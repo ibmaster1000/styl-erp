@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <meta charset="utf-8">
+  <title>StylERP Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body { background:#f3f4f6; }
+
+    /* 공통 다크 톤(로그인 배경 느낌) */
+    :root{
+      --dark-1:#0b0f19;   /* 거의 검정 */
+      --dark-2:#121a2b;   /* 남색 */
+      --dark-3:#1f2a44;   /* hover */
+      --line:#27324d;
+      --text:#e5e7eb;
+      --muted:#a7b0c0;
+      --accent:#7c3aed;   /* 포인트(원하면 변경) */
+    }
+
+    /* 상단 */
+    .topbar{
+      height:86px;
+      background: linear-gradient(90deg, var(--dark-1), var(--dark-2));
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 24px;
+      color:var(--text);
+    }
+
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .brand img{ width:44px; height:44px; }
+    .brand-title{ font-size:28px; font-weight:900; margin:0; letter-spacing:-0.5px; }
+
+    .userbox{ display:flex; align-items:center; gap:18px; }
+    .userbox .meta{ color:var(--text); font-weight:800; }
+    .userbox .meta span:last-child{ color:var(--muted); font-weight:800; }
+    .logout-link{
+      text-decoration:none;
+      color:var(--text);
+      font-weight:900;
+      padding:8px 12px;
+      border-radius:10px;
+      border:1px solid var(--line);
+    }
+    .logout-link:hover{ background:rgba(255,255,255,0.06); }
+
+    /* 레이아웃 */
+    .layout{ display:flex; min-height: calc(100vh - 86px); }
+
+    /* 좌측 메뉴 */
+    .sidebar{
+      width:260px;
+      background: linear-gradient(180deg, var(--dark-1), var(--dark-2));
+      border-right:1px solid var(--line);
+      padding:18px 12px;
+      color:var(--text);
+    }
+    .menu-title{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:900;
+      margin:14px 10px 8px;
+      letter-spacing:0.5px;
+    }
+
+    .menu a{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      color:var(--text);
+      text-decoration:none;
+      font-weight:800;
+      font-size:14px;
+      border:1px solid transparent;
+    }
+    .menu a i{ font-size:16px; color:var(--muted); }
+    .menu a:hover{
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .menu a.active{
+      background: rgba(124,58,237,0.18);
+      border-color: rgba(124,58,237,0.35);
+    }
+    .menu a.active i{ color:#c4b5fd; }
+
+    /* 본문 */
+    .content{ flex:1; padding:22px; }
+    .panel{
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      padding:18px;
+    }
+    .panel h4{ font-weight:900; margin:0 0 14px; }
+
+    .status-cards{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:14px;
+      margin-bottom:18px;
+    }
+    .status-card{
+      height:92px;
+      border-radius:12px;
+      border:2px solid #d1d5db;
+      background:#fff;
+    }
+
+    @media (max-width: 992px){
+      .sidebar{ display:none; }
+      .status-cards{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <!-- 너가 가진 로고 이미지로 바꾸기: /images/logo.png -->
+    <img src="/images/logo.png" alt="logo" onerror="this.style.display='none'">
+    <div>
+      <p class="brand-title">StylERP</p>
+    </div>
+  </div>
+
+  <div class="userbox">
+    <div class="meta">
+      <i class="bi bi-person-circle me-1"></i>
+      <span sec:authentication="name">사용자</span>
+      <span> | </span>
+      <i class="bi bi-briefcase me-1"></i>
+      <span>관리자</span>
+    </div>
+    <a class="logout-link" th:href="@{/logout}">
+      <i class="bi bi-box-arrow-right me-1"></i> 로그아웃
+    </a>
+  </div>
+
+</header>
+
+<div class="layout">
+
+  <!-- 좌측 메뉴 -->
+  <aside class="sidebar">
+    <div class="menu">
+      <div class="menu-title">대시보드</div>
+      <a class="active" th:href="@{/dashboard}">
+        <i class="bi bi-speedometer2"></i> 대시보드
+      </a>
+
+      <div class="menu-title">사용자 관리</div>
+      <a href="#"><i class="bi bi-people"></i> 사용자관리</a>
+      <a href="#"><i class="bi bi-clock-history"></i> 접속로그</a>
+
+      <div class="menu-title">생산 관리</div>
+      <a href="#"><i class="bi bi-tags"></i> 품번등록</a>
+      <a href="#"><i class="bi bi-file-earmark-check"></i> 생산합의등록</a>
+      <a href="#"><i class="bi bi-clipboard-check"></i> 작업지시서등록</a>
+      <a href="#"><i class="bi bi-diagram-3"></i> 원부자재사양서등록</a>
+      <a href="#"><i class="bi bi-cart-plus"></i> 원부자재발주</a>
+      <a href="#"><i class="bi bi-box-arrow-in-down"></i> 원부자재입고등록</a>
+      <a href="#"><i class="bi bi-box-arrow-up"></i> 원부자재출고등록</a>
+      <a href="#"><i class="bi bi-gear-wide-connected"></i> 작업지시</a>
+
+      <div class="menu-title">재고 관리</div>
+      <a href="#"><i class="bi bi-box-seam"></i> 제품입고등록</a>
+      <a href="#"><i class="bi bi-truck"></i> 제품출고등록</a>
+      <a href="#"><i class="bi bi-arrow-left-right"></i> 재고이동등록</a>
+
+      <div class="menu-title">현황</div>
+      <a href="#"><i class="bi bi-graph-up"></i> 자재재고현황</a>
+      <a href="#"><i class="bi bi-graph-up-arrow"></i> 제품입고현황</a>
+      <a href="#"><i class="bi bi-graph-down-arrow"></i> 제품출고현황</a>
+    </div>
+  </aside>
+
+  <!-- 본문 -->
+  <main class="content">
+
+    <section class="panel mb-3">
+      <h4>현황 표시</h4>
+      <div class="status-cards">
+        <div class="status-card"></div>
+        <div class="status-card"></div>
+        <div class="status-card"></div>
+        <div class="status-card"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h4>전체 재고 목록</h4>
+      <div style="height:420px;"></div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>
