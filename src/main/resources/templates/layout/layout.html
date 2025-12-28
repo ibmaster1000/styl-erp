@@ -1,6 +1,5 @@
-<!doctype html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,12 +24,15 @@
 			min-height: 100vh;
 			background: #f3f4f6;
 			color: #111827;
+			font-family: "Noto Sans KR", "Pretendard", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 		}
 
+		/* =====================
+		   Topbar
+		===================== */
 		.topbar {
 			height: 86px;
 			background: linear-gradient(90deg, var(--dark-1), var(--dark-2));
-
 			border-bottom: 1px solid var(--line);
 			display: flex;
 			align-items: center;
@@ -51,183 +53,111 @@
 			object-fit: contain;
 		}
 
-		.brand-title {
-			font-size: 28px;
-			font-weight: 900;
-			margin: 0;
-			letter-spacing: -0.5px;
-		}
-
-		.brand-subtitle {
-			color: var(--muted);
-			margin: 0;
-			font-size: 13px;
-		}
-
-		.userbox {
-			display: flex;
-			align-items: center;
-			gap: 16px;
-		}
-
-		.userbox .meta {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			color: var(--text);
-			font-weight: 800;
-		}
-
-		.userbox .role-divider {
-			color: var(--muted);
-		}
-
-		.userbox .meta .role {
-			color: var(--muted);
-			font-weight: 700;
-		}
-
-		.logout-btn {
-			border: 1px solid var(--line);
-			background: transparent;
-			color: var(--text);
-			font-weight: 800;
-			padding: 8px 14px;
-			border-radius: 10px;
-			display: inline-flex;
-			align-items: center;
-			gap: 6px;
-		}
-
-		.logout-btn:hover {
-			background: rgba(255, 255, 255, 0.06);
-		}
-
+		/* =====================
+		   Layout
+		===================== */
 		.layout {
 			display: flex;
 			min-height: calc(100vh - 86px);
-			background: #f9fafb;
-		}
-
-		.sidebar {
-			width: 260px;
-			flex: 0 0 260px;
-			background: linear-gradient(180deg, var(--dark-1), var(--dark-2));
-			border-right: 1px solid var(--line);
-			padding: 18px 12px;
-			color: var(--text);
-		}
-
-		.menu-title {
-			font-size: 12px;
-			color: var(--muted);
-			font-weight: 900;
-			margin: 14px 10px 8px;
-			letter-spacing: 0.5px;
-		}
-
-		.menu a {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			padding: 10px 12px;
-			border-radius: 12px;
-			color: var(--text);
-			text-decoration: none;
-			font-weight: 800;
-			font-size: 14px;
-			border: 1px solid transparent;
-		}
-
-		.menu a i {
-			font-size: 16px;
-			color: var(--muted);
-		}
-
-		.menu a:hover {
-			background: rgba(255, 255, 255, 0.06);
-			border-color: rgba(255, 255, 255, 0.08);
-		}
-
-		.menu a.active {
-			background: rgba(124, 58, 237, 0.18);
-			border-color: rgba(124, 58, 237, 0.35);
-		}
-
-		.menu a.active i {
-			color: #c4b5fd;
 		}
 
 		.content-area {
 			flex: 1;
-			width: 100%;
-			padding: 26px 28px;
-			display: flex;
-			flex-direction: column;
-			gap: 18px;
-			box-sizing: border-box;
+			padding: 24px;
 		}
 
-		.content-area.container-fluid {
-			max-width: 1440px;
-			margin: 0 auto;
+		/* =====================
+		   Panels
+		===================== */
+		.panel {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 20px;
+		}
+
+		.panel-title {
+			font-size: 18px;
+			font-weight: 900;
+			color: #0f172a;
+			margin-bottom: 16px;
+		}
+
+		/* =====================
+		   Dashboard
+		===================== */
+		.dashboard-page {
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
 		}
 
 		.kpi-cards {
 			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-			gap: 12px;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 16px;
 		}
 
 		.kpi-card {
-			background: #fff;
+			background: #ffffff;
 			border: 1px solid #e5e7eb;
 			border-radius: 12px;
-			padding: 14px;
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+			padding: 18px 16px;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			gap: 10px;
+			min-height: 120px;
 		}
 
 		.kpi-label {
+			font-size: 14px;
+			font-weight: 800;
 			color: #6b7280;
-			font-weight: 700;
-			font-size: 13px;
 		}
 
 		.kpi-value {
-			font-size: 22px;
+			font-size: 32px;
 			font-weight: 900;
-		}
-
-		.panel {
-			background: #fff;
-			border: 1px solid #e5e7eb;
-			border-radius: 12px;
-			padding: 18px;
-		}
-
-		.panel h4 {
-			font-weight: 900;
-			margin: 0 0 14px;
+			color: #0f172a;
+			line-height: 1.2;
 		}
 
 		.status-cards {
 			display: grid;
 			grid-template-columns: repeat(4, minmax(0, 1fr));
-			gap: 14px;
+			gap: 16px;
 		}
 
 		.status-card {
-			height: 92px;
+			height: 110px;
 			border-radius: 12px;
-			border: 2px solid #d1d5db;
-			background: #fff;
+			border: 1px solid #e5e7eb;
+			background: #ffffff;
 		}
 
-		footer {
-			padding: 12px;
-			text-align: center;
-			color: #6b7280;
-			font-size: 13px;
+		.inventory-placeholder {
+			height: 440px;
+			background: #f8fafc;
+			border: 1px dashed #e5e7eb;
+			border-radius: 10px;
+		}
+
+		/* =====================
+		   Responsive
+		===================== */
+		@media (max-width: 1200px) {
+			.kpi-cards,
+			.status-cards {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+		}
+
+		@media (max-width: 768px) {
+			.kpi-cards,
+			.status-cards {
+				grid-template-columns: 1fr;
+			}
 		}
 
 		@media (max-width: 992px) {
@@ -236,22 +166,75 @@
 			}
 
 			.layout {
-				min-height: auto;
 				flex-direction: column;
+				min-height: auto;
 			}
 		}
+
+		footer {
+			padding: 12px;
+			text-align: center;
+			color: #6b7280;
+			font-size: 13px;
+		}
+		/* =====================
+		   Sidebar (FIX)
+		===================== */
+		.sidebar {
+		  width: 260px;
+		  flex: 0 0 260px;
+		  background: linear-gradient(180deg, var(--dark-1), var(--dark-2));
+		  border-right: 1px solid var(--line);
+		  color: var(--text);
+		  padding: 18px 14px;
+		}
+
+		.sidebar .menu-title {
+		  font-size: 12px;
+		  letter-spacing: -0.1px;
+		  font-weight: 800;
+		  color: var(--muted);
+		  margin: 18px 10px 8px;
+		}
+
+		.sidebar a,
+		.sidebar .nav-link {
+		  display: flex;
+		  align-items: center;
+		  gap: 10px;
+		  padding: 10px 12px;
+		  margin: 4px 6px;
+		  border-radius: 10px;
+		  color: var(--text);
+		  text-decoration: none;
+		  font-weight: 700;
+		  font-size: 14px;
+		}
+
+		.sidebar a:hover,
+		.sidebar .nav-link:hover {
+		  background: rgba(124, 58, 237, 0.15);
+		  color: #fff;
+		}
+
+		.sidebar .active,
+		.sidebar .nav-link.active {
+		  background: rgba(124, 58, 237, 0.25);
+		  border:
+
 	</style>
 </head>
 
 <body th:with="content=${content} ?: 'dashboard'">
 	<header th:replace="~{fragments/header :: header(${title})}"></header>
+
 	<div class="layout">
 		<aside th:replace="~{fragments/sidebar :: sidebar(${activeMenu})}"></aside>
-		<main class="content-area container-fluid" th:replace="~{${content} :: content}"></main>
+		<main class="content-area container-fluid"
+			  th:replace="~{${content} :: content}">
+		</main>
 	</div>
+
 	<footer th:replace="~{fragments/footer :: footer}"></footer>
 </body>
-</body>
-
-
 </html>
