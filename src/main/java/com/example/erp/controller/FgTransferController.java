@@ -19,7 +19,7 @@ public class FgTransferController extends PageViewSupport {
 
     @GetMapping
     public String list(Model model) {
-        populate(model, "완제품 이동", "transfer", "pages/fg-transfers :: content", fgTransferService.findAll());
+    	populate(model, "완제품 이동", "transfer", "pages/fg-transfer :: content", fgTransferService.findAll());
         return "layout/layout";
     }
 }
