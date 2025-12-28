@@ -1,0 +1,49 @@
+diff --git a/src/main/java/com/example/erp/controller/PageController.java b/src/main/java/com/example/erp/controller/PageController.java
+index 832dfb61e380bc32eb7cacd6df731d2c929a8b2c..2d01e14b7dc19be6b516d62f17ac6763e5d35fd0 100644
+--- a/src/main/java/com/example/erp/controller/PageController.java
++++ b/src/main/java/com/example/erp/controller/PageController.java
+@@ -1,40 +1,42 @@
+ package com.example.erp.controller;
+ 
+ import org.springframework.stereotype.Controller;
+ import org.springframework.ui.Model;
+ import org.springframework.web.bind.annotation.GetMapping;
+ 
+ @Controller
+ public class PageController {
+ 
+     @GetMapping("/login")
+     public String login() {
+         return "login";
+     }
+ 
+     @GetMapping("/dashboard")
+     public String dashboard(Model model) {
+         // ✅ 일단 더미 KPI (나중에 DB로 교체)
+         model.addAttribute("kpi", new Kpi(12, 3, 8, 5));
+-        return "dashboard";
++        model.addAttribute("content", "dashboard :: content");
++        return "layout/layout";
+     }
+ 
+     // 메뉴 페이지는 일단 “빈 화면”이라도 매핑만 만들어두면 404 안남
+     @GetMapping("/users") public String users(Model m){ return page(m, "users"); }
+     @GetMapping("/accesslog") public String accesslog(Model m){ return page(m, "accesslog"); }
+     @GetMapping("/style") public String style(Model m){ return page(m, "style"); }
+     @GetMapping("/production-agreements") public String pa(Model m){ return page(m, "pa"); }
+     @GetMapping("/work-orders") public String workOrders(Model m){ return page(m, "workorder"); }
+     @GetMapping("/fg/receipts") public String receipts(Model m){ return page(m, "receipt"); }
+     @GetMapping("/fg/shipments") public String shipments(Model m){ return page(m, "shipment"); }
+     @GetMapping("/fg/transfers") public String transfers(Model m){ return page(m, "transfer"); }
+ 
+     private String page(Model model, String activeMenu){
+         model.addAttribute("kpi", new Kpi(12, 3, 8, 5));
+         // 각 페이지용 템플릿은 아직 없으니 dashboard로만 돌려도 됨.
+         // 실제로 페이지 만들면 return 템플릿명으로 변경.
+-        return "dashboard";
++        model.addAttribute("content", "dashboard :: content");
++        return "layout/layout";
+     }
+ 
+     public record Kpi(int workOrdersInProgress, int materialShortage, int todayReceipts, int todayShipments){}
+ }

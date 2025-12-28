@@ -1,0 +1,85 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+  <div class="mb-3">
+    <h4 class="fw-bold mb-1">완제품 입고</h4>
+    <p class="text-muted mb-0">입고 내역 관리</p>
+  </div>
+
+  <div class="kpi-cards">
+    <div class="kpi-card">
+      <div class="kpi-label">진행중 작업지시</div>
+      <div class="kpi-value" th:text="${kpi.workOrdersInProgress}">0</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">금일 입고</div>
+      <div class="kpi-value" th:text="${kpi.todayReceipts}">0</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">금일 출고</div>
+      <div class="kpi-value" th:text="${kpi.todayShipments}">0</div>
+    </div>
+  </div>
+
+  <form class="card shadow-sm mb-3">
+    <div class="card-body row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">품번</label>
+        <input type="text" class="form-control" placeholder="품번">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">입고일자</label>
+        <input type="date" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">창고(L/C)</label>
+        <input type="text" class="form-control" placeholder="창고">
+      </div>
+      <div class="col-md-1 d-grid">
+        <button type="button" class="btn btn-dark">검색</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0 fw-bold">입고 목록</h6>
+        <span class="text-muted small">총 0건</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+          <tr>
+            <th>입고번호</th>
+            <th>입고일자</th>
+            <th>품번</th>
+            <th>색상</th>
+            <th>사이즈</th>
+            <th>수량</th>
+            <th>창고(L/C)</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:if="${#lists.isEmpty(list)}">
+            <td colspan="7" class="text-center text-muted">조회된 데이터가 없습니다.</td>
+          </tr>
+          <tr th:each="r : ${list}">
+            <td th:text="${r.receiptNo}">RC-001</td>
+            <td th:text="${r.receiptDate}">2024-01-01</td>
+            <td th:text="${r.styleNo}">ST-001</td>
+            <td th:text="${r.color}">RED</td>
+            <td th:text="${r.size}">L</td>
+            <td th:text="${r.quantity}">50</td>
+            <td th:text="${r.location}">WH-A</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pt-3 text-center text-muted small">페이징 영역</div>
+    </div>
+  </div>
+
+  <section class="panel mt-3">
+    <h4 class="h6 fw-bold mb-2">준비중</h4>
+    <div class="text-muted small">상세 기능은 추후 추가됩니다.</div>
+  </section>
+</div>

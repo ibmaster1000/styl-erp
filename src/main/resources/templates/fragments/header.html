@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<div th:fragment="header(title)">
+    <div class="topbar">
+        <div class="brand">
+            <img src="/images/logo.png" alt="logo" onerror="this.style.display='none'">
+            <div>
+                <p class="brand-title mb-0">StylERP</p>
+                <small th:text="${title} ?: 'Dashboard'">Dashboard</small>
+            </div>
+        </div>
+
+        <div class="userbox">
+            <div class="meta">
+                <i class="bi bi-person-circle me-1"></i>
+                <span sec:authentication="name">사용자</span>
+                <span> | </span>
+                <i class="bi bi-briefcase me-1"></i>
+                <span>관리자</span>
+            </div>
+            <a class="logout-link" th:href="@{/logout}">
+                <i class="bi bi-box-arrow-right me-1"></i> 로그아웃
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

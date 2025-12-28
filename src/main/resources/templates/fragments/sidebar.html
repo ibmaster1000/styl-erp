@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="sidebar(activeMenu)">
+    <div class="sidebar">
+        <div class="menu">
+            <div class="menu-title">대시보드</div>
+            <a th:href="@{/dashboard}" th:classappend="${activeMenu}=='dashboard' ? ' active'">
+                <i class="bi bi-speedometer2"></i> 대시보드
+            </a>
+
+            <div class="menu-title">사용자 관리</div>
+            <a th:href="@{/users}" th:classappend="${activeMenu}=='users' ? ' active'">
+                <i class="bi bi-people"></i> 사용자 관리
+            </a>
+            <a th:href="@{/accesslog}" th:classappend="${activeMenu}=='accesslog' ? ' active'">
+                <i class="bi bi-clock-history"></i> 접속 로그
+            </a>
+
+            <div class="menu-title">생산 관리</div>
+            <a th:href="@{/style}" th:classappend="${activeMenu}=='style' ? ' active'">
+                <i class="bi bi-tags"></i> 품번/스타일 관리
+            </a>
+            <a th:href="@{/production-agreements}" th:classappend="${activeMenu}=='pa' ? ' active'">
+                <i class="bi bi-file-earmark-check"></i> 생산합의 관리
+            </a>
+            <a th:href="@{/work-orders}" th:classappend="${activeMenu}=='workorder' ? ' active'">
+                <i class="bi bi-clipboard-check"></i> 작업지시서 관리
+            </a>
+
+            <div class="menu-title">재고 관리</div>
+            <a th:href="@{/fg/receipts}" th:classappend="${activeMenu}=='receipt' ? ' active'">
+                <i class="bi bi-box-arrow-in-down"></i> 완제품 입고
+            </a>
+            <a th:href="@{/fg/shipments}" th:classappend="${activeMenu}=='shipment' ? ' active'">
+                <i class="bi bi-truck"></i> 완제품 출고
+            </a>
+            <a th:href="@{/fg/transfers}" th:classappend="${activeMenu}=='transfer' ? ' active'">
+                <i class="bi bi-arrow-left-right"></i> 완제품 이동
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
