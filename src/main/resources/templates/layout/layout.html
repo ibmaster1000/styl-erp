@@ -132,11 +132,11 @@
     </style>
 </head>
 <body>
-<header th:replace="fragments/header :: header(${title})"></header>
+	<header th:replace="~{fragments/header :: header(${title})}"></header>
 <div class="layout">
-    <aside th:replace="fragments/sidebar :: sidebar(${activeMenu})"></aside>
-    <main class="content" th:replace="~{${content}}"></main>
+	<aside th:replace="~{fragments/sidebar :: sidebar(${activeMenu})}"></aside>
+	<main class="content" th:replace="${content}"></main>
 </div>
-<footer th:replace="fragments/footer :: footer"></footer>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
 </body>
 </html>

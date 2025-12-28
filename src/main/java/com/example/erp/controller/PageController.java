@@ -16,7 +16,7 @@ public class PageController {
     public String dashboard(Model model) {
     	model.addAttribute("title", "대시보드");
         model.addAttribute("activeMenu", "dashboard");
-        model.addAttribute("content", "dashboard :: content");
+        model.addAttribute("content", "~{dashboard :: content}");
         model.addAttribute("kpi", new Kpi(12, 3, 8, 5));
         
         return "layout/layout";

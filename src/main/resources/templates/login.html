@@ -107,13 +107,13 @@
         </div>
       </div>
 
-      <div th:if="${param.error and param.error[0] != 'not_admin'}" class="alert alert-danger mt-3">
+      <div th:if="${param.error != null and param.error[0] != 'not_admin'}" class="alert alert-danger mt-3">
         아이디 또는 비밀번호가 틀렸습니다.
       </div>
       <div th:if="${param.logout}" class="alert alert-success mt-3">
         로그아웃 되었습니다.
       </div>
-	  <div th:if="${param.error and param.error[0] == 'not_admin'}" class="alert alert-warning mt-3">
+	  <div th:if="${param.error != null and param.error[0] == 'not_admin'}" class="alert alert-warning mt-3">
       		관리자만 로그인할 수 있습니다.
       </div>
 
