@@ -24,30 +24,67 @@
 			<div class="col-md-4">
 				<label class="form-label fw-semibold">품번</label>
 				<input type="text" class="form-control" placeholder="품번">
-				@@ -67,26 +67,26 @@
-				<tbody>
-					<tr th:if="${#lists.isEmpty(list)}">
-						<td colspan="8" class="text-center text-muted">조회된 데이터가 없습니다.</td>
-					</tr>
-					<tr th:each="w : ${list}">
-						<td th:text="${w.workOrderId}">WO-001</td>
-						<td th:text="${w.styleNo}">ST-001</td>
-						<td th:text="${w.agreementCode}">PA-001</td>
-						<td th:text="${w.color}">RED</td>
-						<td th:text="${w.size}">L</td>
-						<td th:text="${w.quantity}">100</td>
-						<td th:text="${w.dueDate}">2024-01-10</td>
-						<td th:text="${w.status}">진행</td>
-					</tr>
-				</tbody>
+			</div>
+			<div class="col-md-4">
+				<label class="form-label fw-semibold">납기일</label>
+				<input type="date" class="form-control">
+			</div>
+			<div class="col-md-3">
+				<label class="form-label fw-semibold">상태</label>
+				<select class="form-select">
+					<option selected>전체</option>
+					<option>진행</option>
+					<option>완료</option>
+				</select>
+			</div>
+			<div class="col-md-1 d-grid">
+				<button type="button" class="btn btn-dark">검색</button>
+			</div>
+		</div>
+	</form>
+
+	<div class="card shadow-sm">
+		<div class="card-body">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<h6 class="mb-0 fw-bold">작업지시 목록</h6>
+				<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-hover align-middle mb-0">
+					<thead class="table-light">
+						<tr>
+							<th>작업지시</th>
+							<th>품번</th>
+							<th>생산합의</th>
+							<th>색상</th>
+							<th>사이즈</th>
+							<th>수량</th>
+							<th>납기일</th>
+							<th>상태</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:if="${#lists.isEmpty(list)}">
+							<td colspan="8" class="text-center text-muted">조회된 데이터가 없습니다.</td>
+						</tr>
+						<tr th:each="w : ${list}">
+							<td th:text="${w.workOrderId}">WO-001</td>
+							<td th:text="${w.styleNo}">ST-001</td>
+							<td th:text="${w.agreementCode}">PA-001</td>
+							<td th:text="${w.color}">RED</td>
+							<td th:text="${w.size}">L</td>
+							<td th:text="${w.quantity}">100</td>
+							<td th:text="${w.dueDate}">2024-01-10</td>
+							<td th:text="${w.status}">진행</td>
+						</tr>
+					</tbody>
 				</table>
 			</div>
 			<div class="pt-3 text-center text-muted small">페이징 영역</div>
 		</div>
-</div>
-
-<section class="panel mt-3">
-	<h4 class="h6 fw-bold mb-2">준비중</h4>
-	<div class="text-muted small">상세 기능은 추후 추가됩니다.</div>
-</section>
+	</div>
+	<section class="panel mt-3">
+		<h4 class="h6 fw-bold mb-2">준비중</h4>
+		<div class="text-muted small">상세 기능은 추후 추가됩니다.</div>
+	</section>
 </div>

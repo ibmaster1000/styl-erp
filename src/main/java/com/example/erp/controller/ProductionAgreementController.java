@@ -19,7 +19,7 @@ public class ProductionAgreementController extends PageViewSupport {
 
     @GetMapping
     public String list(Model model) {
-        populate(model, "생산 합의", "pa", "pages/production-agreements :: content", productionAgreementService.findAll());
+    	populate(model, "생산 합의", "pa", "pages/production-agreements", productionAgreementService.findAll());
         return "layout/layout";
     }
 }

@@ -19,7 +19,7 @@ public class FgReceiptController extends PageViewSupport {
 
     @GetMapping
     public String list(Model model) {
-        populate(model, "완제품 입고", "receipt", "pages/fg-receipts :: content", fgReceiptService.findAll());
+    	populate(model, "완제품 입고", "receipt", "pages/fg-receipts", fgReceiptService.findAll());
         return "layout/layout";
     }
 }

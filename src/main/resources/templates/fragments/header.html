@@ -1,7 +1,4 @@
-<!doctype html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-
-<body>
+<div xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 	<header th:fragment="header(title)" class="topbar">
 		<div class="brand">
 			<img src="/images/logo.png" alt="logo" onerror="this.style.display='none'">
@@ -9,7 +6,6 @@
 				<p class="brand-title mb-0">StylERP</p>
 				<p class="brand-subtitle" th:text="${title} ?: 'Dashboard'">Dashboard</p>
 			</div>
-		</div>
 		</div>
 		<div class="userbox">
 			<div class="meta">
@@ -30,6 +26,4 @@
 			</form>
 		</div>
 	</header>
-</body>
-
-</html>
+</div>

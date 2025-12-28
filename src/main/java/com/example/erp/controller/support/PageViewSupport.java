@@ -17,6 +17,11 @@ public class PageViewSupport {
         if (content == null || content.isBlank()) {
             return content;
         }
-        return content.trim();
+        String trimmed = content.trim();
+        int fragmentIndex = trimmed.indexOf("::");
+        if (fragmentIndex > -1) {
+            return trimmed.substring(0, fragmentIndex).trim();
+        }
+        return trimmed;
     }
 }

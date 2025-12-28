@@ -19,7 +19,7 @@ public class UserController extends PageViewSupport {
 
     @GetMapping
     public String list(Model model) {
-        populate(model, "사용자 관리", "users", "pages/users :: content", userService.findAll());
+    	populate(model, "사용자 관리", "users", "pages/users", userService.findAll());
         return "layout/layout";
     }
 }

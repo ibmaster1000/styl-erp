@@ -19,7 +19,7 @@ public class WorkOrderController extends PageViewSupport {
 
     @GetMapping
     public String list(Model model) {
-        populate(model, "작업 지시서", "workorder", "pages/work-orders :: content", workOrderService.findAll());
+    	populate(model, "작업 지시서", "workorder", "pages/work-orders", workOrderService.findAll());
         return "layout/layout";
     }
 }

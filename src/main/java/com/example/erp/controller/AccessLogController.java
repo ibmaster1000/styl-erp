@@ -19,7 +19,7 @@ public class AccessLogController extends PageViewSupport {
 
     @GetMapping
     public String list(Model model) {
-        populate(model, "접속 로그", "accesslog", "pages/accesslog :: content", accessLogService.findAll());
+    	populate(model, "접속 로그", "accesslog", "pages/accesslog", accessLogService.findAll());
         return "layout/layout";
     }
 }

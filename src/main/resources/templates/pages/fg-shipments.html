@@ -24,30 +24,61 @@
 			<div class="col-md-4">
 				<label class="form-label fw-semibold">거래처</label>
 				<input type="text" class="form-control" placeholder="거래처">
-				@@ -60,26 +60,26 @@
-				</thead>
-				<tbody>
-					<tr th:if="${#lists.isEmpty(list)}">
-						<td colspan="7" class="text-center text-muted">조회된 데이터가 없습니다.</td>
-					</tr>
-					<tr th:each="s : ${list}">
-						<td th:text="${s.shipmentNo}">SH-001</td>
-						<td th:text="${s.shipmentDate}">2024-01-01</td>
-						<td th:text="${s.customer}">ABC상사</td>
-						<td th:text="${s.styleNo}">ST-001</td>
-						<td th:text="${s.color}">RED</td>
-						<td th:text="${s.size}">L</td>
-						<td th:text="${s.quantity}">40</td>
-					</tr>
-				</tbody>
+			</div>
+			<div class="col-md-4">
+				<label class="form-label fw-semibold">출고일</label>
+				<input type="date" class="form-control">
+			</div>
+			<div class="col-md-3">
+				<label class="form-label fw-semibold">품번</label>
+				<input type="text" class="form-control" placeholder="품번">
+			</div>
+			<div class="col-md-1 d-grid">
+				<button type="button" class="btn btn-dark">검색</button>
+			</div>
+		</div>
+	</form>
+
+	<div class="card shadow-sm">
+		<div class="card-body">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<h6 class="mb-0 fw-bold">출고 목록</h6>
+				<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-hover align-middle mb-0">
+					<thead class="table-light">
+						<tr>
+							<th>출고번호</th>
+							<th>출고일</th>
+							<th>거래처</th>
+							<th>품번</th>
+							<th>색상</th>
+							<th>사이즈</th>
+							<th>수량</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:if="${#lists.isEmpty(list)}">
+							<td colspan="7" class="text-center text-muted">조회된 데이터가 없습니다.</td>
+						</tr>
+						<tr th:each="s : ${list}">
+							<td th:text="${s.shipmentNo}">SH-001</td>
+							<td th:text="${s.shipmentDate}">2024-01-01</td>
+							<td th:text="${s.customer}">ABC상사</td>
+							<td th:text="${s.styleNo}">ST-001</td>
+							<td th:text="${s.color}">RED</td>
+							<td th:text="${s.size}">L</td>
+							<td th:text="${s.quantity}">40</td>
+						</tr>
+					</tbody>
 				</table>
 			</div>
 			<div class="pt-3 text-center text-muted small">페이징 영역</div>
 		</div>
-</div>
-
-<section class="panel mt-3">
-	<h4 class="h6 fw-bold mb-2">준비중</h4>
-	<div class="text-muted small">상세 기능은 추후 추가됩니다.</div>
-</section>
+	</div>
+	<section class="panel mt-3">
+		<h4 class="h6 fw-bold mb-2">준비중</h4>
+		<div class="text-muted small">상세 기능은 추후 추가됩니다.</div>
+	</section>
 </div>

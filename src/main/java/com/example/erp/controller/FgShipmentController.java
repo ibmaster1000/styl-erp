@@ -19,7 +19,7 @@ public class FgShipmentController extends PageViewSupport {
 
     @GetMapping
     public String list(Model model) {
-        populate(model, "완제품 출고", "shipment", "pages/fg-shipments :: content", fgShipmentService.findAll());
+    	populate(model, "완제품 출고", "shipment", "pages/fg-shipments", fgShipmentService.findAll());
         return "layout/layout";
     }
 }

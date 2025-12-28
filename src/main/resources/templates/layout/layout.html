@@ -243,16 +243,14 @@
 	</style>
 </head>
 
-<body th:with="content=${content} ?: 'dashboard :: content'">
-  <header th:replace="~{fragments/header :: header(${title})}"></header>
-  <div class="layout">
-    <aside  th:replace="~{fragments/sidebar :: sidebar(${activeMenu})}"></aside>
-	
-	<main class="content-area container-fluid" th:replace="~{${content}}"></main>
-
-  </div>
-
-  <footer th:replace="~{fragments/footer :: footer}"></footer>
+<body th:with="content=${content} ?: 'dashboard'">
+	<header th:replace="~{fragments/header :: header(${title})}"></header>
+	<div class="layout">
+		<aside th:replace="~{fragments/sidebar :: sidebar(${activeMenu})}"></aside>
+		<main class="content-area container-fluid" th:replace="~{${content} :: content}"></main>
+	</div>
+	<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
 </body>
 
 

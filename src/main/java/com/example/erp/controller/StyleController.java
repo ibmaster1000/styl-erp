@@ -19,7 +19,7 @@ public class StyleController extends PageViewSupport {
 
     @GetMapping
     public String list(Model model) {
-        populate(model, "품번(스타일) 관리", "style", "pages/style :: content", styleService.findAll());
+    	populate(model, "품번(스타일) 관리", "style", "pages/style", styleService.findAll());
         return "layout/layout";
     }
 }
