@@ -6,13 +6,10 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "work_orders")
-public class WorkOrder {
+public class WorkOrder extends BaseAuditEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, length = 50)
+    @Column(name = "work_order_id", nullable = false, length = 50)
     private String workOrderId;
 
     @Column(length = 50)
@@ -33,10 +30,6 @@ public class WorkOrder {
 
     @Column(length = 30)
     private String status;
-
-    public Long getId() {
-        return id;
-    }
 
     public String getWorkOrderId() {
         return workOrderId;

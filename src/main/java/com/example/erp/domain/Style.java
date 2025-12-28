@@ -6,13 +6,10 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "styles")
-public class Style {
+public class Style extends BaseAuditEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, length = 50)
+    @Column(name = "style_no", nullable = false, length = 50)
     private String styleNo;
 
     @Column(length = 100)
@@ -31,10 +28,6 @@ public class Style {
 
     @Column(nullable = false)
     private boolean active = true;
-
-    public Long getId() {
-        return id;
-    }
 
     public String getStyleNo() {
         return styleNo;

@@ -2,17 +2,12 @@ package com.example.erp.domain;
 
 import jakarta.persistence.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "production_agreements")
-public class ProductionAgreement {
+public class ProductionAgreement extends BaseAuditEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, length = 50)
+    @Column(name = "agreement_code", nullable = false, length = 50)
     private String agreementCode;
 
     @Column(length = 50)
@@ -28,12 +23,6 @@ public class ProductionAgreement {
 
     @Column(length = 30)
     private String status;
-
-    private LocalDateTime createdAt;
-
-    public Long getId() {
-        return id;
-    }
 
     public String getAgreementCode() {
         return agreementCode;
@@ -81,13 +70,5 @@ public class ProductionAgreement {
 
     public void setStatus(String status) {
         this.status = status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
     }
 }

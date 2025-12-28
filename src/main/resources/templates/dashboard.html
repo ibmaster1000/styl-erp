@@ -1,5 +1,5 @@
 <div xmlns:th="http://www.thymeleaf.org" th:fragment="content">
-  <divdiv class="kpi-cards mb-3">
+  <div class="kpi-cards mb-3">
     <div class="kpi-card">
       <div class="kpi-label">진행중 작업지시</div>
       <div class="kpi-value" th:text="${kpi.workOrdersInProgress}">0</div>
@@ -15,20 +15,18 @@
 	    <div class="kpi-card">
 	      <div class="kpi-label">금일 출고</div>
 	      <div class="kpi-value" th:text="${kpi.todayShipments}">0</div>
-	</div>
-  </div>
-</div>
-<section class="panel mb-3">
-    <h4>현황 표시</h4>
-    <div class="status-cards">
-      <div class="status-card"></div>
-      <div class="status-card"></div>
-      <div class="status-card"></div>
-      <div class="status-card"></div>
-    </div>
-</section>
-<section class="panel">
-    <h4>전체 재고 목록</h4>
-    <div style="height:420px;"></div>
-  </section>
-</div>
+	    </div>
+		<section class="panel mb-3">
+		    <h4>현황 표시</h4>
+		    <div class="status-cards">
+		      <div class="status-card"></div>
+		      <div class="status-card"></div>
+		      <div class="status-card"></div>
+		      <div class="status-card"></div>
+		    </div>
+		</section>
+		<section class="panel">
+		    <h4>전체 재고 목록</h4>
+		    <div style="height:420px;"></div>
+		  </section>
+		</div>

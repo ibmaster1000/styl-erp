@@ -36,7 +36,6 @@
         <div class="card-body">
             <h5 class="card-title fw-bold mb-3">코드 입력</h5>
             <form th:action="@{/codes}" method="post" id="codeForm" th:attr="data-create-action=@{/codes}">
-                <input type="hidden" name="id" id="codeId">
                 <div class="mb-3">
                     <label class="form-label fw-semibold">분류 코드</label>
                     <input type="text" class="form-control" name="groupCode" id="groupCode" placeholder="예) COLOR" required>
@@ -103,16 +102,15 @@
                             <div class="btn-group btn-group-sm" role="group">
                                 <button type="button"
                                         class="btn btn-outline-primary"
-                                        th:attr="data-id=${code.id},
-                                                 data-group=${code.groupCode},
-                                                 data-code=${code.code},
+                                        th:attr="data-group=${code.id.groupCode},
+                                                 data-code=${code.id.code},
                                                  data-name=${code.name},
                                                  data-sort=${code.sortOrder},
                                                  data-desc=${code.description}"
                                         onclick="fillForm(this)">
                                     <i class="bi bi-pencil"></i>
                                 </button>
-                                <form th:action="@{'/codes/' + ${code.id} + '/delete'}" method="post" class="d-inline">
+                                <form th:action="@{'/codes/' + ${code.id.groupCode} + '/' + ${code.id.code} + '/delete'}" method="post" class="d-inline">
                                     <button type="submit" class="btn btn-outline-danger" onclick="return confirm('삭제하시겠습니까?');">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -138,7 +136,6 @@
         if (!formEl) return;
         formEl.reset();
         formEl.action = createAction || '/codes';
-        document.getElementById('codeId').value = '';
         submitLabel.textContent = '추가';
         submitBtn.classList.remove('btn-warning');
         submitBtn.classList.add('btn-primary');
@@ -146,8 +143,7 @@
 
     function fillForm(button) {
         if (!formEl) return;
-        formEl.action = `/codes/${button.dataset.id}/update`;
-        document.getElementById('codeId').value = button.dataset.id;
+        formEl.action = `/codes/${button.dataset.group}/${button.dataset.code}/update`;
         document.getElementById('groupCode').value = button.dataset.group || '';
         document.getElementById('code').value = button.dataset.code || '';
         document.getElementById('name').value = button.dataset.name || '';

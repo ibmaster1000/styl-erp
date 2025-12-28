@@ -1,6 +1,7 @@
 package com.example.erp.controller;
 
 import com.example.erp.domain.Code;
+import com.example.erp.domain.CodeId;
 import com.example.erp.service.CodeService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -40,9 +41,9 @@ public class CodeController {
     }
 
     @PostMapping("/{id}/update")
-    public String update(@PathVariable Long id, @ModelAttribute("form") CodeForm form, RedirectAttributes redirectAttributes) {
+    public String update(@PathVariable String groupCode, @PathVariable String code, @ModelAttribute("form") CodeForm form, RedirectAttributes redirectAttributes) {
         try {
-            codeService.update(id, form.getGroupCode(), form.getCode(), form.getName(), form.getSortOrder(), form.getDescription());
+            codeService.update(new CodeId(groupCode, code), form.getGroupCode(), form.getCode(), form.getName(), form.getSortOrder(), form.getDescription());
             redirectAttributes.addFlashAttribute("message", "코드가 수정되었습니다.");
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("message", e.getMessage());
@@ -50,9 +51,9 @@ public class CodeController {
         return "redirect:/codes";
     }
 
-    @PostMapping("/{id}/delete")
-    public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        boolean removed = codeService.softDelete(id);
+    @PostMapping("/{groupCode}/{code}/delete")
+    public String delete(@PathVariable String groupCode, @PathVariable String code, RedirectAttributes redirectAttributes) {
+        boolean removed = codeService.softDelete(new CodeId(groupCode, code));
         redirectAttributes.addFlashAttribute("message", removed ? "코드가 삭제되었습니다." : "삭제할 코드를 찾을 수 없습니다.");
         return "redirect:/codes";
     }

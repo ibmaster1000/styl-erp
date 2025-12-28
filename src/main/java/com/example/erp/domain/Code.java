@@ -1,23 +1,16 @@
 package com.example.erp.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 @Entity
-@Table(
-        name = "codes",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"group_code", "code"})
-)
-public class Code {
+@Table(name = "codes")
+public class Code extends BaseAuditEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "group_code", nullable = false, length = 50)
-    private String groupCode;
-
-    @Column(nullable = false, length = 50)
-    private String code;
+    @EmbeddedId
+    private CodeId id;
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -31,24 +24,20 @@ public class Code {
     @Column(nullable = false)
     private boolean deleted = false;
 
-    public Long getId() {
+    public CodeId getId() {
         return id;
     }
 
-    public String getGroupCode() {
-        return groupCode;
+    public void setId(CodeId id) {
+        this.id = id;
     }
 
-    public void setGroupCode(String groupCode) {
-        this.groupCode = groupCode;
+    public String getGroupCode() {
+        return id != null ? id.getGroupCode() : null;
     }
 
     public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
+        return id != null ? id.getCode() : null;
     }
 
     public String getName() {

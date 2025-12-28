@@ -1,6 +1,7 @@
 package com.example.erp.service;
 
 import com.example.erp.domain.Code;
+import com.example.erp.domain.CodeId;
 import com.example.erp.repository.CodeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,10 +20,10 @@ public class CodeService {
     }
 
     public List<Code> findAllActive() {
-        return codeRepository.findByDeletedFalseOrderByGroupCodeAscSortOrderAscCodeAsc();
+        return codeRepository.findByDeletedFalseOrderByIdGroupCodeAscSortOrderAscIdCodeAsc();
     }
 
-    public Code getActive(Long id) {
+    public Code getActive(CodeId id) {
         return codeRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new IllegalArgumentException("Code not found"));
     }
@@ -30,13 +31,12 @@ public class CodeService {
     @Transactional
     public Code create(String groupCode, String code, String name, Integer sortOrder, String description) {
         validateRequired(groupCode, code, name);
-        if (codeRepository.existsByGroupCodeAndCodeAndDeletedFalse(groupCode, code)) {
+        if (codeRepository.existsByIdGroupCodeAndIdCodeAndDeletedFalse(groupCode, code)) {
             throw new IllegalStateException("Duplicate code in same group");
         }
 
         Code entity = new Code();
-        entity.setGroupCode(groupCode.trim());
-        entity.setCode(code.trim());
+        entity.setId(new CodeId(groupCode.trim(), code.trim()));
         entity.setName(name.trim());
         entity.setDescription(StringUtils.hasText(description) ? description.trim() : null);
         entity.setSortOrder(sortOrder != null ? sortOrder : 0);
@@ -46,18 +46,17 @@ public class CodeService {
     }
 
     @Transactional
-    public Code update(Long id, String groupCode, String code, String name, Integer sortOrder, String description) {
+    public Code update(CodeId id, String groupCode, String code, String name, Integer sortOrder, String description) {
         validateRequired(groupCode, code, name);
         Code existing = getActive(id);
 
-        boolean duplicate = codeRepository.existsByGroupCodeAndCodeAndDeletedFalse(groupCode, code)
+        boolean duplicate = codeRepository.existsByIdGroupCodeAndIdCodeAndDeletedFalse(groupCode, code)
                 && (!existing.getGroupCode().equals(groupCode) || !existing.getCode().equals(code));
         if (duplicate) {
             throw new IllegalStateException("Duplicate code in same group");
         }
 
-        existing.setGroupCode(groupCode.trim());
-        existing.setCode(code.trim());
+        existing.setId(new CodeId(groupCode.trim(), code.trim()));
         existing.setName(name.trim());
         existing.setDescription(StringUtils.hasText(description) ? description.trim() : null);
         existing.setSortOrder(sortOrder != null ? sortOrder : 0);
@@ -65,7 +64,7 @@ public class CodeService {
     }
 
     @Transactional
-    public boolean softDelete(Long id) {
+    public boolean softDelete(CodeId id) {
         return codeRepository.softDelete(id) > 0;
     }
 
