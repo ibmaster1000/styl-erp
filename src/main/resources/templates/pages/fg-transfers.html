@@ -4,21 +4,6 @@
 		<p class="text-muted mb-0">창고 간 이동 관리</p>
 	</div>
 
-	<div class="kpi-cards">
-		<div class="kpi-card">
-			<div class="kpi-label">진행중 작업지시</div>
-			<div class="kpi-value" th:text="${kpi.workOrdersInProgress}">0</div>
-		</div>
-		<div class="kpi-card">
-			<div class="kpi-label">금일 입고</div>
-			<div class="kpi-value" th:text="${kpi.todayReceipts}">0</div>
-		</div>
-		<div class="kpi-card">
-			<div class="kpi-label">금일 출고</div>
-			<div class="kpi-value" th:text="${kpi.todayShipments}">0</div>
-		</div>
-	</div>
-
 	<form class="card shadow-sm mb-3">
 		<div class="card-body row g-3 align-items-end">
 			<div class="col-md-4">
