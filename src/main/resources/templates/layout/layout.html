@@ -245,11 +245,11 @@
 
 <body th:with="content=${content} ?: 'dashboard :: content'">
   <header th:replace="~{fragments/header :: header(${title})}"></header>
-
   <div class="layout">
-    <aside th:replace="~{fragments/sidebar :: sidebar(${activeMenu})}"></aside>
+    <aside  th:replace="~{fragments/sidebar :: sidebar(${activeMenu})}"></aside>
 	
-    <main class="content" th:replace="~{${content}}"></main>
+	<main class="content-area container-fluid" th:replace="~{${content}}"></main>
+
   </div>
 
   <footer th:replace="~{fragments/footer :: footer}"></footer>
