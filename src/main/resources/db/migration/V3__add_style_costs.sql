@@ -1,0 +1,5 @@
+ALTER TABLE styles
+    ADD COLUMN IF NOT EXISTS production_cost DECIMAL(15, 2),
+    ADD COLUMN IF NOT EXISTS supply_price DECIMAL(15, 2),
+    ADD COLUMN IF NOT EXISTS sales_price DECIMAL(15, 2),
+    ADD COLUMN IF NOT EXISTS designer_emp_no VARCHAR(30);
