@@ -9,66 +9,110 @@ import jakarta.persistence.Table;
 @Table(name = "codes")
 public class Code extends BaseAuditEntity {
 
-    @EmbeddedId
-    private CodeId id;
+	@EmbeddedId
+	private CodeId id;
 
-    @Column(nullable = false, length = 100)
-    private String name;
+	@Column(name = "code_name", length = 100)
+	private String codeName;
 
-    @Column(length = 255)
-    private String description;
+	@Column(name = "remark", length = 255)
+	private String remark;
 
-    @Column(name = "sort_order")
-    private Integer sortOrder = 0;
+	@Column(name = "is_active", nullable = false)
+	private boolean active = true;
 
-    @Column(nullable = false)
-    private boolean deleted = false;
+	@Column(length = 255)
+	private String description;
 
-    public CodeId getId() {
-        return id;
-    }
+	@Column(name = "group_code", length = 50)
+	private String groupCode;
 
-    public void setId(CodeId id) {
-        this.id = id;
-    }
+	@Column(name = "name", length = 100)
+	private String name;
 
-    public String getGroupCode() {
-        return id != null ? id.getGroupCode() : null;
-    }
+	@Column(name = "sort_order")
+	private Integer sortOrder = 0;
 
-    public String getCode() {
-        return id != null ? id.getCode() : null;
-    }
+	@Column(nullable = false)
+	private boolean deleted = false;
 
-    public String getName() {
-        return name;
-    }
+	public CodeId getId() {
+		return id;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setId(CodeId id) {
+		this.id = id;
+	}
 
-    public String getDescription() {
-        return description;
-    }
+	public String getCodeType() {
+		return id != null ? id.getCodeType() : null;
+	}
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+	public String getCode() {
+		return id != null ? id.getCode() : null;
+	}
 
-    public Integer getSortOrder() {
-        return sortOrder;
-    }
+	public String getCodeName() {
+		return codeName;
+	}
 
-    public void setSortOrder(Integer sortOrder) {
-        this.sortOrder = sortOrder;
-    }
+	public void setCodeName(String codeName) {
+		this.codeName = codeName;
+	}
 
-    public boolean isDeleted() {
-        return deleted;
-    }
+	public String getRemark() {
+		return remark;
+	}
 
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
-    }
+	public void setRemark(String remark) {
+		this.remark = remark;
+	}
+
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getGroupCode() {
+		return groupCode;
+	}
+
+	public void setGroupCode(String groupCode) {
+		this.groupCode = groupCode;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public Integer getSortOrder() {
+		return sortOrder;
+	}
+
+	public void setSortOrder(Integer sortOrder) {
+		this.sortOrder = sortOrder;
+	}
+
+	public boolean isDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(boolean deleted) {
+		this.deleted = deleted;
+	}
 }
