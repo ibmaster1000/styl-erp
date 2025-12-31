@@ -110,11 +110,14 @@
       <div th:if="${param.error != null and param.error[0] != 'not_admin'}" class="alert alert-danger mt-3">
         아이디 또는 비밀번호가 틀렸습니다.
       </div>
+	  <div th:if="${param.registered}" class="alert alert-success mt-3">
+	          회원가입이 완료되었습니다. 로그인해 주세요.
+	        </div>
       <div th:if="${param.logout}" class="alert alert-success mt-3">
         로그아웃 되었습니다.
       </div>
 	  <div th:if="${param.error != null and param.error[0] == 'not_admin'}" class="alert alert-warning mt-3">
-      		관리자만 로그인할 수 있습니다.
+      		관리자 권한이 필요합니다. 일반 사용자로 로그인하거나 관리자 계정을 사용하세요.
       </div>
 
       <!-- ✅ 탭(붙어서) -->
@@ -138,7 +141,7 @@
 
         <div class="d-flex justify-content-between mt-3 pt-3 border-top help-links">
           <a href="#" onclick="alert('추후 구현'); return false;">아이디/비밀번호 찾기</a>
-          <a href="#" onclick="alert('추후 구현'); return false;">회원가입</a>
+          <a th:href="@{/signup}">회원가입</a>
         </div>
       </form>
 
