@@ -40,8 +40,9 @@ public class SecurityConfig {
         http
           .csrf(csrf -> csrf.disable())
           .authorizeHttpRequests(auth -> auth
-        		  .requestMatchers("/login", "/signup", "/css/**", "/js/**", "/images/**").permitAll()
-                  .anyRequest().authenticated()
+              .requestMatchers("/login", "/signup", "/css/**", "/js/**", "/images/**").permitAll()
+              .requestMatchers("/users/**").hasRole("ADMIN")
+              .anyRequest().authenticated()
           )
           .formLogin(form -> form
               .loginPage("/login")

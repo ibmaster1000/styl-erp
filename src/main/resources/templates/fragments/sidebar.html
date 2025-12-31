@@ -1,4 +1,4 @@
-<div xmlns:th="http://www.thymeleaf.org">
+<div xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 	<aside th:fragment="sidebar(activeMenu)" class="sidebar">
 		<div class="menu">
 			<div class="menu-title">대시보드</div>
@@ -6,8 +6,8 @@
 				<i class="bi bi-speedometer2"></i> 대시보드
 			</a>
 
-			<div class="menu-title">사용자 관리</div>
-			<a th:href="@{/users}" th:classappend="${activeMenu}=='users' ? ' active'">
+			<div class="menu-title" sec:authorize="hasRole('ADMIN')">사용자 관리</div>
+			<a th:href="@{/users}" th:classappend="${activeMenu}=='users' ? ' active'" sec:authorize="hasRole('ADMIN')">
 				<i class="bi bi-people"></i> 사용자 관리
 			</a>
 			<a th:href="@{/accesslog}" th:classappend="${activeMenu}=='accesslog' ? ' active'">
