@@ -2,21 +2,22 @@
 	<header th:fragment="header(title)" class="topbar">
 		<div class="brand">
 			<img src="/images/logo.png" alt="logo" onerror="this.style.display='none'">
-			<div>
-				<p class="brand-title mb-0">StylERP</p>
-				<p class="brand-subtitle" th:text="${title} ?: 'Dashboard'">Dashboard</p>
+			<div class="brand-text">
+				<span class="brand-title">StylERP</span>
+				<span class="brand-divider">/</span>
+				<span class="brand-subtitle" th:text="${title} ?: 'Dashboard'">Dashboard</span>
 			</div>
 		</div>
 		<div class="userbox">
-			<div class="meta">
+			<div class="user-meta">
 				<i class="bi bi-person-circle"></i>
-				<span th:text="${#authentication?.name} ?: '알 수 없음'">사용자</span>
+				<span class="user-name" th:text="${#authentication?.name} ?: '알 수 없음'">사용자</span>
 				<span class="role-divider">|</span>
 				<i class="bi bi-briefcase"></i>
 				<span class="role"
 					th:text="${#authentication?.authorities != null ? #strings.listJoin(#authentication.authorities, ', ') : '권한없음'}">ROLE_USER</span>
 			</div>
-			<form th:action="@{/logout}" method="post" class="m-0">
+			<form th:action="@{/logout}" method="post" class="logout-form m-0">
 				<input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}"
 					th:value="${_csrf.token}" />
 				<button type="submit" class="logout-btn">

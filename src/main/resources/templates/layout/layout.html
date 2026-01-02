@@ -54,9 +54,79 @@
 			object-fit: contain;
 		}
 
+		.brand-text {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			font-weight: 900;
+			white-space: nowrap;
+		}
+
+		.brand-title {
+			font-size: 18px;
+		}
+
+		.brand-divider {
+			color: var(--muted);
+		}
+
+		.brand-subtitle {
+			font-size: 15px;
+			color: #cbd5e1;
+		}
+
+		.userbox {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			flex-wrap: nowrap;
+			white-space: nowrap;
+		}
+
+		.user-meta {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			font-weight: 700;
+		}
+
+		.user-name {
+			font-weight: 800;
+		}
+
+		.role-divider {
+			color: var(--muted);
+		}
+
+		.role {
+			color: #cbd5e1;
+			font-weight: 800;
+		}
+
+		.logout-form {
+			margin: 0;
+		}
+
+		.logout-btn {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 8px 12px;
+			border: 1px solid var(--line);
+			border-radius: 10px;
+			background: transparent;
+			color: var(--text);
+			font-weight: 800;
+			white-space: nowrap;
+		}
+
+		.logout-btn:hover {
+			border-color: var(--text);
+		}
+
 		/* =====================
-		   Layout
-		===================== */
+				   Layout
+				===================== */
 		.layout {
 			display: flex;
 			min-height: calc(100vh - 86px);
@@ -137,6 +207,89 @@
 			background: #ffffff;
 		}
 
+		.dashboard-page {
+			padding-top: 10px;
+		}
+
+		.dashboard-layout {
+			display: flex;
+			flex-direction: column;
+			gap: 18px;
+		}
+
+		.dashboard-page .panel {
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 20px;
+			box-shadow: none;
+			background: #ffffff;
+		}
+
+		.dashboard-page .panel-header {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			margin-bottom: 16px;
+		}
+
+		.dashboard-page .panel-title {
+			font-size: 18px;
+			font-weight: 900;
+			color: #0f172a;
+			letter-spacing: -0.2px;
+			margin: 0;
+		}
+
+		.dashboard-page .kpi-cards {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 16px;
+		}
+
+		.dashboard-page .kpi-card {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 18px 16px;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			gap: 10px;
+			min-height: 120px;
+			box-shadow: none;
+		}
+
+		.dashboard-page .kpi-label {
+			color: #6b7280;
+			font-weight: 800;
+			font-size: 14px;
+			letter-spacing: -0.1px;
+		}
+
+		.dashboard-page .kpi-value {
+			font-size: 32px;
+			font-weight: 900;
+			color: #0f172a;
+			line-height: 1.2;
+		}
+
+		.dashboard-page .status-panel {
+			padding-top: 18px;
+		}
+
+		.dashboard-page .status-cards {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 16px;
+		}
+
+		.dashboard-page .status-card {
+			height: 110px;
+			border-radius: 12px;
+			border: 1px solid #e5e7eb;
+			background: #ffffff;
+		}
+
 		.inventory-placeholder {
 			height: 440px;
 			background: #f8fafc;
@@ -144,33 +297,21 @@
 			border-radius: 10px;
 		}
 
-		/* =====================
-		   Responsive
-		===================== */
 		@media (max-width: 1200px) {
+			.dashboard-page .kpi-cards {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
 
-			.kpi-cards,
-			.status-cards {
+			.dashboard-page .status-cards {
 				grid-template-columns: repeat(2, minmax(0, 1fr));
 			}
 		}
 
 		@media (max-width: 768px) {
 
-			.kpi-cards,
-			.status-cards {
+			.dashboard-page .kpi-cards,
+			.dashboard-page .status-cards {
 				grid-template-columns: 1fr;
-			}
-		}
-
-		@media (max-width: 992px) {
-			.sidebar {
-				display: none;
-			}
-
-			.layout {
-				flex-direction: column;
-				min-height: auto;
 			}
 		}
 
@@ -181,64 +322,25 @@
 			font-size: 13px;
 		}
 
-		/* =====================
-		   Sidebar (FIX)
-		===================== */
-		.sidebar {
-			width: 260px;
-			flex: 0 0 260px;
-			background: linear-gradient(180deg, var(--dark-1), var(--dark-2));
-			border-right: 1px solid var(--line);
-			color: var(--text);
-			padding: 18px 14px;
-		}
+		@media (max-width: 992px) {
+			.sidebar {
+				display: none;
+			}
 
-		.sidebar .menu-title {
-			font-size: 12px;
-			letter-spacing: -0.1px;
-			font-weight: 800;
-			color: var(--muted);
-			margin: 18px 10px 8px;
-		}
-
-		.sidebar a,
-		.sidebar .nav-link {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			padding: 10px 12px;
-			margin: 4px 6px;
-			border-radius: 10px;
-			color: var(--text);
-			text-decoration: none;
-			font-weight: 700;
-			font-size: 14px;
-		}
-
-		.sidebar a:hover,
-		.sidebar .nav-link:hover {
-			background: rgba(124, 58, 237, 0.15);
-			color: #fff;
-		}
-
-		.sidebar .active,
-		.sidebar .nav-link.active {
-			background: rgba(124, 58, 237, 0.25);
-			border: 1px solid rgba(124, 58, 237, 0.35);
-			color: #fff;
+			.layout {
+				min-height: auto;
+				flex-direction: column;
+			}
 		}
 	</style>
 </head>
 
 <body th:with="content=${content} ?: 'dashboard'">
 	<header th:replace="~{fragments/header :: header(${title})}"></header>
-
 	<div class="layout">
 		<aside th:replace="~{fragments/sidebar :: sidebar(${activeMenu})}"></aside>
-		<main class="content-area container-fluid" th:replace="~{${content} :: content}">
-		</main>
+		<main class="content-area container-fluid" th:replace="~{${content} :: content}"></main>
 	</div>
-
 	<footer th:replace="~{fragments/footer :: footer}"></footer>
 </body>
 
