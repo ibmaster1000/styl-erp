@@ -23,9 +23,9 @@
 
 		.ms-search-grid {
 			display: grid;
-			grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr);
-			gap: 16px;
-			align-items: stretch;
+			grid-template-columns: 1fr;
+			grid-template-rows: auto auto;
+			gap: 14px;
 		}
 
 		.ms-search-controls {
@@ -35,72 +35,41 @@
 			justify-content: center;
 		}
 
-		.ms-search-grid {
-			display: grid;
-			grid-template-columns: 1fr;
-						grid-template-rows: auto auto;
-						gap: 14px;
-					}
-
-					.ms-row-top,
-					.ms-row-bottom {
-						display: flex;
-						align-items: center;
-						gap: 12px;
-						flex-wrap: wrap;
-					}
-
-					.ms-row-top label,
-					.ms-row-bottom label {
-						margin-bottom: 0;
-						white-space: nowrap;
-					}
-
-					.ms-style-input {
-						flex: 1 1 260px;
-						max-width: 320px;
-					}
-
-					.ms-style-input .form-control {
-						max-width: 100%;
-						min-width: 0;
-					}
-
-					.ms-style-input .btn {
-						white-space: nowrap;
-					}
-
-		.ms-control-left {
-			display: grid;
-			grid-template-rows: auto auto;
-			gap: 12px;
-			align-content: center;
-		}
-
-		.ms-style-row {
-			display: grid;
-			grid-template-columns: auto 1fr auto;
-			gap: 10px;
+		.ms-row-top,
+		.ms-row-bottom {
+			display: flex;
 			align-items: center;
+			gap: 12px;
+			flex-wrap: wrap;
 		}
 
-		.ms-style-row .form-label {
+		.ms-row-top label,
+		.ms-row-bottom label {
 			margin-bottom: 0;
 			white-space: nowrap;
 		}
 
-		.ms-meta-row {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 12px;
-			align-items: center;
+		.ms-style-input {
+			flex: 1 1 260px;
+			max-width: 320px;
+			min-width: 240px;
+		}
+
+		.ms-style-input .form-control {
+			max-width: 100%;
+			min-width: 0;
+		}
+
+		.ms-style-input .btn {
+			white-space: nowrap;
 		}
 
 		.ms-meta-item {
-			display: grid;
-			grid-template-columns: auto 1fr;
-			gap: 8px;
+			display: flex;
 			align-items: center;
+			gap: 8px;
+			flex: 1 1 auto;
+			min-width: 200px;
 		}
 
 		.ms-meta-item .form-label {
@@ -108,11 +77,20 @@
 			white-space: nowrap;
 		}
 
-		.ms-search-action {
-			grid-row: 1 / span 2;
+		.ms-color-select {
+			max-width: 160px;
+		}
+
+		.ms-agree-select {
+			flex: 1 1 260px;
+			min-width: 240px;
+			max-width: 480px;
+		}
+
+		.ms-search-button {
+			width: 140px;
 			align-self: stretch;
-			display: flex;
-			align-items: stretch;
+			min-height: 38px;
 		}
 
 		.ms-control-row .form-control[readonly] {
@@ -193,18 +171,8 @@
 				grid-template-columns: 1fr;
 			}
 
-			.ms-control-row {
-				grid-template-columns: 1fr;
-				grid-template-rows: auto auto auto;
-			}
-
-			.ms-meta-row {
-				grid-template-columns: 1fr;
-			}
-
-			.ms-search-action {
-				grid-row: 3;
-				align-self: stretch;
+			.ms-row-bottom {
+				justify-content: flex-start;
 			}
 		}
 	</style>
@@ -215,37 +183,29 @@
 	</div>
 
 	<div class="ms-layout">
-		<div class="ms-panel ms-search ms-search-grid">
-			<div class="ms-search-controls">
-				<div class="ms-control-row">
-					<div class="ms-control-left">
-						<div class="ms-style-row">
-							<label class="form-label fw-bold">품번</label>
-							<div class="input-group">
-								<input type="text" class="form-control" id="ms-style-input" placeholder="품번을 선택하세요"
-									readonly>
-								<button class="btn btn-outline-secondary" type="button" id="ms-style-search">품번
-									검색</button>
-							</div>
-						</div>
-						<div class="ms-meta-row">
-							<div class="ms-meta-item">
-								<label class="form-label fw-bold">색상</label>
-								<select class="form-select" id="ms-color-select" disabled>
-									<option value="">색상을 선택하세요</option>
-								</select>
-							</div>
-							<div class="ms-meta-item">
-								<label class="form-label fw-bold">생산합의코드</label>
-								<select class="form-select" id="ms-agreement-select" disabled>
-									<option value="">생산합의 코드를 선택하세요</option>
-								</select>
-							</div>
-						</div>
+		<div class="ms-panel ms-search">
+			<div class="ms-search-controls ms-search-grid">
+				<div class="ms-row-top">
+					<label class="form-label fw-bold mb-0">품번</label>
+					<div class="input-group ms-style-input">
+						<input type="text" class="form-control" id="ms-style-input" placeholder="품번을 선택하세요" readonly>
+						<button class="btn btn-outline-secondary" type="button" id="ms-style-search">품번 검색</button>
 					</div>
-					<div class="ms-search-action">
-						<button class="btn btn-dark w-100" type="button" id="ms-search-button">검색</button>
+				</div>
+				<div class="ms-row-bottom">
+					<div class="ms-meta-item">
+						<label class="form-label fw-bold mb-0">색상</label>
+						<select class="form-select ms-color-select" id="ms-color-select" disabled>
+							<option value="">색상을 선택하세요</option>
+						</select>
 					</div>
+					<div class="ms-meta-item">
+						<label class="form-label fw-bold mb-0">생산합의코드</label>
+						<select class="form-select ms-agree-select" id="ms-agreement-select" disabled>
+							<option value="">생산합의 코드를 선택하세요</option>
+						</select>
+					</div>
+					<button class="btn btn-dark ms-search-button" type="button" id="ms-search-button">검색</button>
 				</div>
 			</div>
 
