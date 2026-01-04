@@ -33,17 +33,42 @@
 			display: flex;
 			flex-direction: column;
 			justify-content: center;
-			gap: 12px;
 		}
 
-		.ms-control-row {
+		.ms-search-grid {
 			display: grid;
-			grid-template-columns: 1fr auto;
-			grid-template-rows: auto auto;
-			column-gap: 16px;
-			row-gap: 12px;
-			align-items: stretch;
-		}
+			grid-template-columns: 1fr;
+						grid-template-rows: auto auto;
+						gap: 14px;
+					}
+
+					.ms-row-top,
+					.ms-row-bottom {
+						display: flex;
+						align-items: center;
+						gap: 12px;
+						flex-wrap: wrap;
+					}
+
+					.ms-row-top label,
+					.ms-row-bottom label {
+						margin-bottom: 0;
+						white-space: nowrap;
+					}
+
+					.ms-style-input {
+						flex: 1 1 260px;
+						max-width: 320px;
+					}
+
+					.ms-style-input .form-control {
+						max-width: 100%;
+						min-width: 0;
+					}
+
+					.ms-style-input .btn {
+						white-space: nowrap;
+					}
 
 		.ms-control-left {
 			display: grid;
