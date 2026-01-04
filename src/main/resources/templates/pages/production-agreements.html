@@ -1,73 +1,421 @@
 <div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
+	<style>
+		.pa-layout {
+			display: flex;
+			gap: 20px;
+			align-items: stretch;
+		}
+
+		.pa-left,
+		.pa-right {
+			flex: 1 1 50%;
+			max-width: 50%;
+			min-width: 0;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+
+		.pa-panel {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+
+		.pa-search-form .form-label {
+			font-weight: 800;
+		}
+
+		.pa-table thead th {
+			font-size: 13px;
+			font-weight: 800;
+			background: #f9fafb;
+			white-space: nowrap;
+		}
+
+		.pa-table tbody td {
+			font-size: 13px;
+			vertical-align: middle;
+			white-space: nowrap;
+		}
+
+		.pa-row-selected {
+			background: rgba(124, 58, 237, 0.06);
+			box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.35);
+		}
+
+		.pa-detail-head {
+			display: flex;
+			justify-content: space-between;
+			align-items: baseline;
+			gap: 12px;
+			flex-wrap: wrap;
+			margin-bottom: 12px;
+		}
+
+		.pa-detail-placeholder {
+			padding: 20px;
+			text-align: center;
+			color: #6b7280;
+			background: #f8fafc;
+			border: 1px dashed #e5e7eb;
+			border-radius: 10px;
+		}
+
+		.pa-detail-table input {
+			width: 90px;
+		}
+
+		.pa-chip {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 6px 10px;
+			border-radius: 10px;
+			background: #eef2ff;
+			color: #312e81;
+			font-weight: 800;
+			font-size: 12px;
+		}
+
+		.pa-summary {
+			display: flex;
+			gap: 12px;
+			flex-wrap: wrap;
+		}
+
+		.pa-summary .badge {
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		@media (max-width: 1200px) {
+
+			.pa-left,
+			.pa-right {
+				max-width: 100%;
+				flex-basis: 100%;
+			}
+
+			.pa-layout {
+				flex-direction: column;
+			}
+		}
+	</style>
+
 	<div class="mb-3">
 		<h4 class="fw-bold mb-1">생산합의 관리</h4>
 		<p class="text-muted mb-0">생산 합의서 관리</p>
 	</div>
+	<div class="pa-layout">
+		<div class="pa-left">
+			<form class="pa-panel pa-search-form" method="get" th:action="@{/production-agreements}">
+				<div class="row g-3 align-items-end">
+					<div class="col-md-5">
+						<label class="form-label">품번</label>
+						<input type="text" class="form-control" name="styleNo" th:value="${param.styleNo}"
+							placeholder="품번 코드">
+					</div>
+					<div class="col-md-5">
+						<label class="form-label">생산합의 코드</label>
+						<input type="text" class="form-control" name="agreementCode" th:value="${param.agreementCode}"
+							placeholder="생산합의 코드">
+					</div>
+					<div class="col-md-2 d-grid">
+						<button type="submit" class="btn btn-dark">검색</button>
+					</div>
+				</div>
+			</form>
 
-	<form class="card shadow-sm mb-3">
-		<div class="card-body row g-3 align-items-end">
-			<div class="col-md-4">
-				<label class="form-label fw-semibold">품번</label>
-				<input type="text" class="form-control" placeholder="품번">
-			</div>
-			<div class="col-md-4">
-				<label class="form-label fw-semibold">상태</label>
-				<select class="form-select">
-					<option selected>전체</option>
-					<option>진행</option>
-					<option>완료</option>
-				</select>
-			</div>
-			<div class="col-md-3">
-				<label class="form-label fw-semibold">수량</label>
-				<input type="number" class="form-control" placeholder="예: 1000">
-			</div>
-			<div class="col-md-1 d-grid">
-				<button type="button" class="btn btn-dark">검색</button>
+			<div class="pa-panel">
+				<div class="d-flex justify-content-between align-items-center mb-2">
+					<h6 class="mb-0 fw-bold">생산합의 목록</h6>
+					<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-hover align-middle mb-0 pa-table">
+						<thead class="table-light">
+							<tr>
+								<th>품번</th>
+								<th>생산합의코드</th>
+								<th>색상</th>
+								<th>사이즈</th>
+								<th>합의량</th>
+								<th class="text-center">선택</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:if="${#lists.isEmpty(list)}">
+								<td colspan="6" class="text-center text-muted">조회된 데이터가 없습니다.</td>
+							</tr>
+							<tr th:each="p, iter : ${list}" data-pa-row
+								th:attr="data-agreement=${p.agreementCode},data-style=${p.styleNo}"
+								th:classappend="${iter.index == 0} ? 'pa-row-selected'">
+								<td th:text="${p.styleNo}">ST-001</td>
+								<td th:text="${p.agreementCode}">PA-001</td>
+								<td th:text="${p.color}">RED</td>
+								<td th:text="${p.size}">L</td>
+								<td th:text="${p.quantity}">1000</td>
+								<td class="text-center">
+									<div class="form-check d-inline-flex justify-content-center">
+										<input class="form-check-input pa-row-check" type="checkbox"
+											th:checked="${iter.index == 0}">
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="pt-3 text-center text-muted small">페이징 영역</div>
 			</div>
 		</div>
-	</form>
+		<div class="pa-right">
+			<div class="pa-panel h-100 d-flex flex-column">
+				<div class="pa-detail-head">
+					<div>
+						<div class="fw-bold">세부정보</div>
+						<div class="text-muted small">좌측에서 생산합의를 선택해 상세를 확인하세요.</div>
+					</div>
+					<div class="pa-summary">
+						<span class="badge bg-secondary-subtle text-secondary-emphasis" id="pa-summary-style">품번 -
+							-</span>
+						<span class="badge bg-dark-subtle text-dark-emphasis" id="pa-summary-agreement">생산합의코드 -
+							-</span>
+					</div>
+				</div>
 
-	<div class="card shadow-sm">
-		<div class="card-body">
-			<div class="d-flex justify-content-between align-items-center mb-2">
-				<h6 class="mb-0 fw-bold">생산합의 목록</h6>
-				<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
+				<div id="pa-detail-placeholder"
+					class="pa-detail-placeholder flex-grow-1 d-flex align-items-center justify-content-center">
+					좌측 목록에서 항목을 선택하세요.
+				</div>
+
+				<div id="pa-detail-panel" class="d-none flex-grow-1 d-flex flex-column">
+					<div class="table-responsive flex-grow-1">
+						<table class="table table-sm align-middle pa-detail-table">
+							<thead class="table-light">
+								<tr>
+									<th>색상</th>
+									<th>사이즈</th>
+									<th>합의량</th>
+									<th>공급가</th>
+									<th>합의금액</th>
+								</tr>
+							</thead>
+							<tbody id="pa-detail-body"></tbody>
+							<tfoot>
+								<tr class="fw-bold table-light">
+									<td colspan="2" class="text-end">총합계</td>
+									<td id="pa-grand-qty">0</td>
+									<td></td>
+									<td id="pa-grand-amount">0</td>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+				</div>
 			</div>
-			<div class="table-responsive">
-				<table class="table table-hover align-middle mb-0">
-					<thead class="table-light">
-						<tr>
-							<th>합의코드</th>
-							<th>품번</th>
-							<th>색상</th>
-							<th>사이즈</th>
-							<th>수량</th>
-							<th>상태</th>
-							<th>생성일</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr th:if="${#lists.isEmpty(list)}">
-							<td colspan="7" class="text-center text-muted">조회된 데이터가 없습니다.</td>
-						</tr>
-						<tr th:each="p : ${list}">
-							<td th:text="${p.agreementCode}">PA-001</td>
-							<td th:text="${p.styleNo}">ST-001</td>
-							<td th:text="${p.color}">RED</td>
-							<td th:text="${p.size}">L</td>
-							<td th:text="${p.quantity}">1000</td>
-							<td th:text="${p.status}">진행</td>
-							<td th:text="${p.createdAt}">2024-01-01</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-			<div class="pt-3 text-center text-muted small">페이징 영역</div>
 		</div>
 	</div>
-	<section class="panel mt-3">
-		<h4 class="h6 fw-bold mb-2">준비중</h4>
-		<div class="text-muted small">상세 기능은 추후 추가됩니다.</div>
-	</section>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		const paAgreementDetails = /*[[${agreementDetails}]]*/ {};
+
+		const formatNumber = (value) => {
+			const numberValue = Number(value) || 0;
+			return numberValue.toLocaleString('ko-KR');
+		};
+
+		const updateSummaries = (detail) => {
+			const styleTarget = document.getElementById('pa-summary-style');
+			const agreementTarget = document.getElementById('pa-summary-agreement');
+
+			if (!detail) {
+				styleTarget.textContent = '품번 - -';
+				agreementTarget.textContent = '생산합의코드 - -';
+				return;
+			}
+
+			styleTarget.textContent = `품번 ${detail.styleNo || '-'}`;
+			agreementTarget.textContent = `생산합의코드 ${detail.agreementCode || '-'}`;
+		};
+
+		const renderDetailLines = (detail) => {
+			const placeholder = document.getElementById('pa-detail-placeholder');
+			const panel = document.getElementById('pa-detail-panel');
+			const body = document.getElementById('pa-detail-body');
+			const grandQty = document.getElementById('pa-grand-qty');
+			const grandAmount = document.getElementById('pa-grand-amount');
+
+			if (!detail || !detail.lines || detail.lines.length === 0) {
+				placeholder.classList.remove('d-none');
+				panel.classList.add('d-none');
+				body.innerHTML = '';
+				grandQty.textContent = '0';
+				grandAmount.textContent = '0';
+				return;
+			}
+
+			placeholder.classList.add('d-none');
+			panel.classList.remove('d-none');
+
+			const detailCopy = JSON.parse(JSON.stringify(detail));
+			const totals = {
+				colors: {},
+				grandQty: 0,
+				grandAmount: 0
+			};
+			const colorTotalCells = {};
+
+			body.innerHTML = '';
+
+			detailCopy.lines.forEach((line, index) => {
+				const row = document.createElement('tr');
+
+				const colorCell = document.createElement('td');
+				colorCell.innerHTML = `<span class="pa-chip">${line.color}</span>`;
+				row.appendChild(colorCell);
+
+				const sizeCell = document.createElement('td');
+				sizeCell.textContent = line.size || '-';
+				row.appendChild(sizeCell);
+
+				const qtyCell = document.createElement('td');
+				const qtyInput = document.createElement('input');
+				qtyInput.type = 'number';
+				qtyInput.className = 'form-control form-control-sm';
+				qtyInput.value = line.quantity || 0;
+				qtyInput.min = '0';
+				qtyInput.dataset.index = index;
+				qtyInput.dataset.color = line.color;
+				qtyInput.dataset.supply = line.supplyPrice || 0;
+				qtyCell.appendChild(qtyInput);
+				row.appendChild(qtyCell);
+
+				const supplyCell = document.createElement('td');
+				supplyCell.textContent = formatNumber(line.supplyPrice);
+				row.appendChild(supplyCell);
+
+				const amountCell = document.createElement('td');
+				amountCell.textContent = formatNumber(line.amount);
+				row.appendChild(amountCell);
+
+				body.appendChild(row);
+
+				const applyTotals = (qtyValue) => {
+					const amountValue = (Number(qtyValue) || 0) * (Number(line.supplyPrice) || 0);
+					line.quantity = Number(qtyValue) || 0;
+					line.amount = amountValue;
+					amountCell.textContent = formatNumber(amountValue);
+					recalculateTotals(detailCopy, totals, grandQty, grandAmount, colorTotalCells);
+				};
+
+				qtyInput.addEventListener('input', (event) => applyTotals(event.target.value));
+				qtyInput.addEventListener('change', (event) => applyTotals(event.target.value));
+				const nextLine = detailCopy.lines[index + 1];
+				const isLastOfColor = !nextLine || nextLine.color !== line.color;
+				if (isLastOfColor) {
+					const totalRow = document.createElement('tr');
+					totalRow.classList.add('table-light', 'fw-semibold', 'pa-color-total');
+
+					const colorSummary = document.createElement('td');
+					colorSummary.colSpan = 2;
+					colorSummary.className = 'text-end';
+					colorSummary.textContent = `${line.color} 합계`;
+					totalRow.appendChild(colorSummary);
+
+					const qtyTotal = document.createElement('td');
+					qtyTotal.textContent = '0';
+					totalRow.appendChild(qtyTotal);
+
+					const emptyCell = document.createElement('td');
+					emptyCell.textContent = '';
+					totalRow.appendChild(emptyCell);
+
+					const amountTotal = document.createElement('td');
+					amountTotal.textContent = '0';
+					totalRow.appendChild(amountTotal);
+
+					body.appendChild(totalRow);
+					colorTotalCells[line.color] = {qty: qtyTotal, amount: amountTotal};
+				}
+			});
+
+			recalculateTotals(detailCopy, totals, grandQty, grandAmount, colorTotalCells);
+		};
+
+		const recalculateTotals = (detail, totals, grandQty, grandAmount, colorTotalCells) => {
+			totals.colors = {};
+			totals.grandQty = 0;
+			totals.grandAmount = 0;
+
+			detail.lines.forEach((line) => {
+				const qty = Number(line.quantity) || 0;
+				const amount = Number(line.amount) || 0;
+				totals.grandQty += qty;
+				totals.grandAmount += amount;
+
+				if (!totals.colors[line.color]) {
+					totals.colors[line.color] = {qty: 0, amount: 0};
+				}
+				totals.colors[line.color].qty += qty;
+				totals.colors[line.color].amount += amount;
+			});
+
+			Object.entries(colorTotalCells).forEach(([color, cells]) => {
+				const values = totals.colors[color] || {qty: 0, amount: 0};
+				cells.qty.textContent = formatNumber(values.qty);
+				cells.amount.textContent = formatNumber(values.amount);
+			});
+
+			grandQty.textContent = formatNumber(totals.grandQty);
+			grandAmount.textContent = formatNumber(totals.grandAmount);
+		};
+
+		const selectRow = (row) => {
+			if (!row) return;
+			const table = row.closest('tbody');
+			table.querySelectorAll('tr[data-pa-row]').forEach((r) => r.classList.remove('pa-row-selected'));
+			row.classList.add('pa-row-selected');
+
+			const checkbox = row.querySelector('.pa-row-check');
+			if (checkbox) {
+				table.querySelectorAll('.pa-row-check').forEach((c) => c.checked = false);
+				checkbox.checked = true;
+			}
+
+			const agreementCode = row.dataset.agreement;
+			const detail = paAgreementDetails ? paAgreementDetails[agreementCode] : null;
+			updateSummaries(detail);
+			renderDetailLines(detail);
+		};
+
+		const bindRowEvents = () => {
+			const rows = document.querySelectorAll('[data-pa-row]');
+			rows.forEach((row) => {
+				row.addEventListener('click', (event) => {
+					if (event.target.classList.contains('pa-row-check')) {
+						return;
+					}
+					selectRow(row);
+				});
+
+				const checkbox = row.querySelector('.pa-row-check');
+				if (checkbox) {
+					checkbox.addEventListener('click', (event) => {
+						event.stopPropagation();
+						selectRow(row);
+					});
+				}
+			});
+
+			if (rows.length > 0) {
+				selectRow(rows[0]);
+			}
+		};
+
+		document.addEventListener('DOMContentLoaded', bindRowEvents);
+		/*]]>*/
+	</script>
 </div>

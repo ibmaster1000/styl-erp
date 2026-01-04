@@ -1,75 +1,464 @@
 <div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
+	<style>
+		.wo-layout {
+			display: flex;
+			gap: 20px;
+			align-items: stretch;
+		}
+
+		.wo-left,
+		.wo-right {
+			flex: 1 1 50%;
+			max-width: 50%;
+			min-width: 0;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+
+		.wo-panel {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+
+		.wo-table thead th {
+			font-size: 13px;
+			font-weight: 800;
+			background: #f9fafb;
+			white-space: nowrap;
+		}
+
+		.wo-table tbody td {
+			font-size: 13px;
+			vertical-align: middle;
+			white-space: nowrap;
+		}
+
+		.wo-row-selected {
+			background: rgba(124, 58, 237, 0.06);
+			box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.35);
+		}
+
+		.wo-summary-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px 16px;
+		}
+
+		.measure-table thead th {
+			font-size: 13px;
+			font-weight: 800;
+			text-align: center;
+			background: #f9fafb;
+			position: sticky;
+			top: 0;
+			z-index: 1;
+		}
+
+		.measure-table tbody th {
+			font-size: 13px;
+			font-weight: 800;
+			width: 140px;
+		}
+
+		.measure-table input {
+			width: 100%;
+			text-align: right;
+		}
+
+		.attachment-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+			gap: 12px;
+		}
+
+		.attachment-card {
+			border: 1px solid #e5e7eb;
+			border-radius: 10px;
+			overflow: hidden;
+			background: #f8fafc;
+			cursor: pointer;
+			position: relative;
+			min-height: 160px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.attachment-card img {
+			max-width: 100%;
+			max-height: 100%;
+			object-fit: cover;
+		}
+
+		.attachment-empty {
+			color: #9ca3af;
+			font-weight: 700;
+		}
+
+		.attachment-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			gap: 10px;
+			margin-bottom: 8px;
+		}
+
+		.modal-backdrop {
+			position: fixed;
+			inset: 0;
+			background: rgba(15, 23, 42, 0.55);
+			backdrop-filter: blur(2px);
+			display: none;
+			align-items: center;
+			justify-content: center;
+			z-index: 1050;
+			padding: 20px;
+		}
+
+		.modal-backdrop.active {
+			display: flex;
+		}
+
+		.modal-body {
+			background: #0f172a;
+			color: #fff;
+			border-radius: 14px;
+			padding: 16px;
+			max-width: 900px;
+			width: 100%;
+			position: relative;
+			box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+		}
+
+		.modal-body img {
+			width: 100%;
+			max-height: 60vh;
+			object-fit: contain;
+			border-radius: 10px;
+			background: #0b1021;
+		}
+
+		.modal-actions {
+			display: flex;
+			gap: 8px;
+			margin-top: 12px;
+			justify-content: flex-end;
+		}
+
+		.modal-close {
+			position: absolute;
+			right: 16px;
+			bottom: 16px;
+			width: 46px;
+			height: 46px;
+			border-radius: 50%;
+			border: none;
+			background: #ef4444;
+			color: #fff;
+			font-weight: 800;
+			box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+		}
+
+		@media (max-width: 1200px) {
+
+			.wo-left,
+			.wo-right {
+				max-width: 100%;
+				flex-basis: 100%;
+			}
+
+			.wo-layout {
+				flex-direction: column;
+			}
+		}
+	</style>
+
 	<div class="mb-3">
 		<h4 class="fw-bold mb-1">작업지시서 관리</h4>
-		<p class="text-muted mb-0">작업 지시서 관리</p>
+		<p class="text-muted mb-0">치수표와 첨부 문서를 동시에 확인하세요.</p>
 	</div>
+	<div class="wo-layout">
+		<div class="wo-left">
+			<form class="wo-panel mb-1" method="get" th:action="@{/work-orders}">
+				<div class="row g-3 align-items-end">
+					<div class="col-md-5">
+						<label class="form-label fw-semibold">품번</label>
+						<input type="text" class="form-control" name="styleNo" th:value="${param.styleNo}"
+							placeholder="품번 코드">
+					</div>
+					<div class="col-md-5">
+						<label class="form-label fw-semibold">작업지시</label>
+						<input type="text" class="form-control" name="workOrderId" th:value="${param.workOrderId}"
+							placeholder="작업지시 코드">
+					</div>
+					<div class="col-md-2 d-grid">
+						<button type="submit" class="btn btn-dark">검색</button>
+					</div>
+				</div>
+			</form>
 
-	<form class="card shadow-sm mb-3">
-		<div class="card-body row g-3 align-items-end">
-			<div class="col-md-4">
-				<label class="form-label fw-semibold">품번</label>
-				<input type="text" class="form-control" placeholder="품번">
+			<div class="wo-panel">
+				<div class="d-flex justify-content-between align-items-center mb-2">
+					<h6 class="mb-0 fw-bold">작업지시 목록</h6>
+					<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
+				</div>
+				<div class="table-responsive" style="max-height: 240px;">
+					<table class="table table-hover align-middle mb-0 wo-table">
+						<thead class="table-light">
+							<tr>
+								<th>작업지시</th>
+								<th>품번</th>
+								<th>생산합의</th>
+								<th>색상</th>
+								<th>사이즈</th>
+								<th>수량</th>
+								<th>납기일</th>
+								<th>상태</th>
+							</tr>
+						</thead>
+						<tbody id="wo-list-body">
+							<tr th:if="${#lists.isEmpty(list)}">
+								<td colspan="8" class="text-center text-muted">조회된 데이터가 없습니다.</td>
+							</tr>
+							<tr th:each="w, iter : ${list}" data-wo-row
+								th:classappend="${iter.index == 0} ? 'wo-row-selected'">
+								<td th:text="${w.workOrderId}" data-field="workOrderId">WO-001</td>
+								<td th:text="${w.styleNo}" data-field="styleNo">ST-001</td>
+								<td th:text="${w.agreementCode}" data-field="agreementCode">PA-001</td>
+								<td th:text="${w.color}" data-field="color">RED</td>
+								<td th:text="${w.size}" data-field="size">L</td>
+								<td th:text="${w.quantity}" data-field="quantity">100</td>
+								<td th:text="${w.dueDate}" data-field="dueDate">2024-01-10</td>
+								<td th:text="${w.status}" data-field="status">진행</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
 			</div>
-			<div class="col-md-4">
-				<label class="form-label fw-semibold">납기일</label>
-				<input type="date" class="form-control">
+			<div class="wo-panel">
+				<div class="d-flex justify-content-between align-items-center mb-3">
+					<h6 class="mb-0 fw-bold">작업지시 기본 정보</h6>
+					<span class="text-muted small">선택한 작업지시 기준</span>
+				</div>
+				<div class="wo-summary-grid">
+					<div>
+						<div class="text-muted small">작업지시</div>
+						<div class="fw-bold" id="wo-summary-id">-</div>
+					</div>
+					<div>
+						<div class="text-muted small">품번</div>
+						<div class="fw-bold" id="wo-summary-style">-</div>
+					</div>
+					<div>
+						<div class="text-muted small">생산합의</div>
+						<div class="fw-bold" id="wo-summary-agreement">-</div>
+					</div>
+					<div>
+						<div class="text-muted small">납기일</div>
+						<div class="fw-bold" id="wo-summary-due">-</div>
+					</div>
+				</div>
 			</div>
-			<div class="col-md-3">
-				<label class="form-label fw-semibold">상태</label>
-				<select class="form-select">
-					<option selected>전체</option>
-					<option>진행</option>
-					<option>완료</option>
-				</select>
-			</div>
-			<div class="col-md-1 d-grid">
-				<button type="button" class="btn btn-dark">검색</button>
+			<div class="wo-panel">
+				<div class="d-flex justify-content-between align-items-center mb-2">
+					<h6 class="mb-0 fw-bold">치수표</h6>
+					<span class="text-muted small">구분 × 사이즈별 입력</span>
+				</div>
+				<div class="table-responsive" style="max-height: 420px;">
+					<table class="table table-sm align-middle measure-table" id="measure-table">
+						<thead>
+							<tr id="measure-head-row"></tr>
+						</thead>
+						<tbody id="measure-body"></tbody>
+					</table>
+				</div>
 			</div>
 		</div>
-	</form>
+		<div class="wo-right">
+			<div class="wo-panel h-100 d-flex flex-column">
+				<div class="attachment-section mb-3">
+					<div class="attachment-header">
+						<div>
+							<div class="fw-bold">도식화</div>
+							<div class="text-muted small">등록된 도식화를 확인하세요.</div>
+						</div>
+						<button type="button" class="btn btn-outline-secondary btn-sm">도식화 등록</button>
+					</div>
+					<div class="attachment-grid" id="illustration-grid"></div>
+				</div>
 
-	<div class="card shadow-sm">
-		<div class="card-body">
-			<div class="d-flex justify-content-between align-items-center mb-2">
-				<h6 class="mb-0 fw-bold">작업지시 목록</h6>
-				<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
+				<div class="attachment-section">
+					<div class="attachment-header">
+						<div>
+							<div class="fw-bold">봉제방법</div>
+							<div class="text-muted small">등록된 봉제방법을 확인하세요.</div>
+						</div>
+						<button type="button" class="btn btn-outline-secondary btn-sm">봉제방법 등록</button>
+					</div>
+					<div class="attachment-grid" id="sewing-grid"></div>
+				</div>
 			</div>
-			<div class="table-responsive">
-				<table class="table table-hover align-middle mb-0">
-					<thead class="table-light">
-						<tr>
-							<th>작업지시</th>
-							<th>품번</th>
-							<th>생산합의</th>
-							<th>색상</th>
-							<th>사이즈</th>
-							<th>수량</th>
-							<th>납기일</th>
-							<th>상태</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr th:if="${#lists.isEmpty(list)}">
-							<td colspan="8" class="text-center text-muted">조회된 데이터가 없습니다.</td>
-						</tr>
-						<tr th:each="w : ${list}">
-							<td th:text="${w.workOrderId}">WO-001</td>
-							<td th:text="${w.styleNo}">ST-001</td>
-							<td th:text="${w.agreementCode}">PA-001</td>
-							<td th:text="${w.color}">RED</td>
-							<td th:text="${w.size}">L</td>
-							<td th:text="${w.quantity}">100</td>
-							<td th:text="${w.dueDate}">2024-01-10</td>
-							<td th:text="${w.status}">진행</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-			<div class="pt-3 text-center text-muted small">페이징 영역</div>
 		</div>
 	</div>
-	<section class="panel mt-3">
-		<h4 class="h6 fw-bold mb-2">준비중</h4>
-		<div class="text-muted small">상세 기능은 추후 추가됩니다.</div>
-	</section>
+
+	<div class="modal-backdrop" id="wo-preview-modal">
+		<div class="modal-body">
+			<img id="wo-preview-image" alt="미리보기">
+			<div class="modal-actions">
+				<button type="button" class="btn btn-outline-light btn-sm">편집(준비중)</button>
+				<button type="button" class="btn btn-outline-light btn-sm">다운로드(준비중)</button>
+				<button type="button" class="btn btn-outline-danger btn-sm">삭제(준비중)</button>
+			</div>
+			<button type="button" class="modal-close" id="wo-modal-close">×</button>
+		</div>
+	</div>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		const workOrders = /*[[${list}]]*/[];
+		const styleRules = /*[[${styleRules}]]*/ {};
+		const attachments = /*[[${attachments}]]*/ {};
+
+		const defaultSizes = ['095', '100', '105', '110'];
+		const measureItems = ['총기장', '허리폭', '다리폭', '둔폭', '밑길이'];
+		const measureState = {};
+
+		const getSizesByStyle = (styleNo) => {
+			if (!styleNo || !styleRules || !styleRules[styleNo]) return defaultSizes;
+			const rule = styleRules[styleNo];
+			const sizes = new Set();
+			Object.values(rule).forEach((list) => {
+				if (Array.isArray(list)) {
+					list.forEach((size) => sizes.add(size));
+				}
+			});
+			return sizes.size ? Array.from(sizes) : defaultSizes;
+		};
+
+		const renderMeasureTable = (sizes, workOrderId) => {
+			const headRow = document.getElementById('measure-head-row');
+			const body = document.getElementById('measure-body');
+			headRow.innerHTML = '';
+			body.innerHTML = '';
+
+			const nameTh = document.createElement('th');
+			nameTh.textContent = '구분';
+			headRow.appendChild(nameTh);
+
+			sizes.forEach((size) => {
+				const th = document.createElement('th');
+				th.textContent = size;
+				th.classList.add('text-center');
+				headRow.appendChild(th);
+			});
+
+			const currentState = measureState[workOrderId] || {};
+
+			measureItems.forEach((item) => {
+				const tr = document.createElement('tr');
+				const label = document.createElement('th');
+				label.textContent = item;
+				tr.appendChild(label);
+
+				sizes.forEach((size) => {
+					const td = document.createElement('td');
+					const input = document.createElement('input');
+					input.type = 'number';
+					input.step = '0.1';
+					input.className = 'form-control form-control-sm';
+					input.value = currentState[item]?.[size] ?? '';
+					input.addEventListener('input', (e) => {
+						if (!measureState[workOrderId]) measureState[workOrderId] = {};
+						if (!measureState[workOrderId][item]) measureState[workOrderId][item] = {};
+						measureState[workOrderId][item][size] = e.target.value;
+					});
+					td.appendChild(input);
+					tr.appendChild(td);
+				});
+				body.appendChild(tr);
+			});
+		};
+
+		const renderAttachments = (list, targetId, emptyText) => {
+			const container = document.getElementById(targetId);
+			container.innerHTML = '';
+			if (!list || list.length === 0) {
+				const empty = document.createElement('div');
+				empty.className = 'attachment-card attachment-empty';
+				empty.textContent = emptyText;
+				container.appendChild(empty);
+				return;
+			}
+			list.forEach((item) => {
+				const card = document.createElement('div');
+				card.className = 'attachment-card';
+				card.dataset.src = item.filePath || '';
+				card.innerHTML = item.filePath ? `<img src="${item.filePath}" alt="attachment">` : '<div class="attachment-empty">이미지 없음</div>';
+				card.addEventListener('click', () => openModal(item.filePath));
+				container.appendChild(card);
+			});
+		};
+
+		const updateSummary = (wo) => {
+			document.getElementById('wo-summary-id').textContent = wo?.workOrderId || '-';
+			document.getElementById('wo-summary-style').textContent = wo?.styleNo || '-';
+			document.getElementById('wo-summary-agreement').textContent = wo?.agreementCode || '-';
+			document.getElementById('wo-summary-due').textContent = wo?.dueDate || '-';
+		};
+
+		const selectRow = (row) => {
+			if (!row) return;
+			document.querySelectorAll('[data-wo-row]').forEach((r) => r.classList.remove('wo-row-selected'));
+			row.classList.add('wo-row-selected');
+
+			const cells = row.querySelectorAll('[data-field]');
+			const wo = {};
+			cells.forEach((cell) => {
+				wo[cell.dataset.field] = cell.textContent.trim();
+			});
+
+			const sizes = getSizesByStyle(wo.styleNo);
+			renderMeasureTable(sizes, wo.workOrderId);
+			updateSummary(wo);
+		};
+
+		const bindRowEvents = () => {
+			document.querySelectorAll('[data-wo-row]').forEach((row) => {
+				row.addEventListener('click', () => selectRow(row));
+			});
+			const firstRow = document.querySelector('[data-wo-row]');
+			if (firstRow) {
+				selectRow(firstRow);
+			} else {
+				renderMeasureTable(defaultSizes, 'default');
+			}
+		};
+
+		const modal = document.getElementById('wo-preview-modal');
+		const modalImg = document.getElementById('wo-preview-image');
+		const openModal = (src) => {
+			if (!src) return;
+			modalImg.src = src;
+			modal.classList.add('active');
+		};
+		const closeModal = () => modal.classList.remove('active');
+
+		document.getElementById('wo-modal-close').addEventListener('click', closeModal);
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') closeModal();
+		});
+		modal.addEventListener('click', (e) => {
+			if (e.target === modal) closeModal();
+		});
+
+		document.addEventListener('DOMContentLoaded', () => {
+			bindRowEvents();
+			renderAttachments(attachments.ILLUSTRATION, 'illustration-grid', '도식화가 없습니다.');
+			renderAttachments(attachments.SEWING, 'sewing-grid', '봉제방법이 없습니다.');
+		});
+		/*]]>*/
+	</script>
 </div>
