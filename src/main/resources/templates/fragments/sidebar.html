@@ -24,6 +24,22 @@
 			<a th:href="@{/work-orders}" th:classappend="${activeMenu}=='workorder' ? ' active'">
 				<i class="bi bi-clipboard-check"></i> 작업지시서 관리
 			</a>
+			<a th:href="@{/production/material-specs}" th:classappend="${activeMenu}=='material-specs' ? ' active'">
+				<i class="bi bi-journal-text"></i> 원부자재 사양서 등록
+			</a>
+			<a th:href="@{/production/material-orders}" th:classappend="${activeMenu}=='material-orders' ? ' active'">
+				<i class="bi bi-cart-check"></i> 원부자재 발주
+			</a>
+			<a th:href="@{/production/material-receipts}"
+				th:classappend="${activeMenu}=='material-receipts' ? ' active'">
+				<i class="bi bi-box-arrow-in-down"></i> 원부자재 입고 등록
+			</a>
+			<a th:href="@{/production/material-issues}" th:classappend="${activeMenu}=='material-issues' ? ' active'">
+				<i class="bi bi-arrow-left-right"></i> 원부자재 출고 등록
+			</a>
+			<a th:href="@{/work-orders}" th:classappend="${activeMenu}=='work-instructions' ? ' active'">
+				<i class="bi bi-clipboard-data"></i> 작업지시
+			</a>
 
 			<div class="menu-title">재고 관리</div>
 			<a th:href="@{/fg/receipts}" th:classappend="${activeMenu}=='receipt' ? ' active'">

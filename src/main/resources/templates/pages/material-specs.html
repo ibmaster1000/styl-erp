@@ -1,0 +1,386 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
+	<style>
+		.ms-layout {
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+		}
+
+		.ms-panel {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+
+		.ms-search {
+			display: flex;
+			gap: 16px;
+			align-items: stretch;
+			min-height: 240px;
+		}
+
+		.ms-search-controls {
+			flex: 1 1 55%;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			gap: 12px;
+		}
+
+		.ms-control-row {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 12px;
+			align-items: center;
+		}
+
+		.ms-control-row .form-control[readonly] {
+			background-color: #f8fafc;
+			font-weight: 700;
+		}
+
+		.ms-color-size {
+			flex: 1 1 45%;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+			min-width: 320px;
+		}
+
+		.ms-color-size .table-responsive {
+			max-height: 260px;
+		}
+
+		.ms-color-size table th {
+			font-size: 13px;
+			font-weight: 800;
+			background: #f9fafb;
+			text-align: center;
+			white-space: nowrap;
+		}
+
+		.ms-color-size table td {
+			font-size: 13px;
+			text-align: center;
+			white-space: nowrap;
+		}
+
+		.ms-table thead th {
+			font-size: 13px;
+			font-weight: 800;
+			background: #f9fafb;
+			white-space: nowrap;
+		}
+
+		.ms-table tbody td {
+			font-size: 13px;
+			vertical-align: middle;
+			white-space: nowrap;
+		}
+
+		.ms-modal-backdrop {
+			position: fixed;
+			inset: 0;
+			display: none;
+			align-items: center;
+			justify-content: center;
+			background: rgba(15, 23, 42, 0.45);
+			padding: 20px;
+			z-index: 1050;
+		}
+
+		.ms-modal-backdrop.active {
+			display: flex;
+		}
+
+		.ms-modal {
+			background: #ffffff;
+			border-radius: 12px;
+			border: 1px solid #e5e7eb;
+			box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+			padding: 16px;
+			max-width: 520px;
+			width: 100%;
+		}
+
+		.ms-modal .table-responsive {
+			max-height: 320px;
+		}
+
+		@media (max-width: 992px) {
+			.ms-search {
+				flex-direction: column;
+			}
+
+			.ms-control-row {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+
+	<div class="mb-3">
+		<h4 class="fw-bold mb-1">원부자재 사양서 등록</h4>
+		<p class="text-muted mb-0">품번 기준 색상×사이즈 정보를 확인하고 자재 사양서를 관리하세요.</p>
+	</div>
+
+	<div class="ms-layout">
+		<div class="ms-panel ms-search">
+			<div class="ms-search-controls">
+				<div class="ms-control-row">
+					<div class="d-grid gap-1">
+						<label class="form-label mb-1 fw-bold">품번</label>
+						<div class="input-group">
+							<input type="text" class="form-control" id="ms-style-input" placeholder="품번을 선택하세요" readonly>
+							<button class="btn btn-outline-secondary" type="button" id="ms-style-search">품번 검색</button>
+						</div>
+					</div>
+					<div class="d-grid gap-1">
+						<label class="form-label mb-1 fw-bold">색상</label>
+						<select class="form-select" id="ms-color-select" disabled>
+							<option value="">색상을 선택하세요</option>
+						</select>
+					</div>
+					<div class="d-grid gap-1">
+						<label class="form-label mb-1 fw-bold">생산합의코드</label>
+						<select class="form-select" id="ms-agreement-select" disabled>
+							<option value="">생산합의 코드를 선택하세요</option>
+						</select>
+					</div>
+					<div class="d-grid gap-1">
+						<label class="form-label mb-1 fw-bold text-white">검색</label>
+						<button class="btn btn-dark w-100" type="button" id="ms-search-button">검색</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="ms-panel ms-color-size mb-0">
+				<div class="d-flex justify-content-between align-items-center">
+					<div>
+						<div class="fw-bold">색상 × 사이즈 요약</div>
+						<div class="text-muted small">선택된 품번의 스타일 규칙을 표시합니다.</div>
+					</div>
+					<span class="badge text-bg-light" id="ms-style-chip">-</span>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-bordered align-middle mb-0">
+						<thead>
+							<tr id="ms-color-size-head">
+								<th>색상</th>
+								<th class="text-muted">-</th>
+							</tr>
+						</thead>
+						<tbody id="ms-color-size-body">
+							<tr>
+								<td colspan="2" class="text-center text-muted">품번을 선택하면 색상×사이즈 표가 표시됩니다.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<div class="ms-panel">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<h6 class="mb-0 fw-bold">원부자재 사양서 목록</h6>
+				<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-hover align-middle mb-0 ms-table">
+					<thead class="table-light">
+						<tr>
+							<th>구분</th>
+							<th>자재명칭</th>
+							<th>용도</th>
+							<th>자재규격</th>
+							<th>자재색상</th>
+							<th>소요량 단위</th>
+							<th>1매 소요량</th>
+							<th>자재코드</th>
+							<th>자재처</th>
+							<th>LOSS율</th>
+							<th>발주단위</th>
+							<th>단가</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:if="${#lists.isEmpty(list)}">
+							<td colspan="12" class="text-center text-muted">등록된 자재 사양서가 없습니다.</td>
+						</tr>
+						<tr th:each="item : ${list}">
+							<td th:text="${item.category}">원자재</td>
+							<td th:text="${item.materialName}">FABRIC A</td>
+							<td th:text="${item.materialUsage}">상의</td>
+							<td th:text="${item.spec}">50x70</td>
+							<td th:text="${item.materialColor}">BK</td>
+							<td th:text="${item.uom}">YD</td>
+							<td th:text="${item.qtyPerPiece} != null ? #numbers.formatDecimal(item.qtyPerPiece, 1, 'COMMA', 2, 'POINT') : '-'">0.50</td>
+							<td th:text="${item.materialCode}">MP25001-1-WH003</td>
+							<td th:text="${item.supplierCode}">SUP-01</td>
+							<td th:text="${item.lossRate} != null ? item.lossRate + '%' : '-'">2%</td>
+							<td th:text="${item.orderUom}">EA</td>
+							<td th:text="${item.unitPrice} != null ? #numbers.formatDecimal(item.unitPrice, 1, 'COMMA', 2, 'POINT') : '-'">5,000</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<div class="ms-modal-backdrop" id="style-search-modal">
+		<div class="ms-modal">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<h6 class="mb-0 fw-bold">품번 검색</h6>
+				<button type="button" class="btn-close" aria-label="닫기" id="ms-style-close"></button>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-sm align-middle mb-0">
+					<thead class="table-light">
+						<tr>
+							<th>품번</th>
+							<th>품목</th>
+							<th class="text-end">선택</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:if="${#lists.isEmpty(styles)}">
+							<td colspan="3" class="text-center text-muted">등록된 품번이 없습니다.</td>
+						</tr>
+						<tr th:each="style : ${styles}">
+							<td th:text="${style.styleNo}">ST-0001</td>
+							<td th:text="${style.item}">상의</td>
+							<td class="text-end">
+								<button type="button" class="btn btn-outline-primary btn-sm" data-style-pick
+									th:attr="data-style=${style.styleNo}">선택</button>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		const msStyles = /*[[${styles}]]*/ [];
+		const msStyleRules = /*[[${styleRules}]]*/ {};
+		const styleInput = document.getElementById('ms-style-input');
+		const colorSelect = document.getElementById('ms-color-select');
+		const agreementSelect = document.getElementById('ms-agreement-select');
+		const styleChip = document.getElementById('ms-style-chip');
+		const modal = document.getElementById('style-search-modal');
+		const searchButton = document.getElementById('ms-search-button');
+
+		const closeModal = () => modal.classList.remove('active');
+
+		const renderColorSizeTable = (styleNo) => {
+			const tableHead = document.getElementById('ms-color-size-head');
+			const tableBody = document.getElementById('ms-color-size-body');
+			tableHead.innerHTML = '';
+			tableBody.innerHTML = '';
+
+			const rules = msStyleRules?.[styleNo];
+			if (!rules || Object.keys(rules).length === 0) {
+				const emptyHeadRow = document.createElement('tr');
+				['색상', '-'].forEach((label) => {
+					const th = document.createElement('th');
+					th.textContent = label;
+					emptyHeadRow.appendChild(th);
+				});
+				tableHead.appendChild(emptyHeadRow);
+
+				const emptyRow = document.createElement('tr');
+				const td = document.createElement('td');
+				td.colSpan = 2;
+				td.className = 'text-center text-muted';
+				td.textContent = '선택된 품번의 스타일 규칙이 없습니다.';
+				emptyRow.appendChild(td);
+				tableBody.appendChild(emptyRow);
+				return;
+			}
+
+			const sizeOrder = [];
+			Object.values(rules).forEach((sizes) => {
+				if (Array.isArray(sizes)) {
+					sizes.forEach((s) => {
+						if (!sizeOrder.includes(s)) sizeOrder.push(s);
+					});
+				}
+			});
+
+			const headRow = document.createElement('tr');
+			const colorHead = document.createElement('th');
+			colorHead.textContent = '색상';
+			headRow.appendChild(colorHead);
+			sizeOrder.forEach((size) => {
+				const th = document.createElement('th');
+				th.textContent = size;
+				headRow.appendChild(th);
+			});
+			tableHead.appendChild(headRow);
+
+			Object.entries(rules).forEach(([color, sizes]) => {
+				const tr = document.createElement('tr');
+				const colorCell = document.createElement('td');
+				colorCell.textContent = color;
+				tr.appendChild(colorCell);
+				sizeOrder.forEach((size) => {
+					const td = document.createElement('td');
+					td.textContent = '-';
+					tr.appendChild(td);
+				});
+				tableBody.appendChild(tr);
+			});
+		};
+
+		const populateSelectors = (styleNo) => {
+			const rules = msStyleRules?.[styleNo];
+			colorSelect.innerHTML = '<option value=\"\">색상을 선택하세요</option>';
+			agreementSelect.innerHTML = '<option value=\"\">생산합의 코드를 선택하세요</option>';
+			const hasRules = rules && Object.keys(rules).length > 0;
+			colorSelect.disabled = !hasRules;
+			agreementSelect.disabled = !hasRules;
+			if (hasRules) {
+				Object.keys(rules).forEach((color) => {
+					const option = document.createElement('option');
+					option.value = color;
+					option.textContent = color;
+					colorSelect.appendChild(option);
+				});
+			}
+		};
+
+		const applyStyleSelection = (styleNo) => {
+			if (!styleNo) return;
+			styleInput.value = styleNo;
+			styleChip.textContent = styleNo;
+			populateSelectors(styleNo);
+			renderColorSizeTable(styleNo);
+			closeModal();
+		};
+
+		document.getElementById('ms-style-search').addEventListener('click', () => {
+			modal.classList.add('active');
+		});
+
+		document.getElementById('ms-style-close').addEventListener('click', closeModal);
+		modal.addEventListener('click', (e) => {
+			if (e.target === modal) closeModal();
+		});
+
+		document.querySelectorAll('[data-style-pick]').forEach((button) => {
+			button.addEventListener('click', (e) => {
+				const selected = e.currentTarget.dataset.style;
+				applyStyleSelection(selected);
+			});
+		});
+
+		searchButton.addEventListener('click', () => {
+			if (!styleInput.value) {
+				alert('품번을 먼저 선택하세요.');
+			}
+		});
+		/*]]>*/
+	</script>
+</div>
