@@ -21,7 +21,7 @@ public class WorkOrderAttachmentService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public Map<String, List<WorkOrderAttachmentView>> fetchGroupedAttachments() {
+    public Map<AttachmentType, List<WorkOrderAttachmentView>> fetchGroupedAttachments() {
         if (hasTable("work_order_attachments_v2")) {
             return fetchFromV2();
         }
@@ -31,12 +31,12 @@ public class WorkOrderAttachmentService {
         return Collections.emptyMap();
     }
 
-    private Map<String, List<WorkOrderAttachmentView>> fetchFromV2() {
+    private Map<AttachmentType, List<WorkOrderAttachmentView>> fetchFromV2() {
         String sql = """
                 select work_order_id, attachment_type, file_path
                 from work_order_attachments_v2
                 """;
-        Map<String, List<WorkOrderAttachmentView>> grouped = new EnumMap<>(AttachmentType.class);
+        Map<AttachmentType, List<WorkOrderAttachmentView>> grouped = new EnumMap<>(AttachmentType.class);
         jdbcTemplate.query(sql, rs -> {
             String type = normalize(rs.getString("attachment_type"));
             String workOrderId = rs.getString("work_order_id");
@@ -48,13 +48,13 @@ public class WorkOrderAttachmentService {
             if (attachmentType == null) {
                 return;
             }
-            grouped.computeIfAbsent(attachmentType.name(), k -> new ArrayList<>())
+            grouped.computeIfAbsent(attachmentType, k -> new ArrayList<>())
                     .add(new WorkOrderAttachmentView(workOrderId, attachmentType.name(), path));
         });
         return grouped;
     }
 
-    private Map<String, List<WorkOrderAttachmentView>> fetchFromLegacy() {
+    private Map<AttachmentType, List<WorkOrderAttachmentView>> fetchFromLegacy() {
         boolean hasIllustration = hasColumn("work_order_attachments", "illustration_path");
         boolean hasSewing = hasColumn("work_order_attachments", "sewing_path");
         boolean hasWorkOrderId = hasColumn("work_order_attachments", "work_order_id");
@@ -68,17 +68,17 @@ public class WorkOrderAttachmentService {
                 (hasSewing ? "sewing_path" : "null as sewing_path") +
                 " from work_order_attachments";
 
-        Map<String, List<WorkOrderAttachmentView>> grouped = new EnumMap<>(AttachmentType.class);
+        Map<AttachmentType, List<WorkOrderAttachmentView>> grouped = new EnumMap<>(AttachmentType.class);
         jdbcTemplate.query(sql, rs -> {
             String workOrderId = rs.getString("work_order_id");
             String illustrationPath = hasIllustration ? rs.getString("illustration_path") : null;
             String sewingPath = hasSewing ? rs.getString("sewing_path") : null;
             if (illustrationPath != null && !illustrationPath.isBlank()) {
-                grouped.computeIfAbsent(AttachmentType.ILLUSTRATION.name(), k -> new ArrayList<>())
+                grouped.computeIfAbsent(AttachmentType.ILLUSTRATION, k -> new ArrayList<>())
                         .add(new WorkOrderAttachmentView(workOrderId, AttachmentType.ILLUSTRATION.name(), illustrationPath));
             }
             if (sewingPath != null && !sewingPath.isBlank()) {
-                grouped.computeIfAbsent(AttachmentType.SEWING.name(), k -> new ArrayList<>())
+                grouped.computeIfAbsent(AttachmentType.SEWING, k -> new ArrayList<>())
                         .add(new WorkOrderAttachmentView(workOrderId, AttachmentType.SEWING.name(), sewingPath));
             }
         });
@@ -118,7 +118,7 @@ public class WorkOrderAttachmentService {
         return value == null ? null : value.trim().toUpperCase(Locale.ROOT);
     }
 
-    private enum AttachmentType {
+    public enum AttachmentType {
         ILLUSTRATION,
         SEWING;
 

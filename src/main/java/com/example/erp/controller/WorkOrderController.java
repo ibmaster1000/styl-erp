@@ -5,6 +5,7 @@ import com.example.erp.domain.WorkOrder;
 import com.example.erp.service.WorkOrderService;
 import com.example.erp.service.StyleRuleService;
 import com.example.erp.service.WorkOrderAttachmentService;
+import com.example.erp.service.WorkOrderAttachmentService.AttachmentType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,10 +40,10 @@ public String list(Model model) {
              .filter(v -> v != null && !v.isBlank())
              .collect(Collectors.toSet());
      Map<String, Map<String, List<String>>> styleRules = styleRuleService.findRulesByStyleNos(styleNos);
-     Map<String, List<com.example.erp.controller.dto.WorkOrderAttachmentView>> attachments = workOrderAttachmentService.fetchGroupedAttachments();
+     Map<AttachmentType, List<com.example.erp.controller.dto.WorkOrderAttachmentView>> attachments = workOrderAttachmentService.fetchGroupedAttachments();
 
-     populate(model, "작업 지시서", "workorder", "pages/work-orders", workOrders);
-     model.addAttribute("styleRules", styleRules);
+		populate(model, "작업 지시서", "workorder", "pages/work-orders", workOrders);
+	     model.addAttribute("styleRules", styleRules);
      model.addAttribute("attachments", attachments);
      return "layout/layout";
  }
