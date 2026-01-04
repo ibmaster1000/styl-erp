@@ -5,13 +5,11 @@ import com.example.erp.controller.dto.MaterialOrderRequest;
 import com.example.erp.controller.dto.MaterialOrderSelection;
 import com.example.erp.controller.dto.MaterialOrderStyleResult;
 import com.example.erp.controller.dto.MaterialOrderSupplierView;
-import com.example.erp.controller.support.PageViewSupport;
 import com.example.erp.domain.User;
 import com.example.erp.repository.UserRepository;
 import com.example.erp.service.MaterialOrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,13 +19,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.security.Principal;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 @Controller
 @RequestMapping("/production/material-orders")
-public class MaterialOrderController extends PageViewSupport {
+public class MaterialOrderController {
 
     private final MaterialOrderService materialOrderService;
     private final UserRepository userRepository;
@@ -35,12 +32,6 @@ public class MaterialOrderController extends PageViewSupport {
     public MaterialOrderController(MaterialOrderService materialOrderService, UserRepository userRepository) {
         this.materialOrderService = materialOrderService;
         this.userRepository = userRepository;
-    }
-
-    @GetMapping
-    public String view(Model model) {
-        populate(model, "원부자재 발주", "material-orders", "pages/material-orders", Collections.emptyList());
-        return "layout/layout";
     }
 
     @GetMapping("/styles")
