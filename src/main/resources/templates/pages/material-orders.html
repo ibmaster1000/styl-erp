@@ -1,0 +1,598 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
+	<style>
+		.mo-top {
+			display: grid;
+			grid-template-columns: minmax(0, 2fr) minmax(360px, 1fr);
+			gap: 16px;
+			margin-bottom: 16px;
+		}
+
+		.mo-panel {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+
+		.mo-row {
+			display: flex;
+			gap: 12px;
+			align-items: center;
+		}
+
+		.mo-row+.mo-row {
+			margin-top: 10px;
+		}
+
+		.mo-style-input {
+			max-width: 320px;
+			flex: 1 1 auto;
+		}
+
+		.mo-color-select {
+			max-width: 160px;
+			flex: 0 0 160px;
+		}
+
+		.mo-agree-select {
+			min-width: 240px;
+			max-width: 500px;
+			flex: 1 1 auto;
+		}
+
+		.mo-search-btn {
+			height: 38px;
+			align-self: stretch;
+			min-width: 88px;
+		}
+
+		.mo-style-rule {
+			min-height: 160px;
+		}
+
+		.mo-style-rule h6 {
+			font-weight: 800;
+		}
+
+		.mo-style-rule .table thead th {
+			white-space: nowrap;
+			font-size: 13px;
+		}
+
+		.mo-style-rule .table tbody td {
+			font-size: 13px;
+			white-space: nowrap;
+		}
+
+		.mo-table thead th {
+			font-size: 13px;
+			font-weight: 800;
+			background: #f9fafb;
+			white-space: nowrap;
+		}
+
+		.mo-table tbody td {
+			font-size: 13px;
+			vertical-align: middle;
+			white-space: nowrap;
+		}
+
+		.mo-supplier-row {
+			cursor: pointer;
+		}
+
+		.mo-supplier-row.active {
+			background: rgba(124, 58, 237, 0.08);
+		}
+
+		.mo-bottom-note {
+			font-size: 13px;
+		}
+
+		.mo-placeholder {
+			text-align: center;
+			color: #6b7280;
+		}
+
+		.mo-delivery-select {
+			min-width: 140px;
+		}
+
+		@media (max-width: 1200px) {
+			.mo-top {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+
+	<div class="mb-3">
+		<h4 class="fw-bold mb-1">원부자재 발주</h4>
+		<p class="text-muted mb-0">선택된 품번/색상/생산합의 기준으로 자재처와 원부자재를 관리합니다.</p>
+	</div>
+
+	<div class="mo-top">
+		<div class="mo-panel">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<h6 class="fw-bold mb-0">검색/선택</h6>
+				<small class="text-muted">품번을 먼저 선택해주세요.</small>
+			</div>
+			<div class="mo-row">
+				<div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2 flex-wrap">
+					<label class="fw-semibold small mb-0">품번</label>
+					<input type="hidden" id="selectedStylesId" name="stylesId">
+					<input type="text" id="selectedStyleCode" class="form-control mo-style-input" readonly
+						placeholder="품번을 선택하세요">
+					<button type="button" class="btn btn-outline-secondary" id="openStyleSearchBtn">품번 검색</button>
+				</div>
+			</div>
+			<div class="mo-row">
+				<select id="colorSelect" class="form-select mo-color-select" disabled>
+					<option value="">색상 선택</option>
+				</select>
+				<select id="prdAgreeSelect" class="form-select mo-agree-select" disabled>
+					<option value="">생산합의코드 선택</option>
+				</select>
+				<button type="button" class="btn btn-dark mo-search-btn" id="materialSearchBtn">검색</button>
+			</div>
+		</div>
+
+		<div class="mo-panel mo-style-rule">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<h6 class="mb-0 fw-bold">styles_rule 기준 색상 × 사이즈</h6>
+				<small class="text-muted">선택한 품번에 따라 표시됩니다.</small>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-bordered align-middle mb-0 mo-table" id="styleRuleTable">
+					<thead>
+						<tr id="styleRuleHeaderRow">
+							<th style="width: 140px;">색상</th>
+							<th>사이즈</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td colspan="2" class="mo-placeholder">품번 선택 후 규칙이 표시됩니다.</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<div class="mo-panel mb-3">
+		<div class="d-flex justify-content-between align-items-center mb-2">
+			<h6 class="fw-bold mb-0">자재처 목록</h6>
+			<small class="text-muted" id="supplierSummary">조건을 선택 후 검색하세요.</small>
+		</div>
+		<div class="table-responsive">
+			<table class="table table-hover align-middle mo-table" id="supplierTable">
+				<thead class="table-light">
+					<tr>
+						<th>자재처 코드</th>
+						<th>자재처 명</th>
+						<th>발주일</th>
+						<th>납기일</th>
+						<th>납품장소</th>
+						<th>비고</th>
+						<th>발주여부</th>
+					</tr>
+				</thead>
+				<tbody id="supplierTableBody">
+					<tr>
+						<td colspan="7" class="mo-placeholder">검색된 자재처가 없습니다.</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<div class="mo-panel">
+		<div class="d-flex justify-content-between align-items-center mb-2">
+			<h6 class="fw-bold mb-0">원부자재 목록</h6>
+			<small class="text-muted mo-bottom-note" id="materialNote">자재처를 선택하면 목록이 표시됩니다.</small>
+		</div>
+		<div class="table-responsive">
+			<table class="table table-bordered table-sm align-middle mo-table" id="materialTable">
+				<thead class="table-light">
+					<tr>
+						<th>색상</th>
+						<th>구분</th>
+						<th>자재명칭</th>
+						<th>용도</th>
+						<th>자재규격</th>
+						<th>자재색상</th>
+						<th>소요량단위</th>
+						<th>1매소요량</th>
+						<th>자재처</th>
+						<th>LOSS율</th>
+						<th>발주단위</th>
+						<th>단가</th>
+						<th>발주량</th>
+						<th>발주금액</th>
+						<th>참고사항</th>
+					</tr>
+				</thead>
+				<tbody id="materialTableBody">
+					<tr>
+						<td colspan="15" class="mo-placeholder">자재처를 선택하세요.</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+
+	<div class="modal fade" id="styleSearchModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title fw-bold">품번 검색</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="input-group mb-3">
+						<input type="text" class="form-control" id="styleSearchKeyword" placeholder="품번 또는 아이템명 검색">
+						<button class="btn btn-outline-secondary" type="button" id="styleSearchBtn">검색</button>
+					</div>
+					<div class="table-responsive">
+						<table class="table table-hover align-middle">
+							<thead class="table-light">
+								<tr>
+									<th>품번</th>
+									<th>아이템</th>
+									<th>상태</th>
+								</tr>
+							</thead>
+							<tbody id="styleSearchResults">
+								<tr>
+									<td colspan="3" class="mo-placeholder">검색어를 입력하세요.</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+					<button type="button" class="btn btn-primary" id="styleSelectBtn">선택</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const styleModal = new bootstrap.Modal(document.getElementById('styleSearchModal'));
+			const styleSearchBtn = document.getElementById('styleSearchBtn');
+			const styleSearchKeyword = document.getElementById('styleSearchKeyword');
+			const styleSearchResults = document.getElementById('styleSearchResults');
+			const styleSelectBtn = document.getElementById('styleSelectBtn');
+			const selectedStylesIdInput = document.getElementById('selectedStylesId');
+			const selectedStyleCodeInput = document.getElementById('selectedStyleCode');
+			const colorSelect = document.getElementById('colorSelect');
+			const prdAgreeSelect = document.getElementById('prdAgreeSelect');
+			const styleRuleHeaderRow = document.getElementById('styleRuleHeaderRow');
+			const styleRuleTableBody = document.querySelector('#styleRuleTable tbody');
+			const materialSearchBtn = document.getElementById('materialSearchBtn');
+			const supplierTableBody = document.getElementById('supplierTableBody');
+			const supplierSummary = document.getElementById('supplierSummary');
+			const materialTableBody = document.getElementById('materialTableBody');
+			const materialNote = document.getElementById('materialNote');
+
+			let selectedStyleRow = null;
+			let selectedSupplierCode = null;
+
+			document.getElementById('openStyleSearchBtn').addEventListener('click', () => {
+				styleModal.show();
+				styleSearchKeyword.focus();
+			});
+
+			styleSearchBtn.addEventListener('click', fetchStyles);
+			styleSearchKeyword.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					fetchStyles();
+				}
+			});
+
+			function fetchStyles() {
+				const keyword = styleSearchKeyword.value || '';
+				fetch(`/production/material-orders/styles?keyword=${encodeURIComponent(keyword)}`)
+					.then(res => res.json())
+					.then(renderStyleResults)
+					.catch(() => renderStyleResults([]));
+			}
+
+			function renderStyleResults(list) {
+				styleSearchResults.innerHTML = '';
+				if (!list || list.length === 0) {
+					styleSearchResults.innerHTML = `<tr><td colspan="3" class="mo-placeholder">조건에 맞는 품번이 없습니다.</td></tr>`;
+					return;
+				}
+				list.forEach(item => {
+					const tr = document.createElement('tr');
+					tr.classList.add('style-result-row');
+					tr.dataset.stylesId = item.stylesId;
+					tr.dataset.styleCode = item.styleCode;
+					tr.innerHTML = `
+						<td>${item.styleCode || '-'}</td>
+						<td>${item.item || '-'}</td>
+						<td>${item.active ? '사용' : '중지'}</td>
+					`;
+					tr.addEventListener('click', () => {
+						document.querySelectorAll('.style-result-row').forEach(r => r.classList.remove('table-primary'));
+						tr.classList.add('table-primary');
+						selectedStyleRow = tr;
+					});
+					styleSearchResults.appendChild(tr);
+				});
+			}
+
+			styleSelectBtn.addEventListener('click', () => {
+				if (!selectedStyleRow) {
+					alert('품번을 선택하세요.');
+					return;
+				}
+				selectedStylesIdInput.value = selectedStyleRow.dataset.stylesId || '';
+				selectedStyleCodeInput.value = selectedStyleRow.dataset.styleCode || '';
+				colorSelect.disabled = false;
+				prdAgreeSelect.disabled = false;
+				styleModal.hide();
+				loadSelectionOptions();
+			});
+
+			function loadSelectionOptions() {
+				const stylesId = selectedStylesIdInput.value;
+				const styleCode = selectedStyleCodeInput.value;
+				fetch(`/production/material-orders/options?stylesId=${encodeURIComponent(stylesId)}&styleCode=${encodeURIComponent(styleCode)}`)
+					.then(res => res.json())
+					.then(data => {
+						renderSelectOptions(colorSelect, data.colors, '색상 선택');
+						renderSelectOptions(prdAgreeSelect, data.agreements, '생산합의코드 선택');
+						renderStyleRule(data.styleRule);
+						supplierTableBody.innerHTML = `<tr><td colspan="7" class="mo-placeholder">조건을 선택 후 검색하세요.</td></tr>`;
+						materialTableBody.innerHTML = `<tr><td colspan="15" class="mo-placeholder">자재처를 선택하세요.</td></tr>`;
+						supplierSummary.textContent = '색상/생산합의코드를 선택 후 검색하세요.';
+						materialNote.textContent = '자재처를 선택하면 목록이 표시됩니다.';
+						selectedSupplierCode = null;
+					})
+					.catch(() => {
+						renderSelectOptions(colorSelect, [], '색상 선택');
+						renderSelectOptions(prdAgreeSelect, [], '생산합의코드 선택');
+						renderStyleRule({});
+					});
+			}
+
+			function renderSelectOptions(selectEl, options, placeholder) {
+				selectEl.innerHTML = '';
+				const defaultOpt = document.createElement('option');
+				defaultOpt.value = '';
+				defaultOpt.textContent = placeholder;
+				selectEl.appendChild(defaultOpt);
+				(options || []).forEach(opt => {
+					const optionEl = document.createElement('option');
+					optionEl.value = opt;
+					optionEl.textContent = opt;
+					selectEl.appendChild(optionEl);
+				});
+			}
+
+			function renderStyleRule(rule) {
+				styleRuleTableBody.innerHTML = '';
+				const colors = rule ? Object.keys(rule) : [];
+				if (!colors || colors.length === 0) {
+					styleRuleHeaderRow.innerHTML = `<th style="width: 140px;">색상</th><th>사이즈</th>`;
+					styleRuleTableBody.innerHTML = `<tr><td colspan="2" class="mo-placeholder">styles_rule 정보가 없습니다.</td></tr>`;
+					return;
+				}
+				const allSizes = new Set();
+				colors.forEach(color => {
+					(rule[color] || []).forEach(size => allSizes.add(size));
+				});
+				const sizeList = Array.from(allSizes);
+				styleRuleHeaderRow.innerHTML = `<th style="width: 140px;">색상</th>${sizeList.map(size => `<th>${size}</th>`).join('')}`;
+				colors.forEach(color => {
+					const tr = document.createElement('tr');
+					const sizeCells = sizeList.map(size => {
+						const matched = (rule[color] || []).includes(size);
+						return `<td class="text-center">${matched ? '●' : '-'}</td>`;
+					}).join('');
+					tr.innerHTML = `<td class="fw-semibold">${color}</td>${sizeCells}`;
+					styleRuleTableBody.appendChild(tr);
+				});
+			}
+
+			materialSearchBtn.addEventListener('click', () => {
+				if (!selectedStyleCodeInput.value) {
+					alert('품번을 먼저 선택하세요.');
+					return;
+				}
+				if (!colorSelect.value || !prdAgreeSelect.value) {
+					alert('색상과 생산합의코드를 선택하세요.');
+					return;
+				}
+				fetchSuppliers();
+			});
+
+			function fetchSuppliers() {
+				const stylesId = selectedStylesIdInput.value;
+				const colorCode = colorSelect.value;
+				const prdAgreeCode = prdAgreeSelect.value;
+				const url = `/production/material-orders/suppliers?stylesId=${encodeURIComponent(stylesId)}&prdAgreeCode=${encodeURIComponent(prdAgreeCode)}&colorCode=${encodeURIComponent(colorCode)}`;
+				fetch(url)
+					.then(res => res.json())
+					.then(renderSuppliers)
+					.catch(() => renderSuppliers([]));
+			}
+
+			function renderSuppliers(list) {
+				supplierTableBody.innerHTML = '';
+				selectedSupplierCode = null;
+				materialTableBody.innerHTML = `<tr><td colspan="15" class="mo-placeholder">자재처를 선택하세요.</td></tr>`;
+				if (!list || list.length === 0) {
+					supplierTableBody.innerHTML = `<tr><td colspan="7" class="mo-placeholder">조건에 맞는 자재처가 없습니다.</td></tr>`;
+					supplierSummary.textContent = '검색된 자재처가 없습니다.';
+					return;
+				}
+				supplierSummary.textContent = `총 ${list.length}건`;
+				list.forEach((supplier, idx) => {
+					const tr = document.createElement('tr');
+					tr.classList.add('mo-supplier-row');
+					tr.dataset.supplierCode = supplier.supplierCode;
+					tr.innerHTML = `
+						<td>${supplier.supplierCode || '-'}</td>
+						<td>${supplier.supplierName || '-'}</td>
+						<td><input type="date" class="form-control form-control-sm order-date"></td>
+						<td><input type="date" class="form-control form-control-sm due-date"></td>
+						<td>
+							<select class="form-select form-select-sm mo-delivery-select delivery-place">
+								<option value="">(미구현)</option>
+							</select>
+						</td>
+						<td><input type="text" class="form-control form-control-sm order-remark" maxlength="200"></td>
+						<td>
+							<button type="button" class="btn ${supplier.ordered ? 'btn-success' : 'btn-outline-primary'} btn-sm order-action-btn" ${supplier.ordered ? 'disabled' : ''}>
+								${supplier.ordered ? '발주 완료' : '발주 신청'}
+							</button>
+						</td>
+					`;
+
+					tr.addEventListener('click', (e) => {
+						if (e.target.closest('.order-action-btn')) {
+							return;
+						}
+						selectSupplierRow(tr);
+					});
+
+					const actionBtn = tr.querySelector('.order-action-btn');
+					actionBtn.addEventListener('click', (e) => {
+						e.stopPropagation();
+						handleOrderAction(tr, supplier);
+					});
+
+					if (idx === 0) {
+						selectSupplierRow(tr);
+					}
+					supplierTableBody.appendChild(tr);
+				});
+			}
+
+			function selectSupplierRow(row) {
+				document.querySelectorAll('.mo-supplier-row').forEach(r => r.classList.remove('active'));
+				row.classList.add('active');
+				selectedSupplierCode = row.dataset.supplierCode;
+				materialNote.textContent = `${selectedSupplierCode} 자재처 기준 목록`;
+				loadMaterials();
+			}
+
+			function loadMaterials() {
+				if (!selectedSupplierCode) {
+					return;
+				}
+				const stylesId = selectedStylesIdInput.value;
+				const colorCode = colorSelect.value;
+				const prdAgreeCode = prdAgreeSelect.value;
+				const url = `/production/material-orders/materials?stylesId=${encodeURIComponent(stylesId)}&prdAgreeCode=${encodeURIComponent(prdAgreeCode)}&colorCode=${encodeURIComponent(colorCode)}&supplierCode=${encodeURIComponent(selectedSupplierCode)}`;
+				fetch(url)
+					.then(res => res.json())
+					.then(renderMaterials)
+					.catch(() => renderMaterials([]));
+			}
+
+			function renderMaterials(list) {
+				materialTableBody.innerHTML = '';
+				if (!list || list.length === 0) {
+					materialTableBody.innerHTML = `<tr><td colspan="15" class="mo-placeholder">조회된 원부자재가 없습니다.</td></tr>`;
+					return;
+				}
+
+				list.forEach(item => {
+					const amount = computeAmount(0, item.unitPrice);
+					const tr = document.createElement('tr');
+					tr.innerHTML = `
+						<td>${item.colorCode || '-'}</td>
+						<td>${item.category || '-'}</td>
+						<td>${item.materialName || '-'}</td>
+						<td>${item.materialUsage || '-'}</td>
+						<td>${item.spec || '-'}</td>
+						<td>${item.materialColor || '-'}</td>
+						<td>${item.uom || '-'}</td>
+						<td>${formatNumber(item.qtyPerPiece)}</td>
+						<td>${item.supplierCode || '-'}</td>
+						<td>${formatNumber(item.lossRate)}</td>
+						<td>${item.orderUom || '-'}</td>
+						<td>${formatCurrency(item.unitPrice)}</td>
+						<td><input type="number" class="form-control form-control-sm text-end material-qty" value="0" min="0" step="0.01"></td>
+						<td class="material-amount text-end">${formatCurrency(amount)}</td>
+						<td>${item.remark || '-'}</td>
+					`;
+					const qtyInput = tr.querySelector('.material-qty');
+					const amountCell = tr.querySelector('.material-amount');
+					qtyInput.addEventListener('input', () => {
+						const nextAmount = computeAmount(qtyInput.value, item.unitPrice);
+						amountCell.textContent = formatCurrency(nextAmount);
+					});
+					materialTableBody.appendChild(tr);
+				});
+			}
+
+			function handleOrderAction(row, supplier) {
+				if (supplier.ordered) {
+					return;
+				}
+				if (!confirm('발주하시겠습니까?')) {
+					return;
+				}
+				const payload = {
+					stylesId: selectedStylesIdInput.value,
+					styleCode: selectedStyleCodeInput.value,
+					colorCode: colorSelect.value,
+					prdAgreeCode: prdAgreeSelect.value,
+					supplierCode: supplier.supplierCode,
+					orderDate: row.querySelector('.order-date')?.value || null,
+					dueDate: row.querySelector('.due-date')?.value || null,
+					deliveryPlace: row.querySelector('.delivery-place')?.value || null,
+					remark: row.querySelector('.order-remark')?.value || null
+				};
+
+				fetch('/production/material-orders/submit', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(payload)
+				})
+					.then(res => res.json())
+					.then(() => {
+						alert('발주가 완료되었습니다!');
+						const btn = row.querySelector('.order-action-btn');
+						btn.textContent = '발주 완료';
+						btn.classList.remove('btn-outline-primary');
+						btn.classList.add('btn-success');
+						btn.disabled = true;
+						selectSupplierRow(row);
+					})
+					.catch(() => alert('발주 처리 중 오류가 발생했습니다.'));
+			}
+
+			function computeAmount(qty, unitPrice) {
+				const q = parseFloat(qty || 0);
+				const price = parseFloat(unitPrice || 0);
+				return isNaN(q) || isNaN(price) ? 0 : q * price;
+			}
+
+			function formatNumber(value) {
+				if (value === null || value === undefined) {
+					return '-';
+				}
+				const num = Number(value);
+				return isNaN(num) ? '-' : num.toLocaleString();
+			}
+
+			function formatCurrency(value) {
+				if (value === null || value === undefined) {
+					return '0';
+				}
+				const num = Number(value);
+				return isNaN(num) ? '0' : num.toLocaleString();
+			}
+		});
+	</script>
+</div>
