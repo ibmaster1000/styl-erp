@@ -21,6 +21,13 @@
 			min-height: 240px;
 		}
 
+		.ms-search-grid {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr);
+			gap: 16px;
+			align-items: stretch;
+		}
+
 		.ms-search-controls {
 			flex: 1 1 55%;
 			display: flex;
@@ -31,9 +38,56 @@
 
 		.ms-control-row {
 			display: grid;
-			grid-template-columns: repeat(4, minmax(0, 1fr));
+			grid-template-columns: 1fr auto;
+			grid-template-rows: auto auto;
+			column-gap: 16px;
+			row-gap: 12px;
+			align-items: stretch;
+		}
+
+		.ms-control-left {
+			display: grid;
+			grid-template-rows: auto auto;
+			gap: 12px;
+			align-content: center;
+		}
+
+		.ms-style-row {
+			display: grid;
+			grid-template-columns: auto 1fr auto;
+			gap: 10px;
+			align-items: center;
+		}
+
+		.ms-style-row .form-label {
+			margin-bottom: 0;
+			white-space: nowrap;
+		}
+
+		.ms-meta-row {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: 12px;
 			align-items: center;
+		}
+
+		.ms-meta-item {
+			display: grid;
+			grid-template-columns: auto 1fr;
+			gap: 8px;
+			align-items: center;
+		}
+
+		.ms-meta-item .form-label {
+			margin-bottom: 0;
+			white-space: nowrap;
+		}
+
+		.ms-search-action {
+			grid-row: 1 / span 2;
+			align-self: stretch;
+			display: flex;
+			align-items: stretch;
 		}
 
 		.ms-control-row .form-control[readonly] {
@@ -110,12 +164,22 @@
 		}
 
 		@media (max-width: 992px) {
-			.ms-search {
-				flex-direction: column;
+			.ms-search-grid {
+				grid-template-columns: 1fr;
 			}
 
 			.ms-control-row {
 				grid-template-columns: 1fr;
+				grid-template-rows: auto auto auto;
+			}
+
+			.ms-meta-row {
+				grid-template-columns: 1fr;
+			}
+
+			.ms-search-action {
+				grid-row: 3;
+				align-self: stretch;
 			}
 		}
 	</style>
@@ -126,30 +190,35 @@
 	</div>
 
 	<div class="ms-layout">
-		<div class="ms-panel ms-search">
+		<div class="ms-panel ms-search ms-search-grid">
 			<div class="ms-search-controls">
 				<div class="ms-control-row">
-					<div class="d-grid gap-1">
-						<label class="form-label mb-1 fw-bold">품번</label>
-						<div class="input-group">
-							<input type="text" class="form-control" id="ms-style-input" placeholder="품번을 선택하세요" readonly>
-							<button class="btn btn-outline-secondary" type="button" id="ms-style-search">품번 검색</button>
+					<div class="ms-control-left">
+						<div class="ms-style-row">
+							<label class="form-label fw-bold">품번</label>
+							<div class="input-group">
+								<input type="text" class="form-control" id="ms-style-input" placeholder="품번을 선택하세요"
+									readonly>
+								<button class="btn btn-outline-secondary" type="button" id="ms-style-search">품번
+									검색</button>
+							</div>
+						</div>
+						<div class="ms-meta-row">
+							<div class="ms-meta-item">
+								<label class="form-label fw-bold">색상</label>
+								<select class="form-select" id="ms-color-select" disabled>
+									<option value="">색상을 선택하세요</option>
+								</select>
+							</div>
+							<div class="ms-meta-item">
+								<label class="form-label fw-bold">생산합의코드</label>
+								<select class="form-select" id="ms-agreement-select" disabled>
+									<option value="">생산합의 코드를 선택하세요</option>
+								</select>
+							</div>
 						</div>
 					</div>
-					<div class="d-grid gap-1">
-						<label class="form-label mb-1 fw-bold">색상</label>
-						<select class="form-select" id="ms-color-select" disabled>
-							<option value="">색상을 선택하세요</option>
-						</select>
-					</div>
-					<div class="d-grid gap-1">
-						<label class="form-label mb-1 fw-bold">생산합의코드</label>
-						<select class="form-select" id="ms-agreement-select" disabled>
-							<option value="">생산합의 코드를 선택하세요</option>
-						</select>
-					</div>
-					<div class="d-grid gap-1">
-						<label class="form-label mb-1 fw-bold text-white">검색</label>
+					<div class="ms-search-action">
 						<button class="btn btn-dark w-100" type="button" id="ms-search-button">검색</button>
 					</div>
 				</div>
@@ -215,12 +284,16 @@
 							<td th:text="${item.spec}">50x70</td>
 							<td th:text="${item.materialColor}">BK</td>
 							<td th:text="${item.uom}">YD</td>
-							<td th:text="${item.qtyPerPiece} != null ? #numbers.formatDecimal(item.qtyPerPiece, 1, 'COMMA', 2, 'POINT') : '-'">0.50</td>
+							<td
+								th:text="${item.qtyPerPiece} != null ? #numbers.formatDecimal(item.qtyPerPiece, 1, 'COMMA', 2, 'POINT') : '-'">
+								0.50</td>
 							<td th:text="${item.materialCode}">MP25001-1-WH003</td>
 							<td th:text="${item.supplierCode}">SUP-01</td>
 							<td th:text="${item.lossRate} != null ? item.lossRate + '%' : '-'">2%</td>
 							<td th:text="${item.orderUom}">EA</td>
-							<td th:text="${item.unitPrice} != null ? #numbers.formatDecimal(item.unitPrice, 1, 'COMMA', 2, 'POINT') : '-'">5,000</td>
+							<td
+								th:text="${item.unitPrice} != null ? #numbers.formatDecimal(item.unitPrice, 1, 'COMMA', 2, 'POINT') : '-'">
+								5,000</td>
 						</tr>
 					</tbody>
 				</table>
@@ -263,7 +336,7 @@
 
 	<script th:inline="javascript">
 		/*<![CDATA[*/
-		const msStyles = /*[[${styles}]]*/ [];
+		const msStyles = /*[[${styles}]]*/[];
 		const msStyleRules = /*[[${styleRules}]]*/ {};
 		const styleInput = document.getElementById('ms-style-input');
 		const colorSelect = document.getElementById('ms-color-select');
