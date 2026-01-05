@@ -398,10 +398,13 @@ public class MaterialTransactionService {
 		}
 
 		MapSqlParameterSource params = new MapSqlParameterSource("codes", supplierCodes);
-		Map<String, String> result = new LinkedHashMap<>();
-		jdbcTemplate.query(sql.toString(), params, rs -> {
-			result.put(rs.getString("code_value"), rs.getString("code_name"));
-		});
+		return jdbcTemplate.query(sql.toString(), params, rs -> {
+            Map<String, String> result = new LinkedHashMap<>();
+            while (rs.next()) {
+                result.put(rs.getString("code_value"), rs.getString("code_name"));
+            }
+            return result;
+        });
 	}
 
 	private String selectOrNull(String column, String alias) {
