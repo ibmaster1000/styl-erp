@@ -30,11 +30,10 @@
 			<a th:href="@{/production/material-orders}" th:classappend="${activeMenu}=='material-orders' ? ' active'">
 				<i class="bi bi-cart-check"></i> 원부자재 발주
 			</a>
-			<a th:href="@{/production/material-receipts}"
-				th:classappend="${activeMenu}=='material-receipts' ? ' active'">
-				<i class="bi bi-box-arrow-in-down"></i> 원부자재 입고 등록
+			<a th:href="@{/production/material-inbound}" th:classappend="${activeMenu}=='material-inbound' ? ' active'">
+							<i class="bi bi-box-arrow-in-down"></i> 원부자재 입고 등록
 			</a>
-			<a th:href="@{/production/material-issues}" th:classappend="${activeMenu}=='material-issues' ? ' active'">
+			<a th:href="@{/production/material-outbound}" th:classappend="${activeMenu}=='material-outbound' ? ' active'">
 				<i class="bi bi-arrow-left-right"></i> 원부자재 출고 등록
 			</a>
 			<a th:href="@{/work-orders}" th:classappend="${activeMenu}=='work-instructions' ? ' active'">

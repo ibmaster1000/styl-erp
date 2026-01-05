@@ -1,0 +1,168 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="materialTopSearchWithRule(idPrefix, ruleTitle, ruleSubtitle)">
+	<style>
+		.material-top-layout {
+			display: flex;
+			gap: 16px;
+			align-items: stretch;
+			min-height: 240px;
+		}
+
+		.material-panel {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+
+		.material-search-controls {
+			flex: 1 1 55%;
+			display: grid;
+			grid-template-rows: auto auto;
+			gap: 14px;
+		}
+
+		.material-row {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			flex-wrap: wrap;
+		}
+
+		.material-row .form-label {
+			margin-bottom: 0;
+			white-space: nowrap;
+		}
+
+		.material-style-input {
+			flex: 1 1 260px;
+			max-width: 320px;
+			min-width: 240px;
+		}
+
+		.material-style-input .form-control {
+			max-width: 100%;
+			min-width: 0;
+		}
+
+		.material-style-input .btn {
+			white-space: nowrap;
+		}
+
+		.material-meta-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			flex: 1 1 auto;
+			min-width: 200px;
+		}
+
+		.material-meta-item .form-label {
+			margin-bottom: 0;
+			white-space: nowrap;
+		}
+
+		.material-color-select {
+			max-width: 160px;
+		}
+
+		.material-agree-select {
+			flex: 1 1 260px;
+			min-width: 240px;
+			max-width: 520px;
+		}
+
+		.material-search-button {
+			width: 140px;
+			align-self: stretch;
+			min-height: 38px;
+		}
+
+		.material-rule-card {
+			flex: 1 1 45%;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+			min-width: 320px;
+		}
+
+		.material-rule-card .table-responsive {
+			max-height: 260px;
+		}
+
+		.material-rule-card table th {
+			font-size: 13px;
+			font-weight: 800;
+			background: #f9fafb;
+			text-align: center;
+			white-space: nowrap;
+		}
+
+		.material-rule-card table td {
+			font-size: 13px;
+			text-align: center;
+			white-space: nowrap;
+		}
+
+		@media (max-width: 992px) {
+			.material-search-controls {
+				grid-template-rows: auto auto;
+			}
+		}
+	</style>
+
+	<div class="material-top-layout" th:attr="data-prefix=${idPrefix}">
+		<div class="material-panel material-search-controls">
+			<div class="material-row">
+				<label class="form-label fw-bold mb-0">품번</label>
+				<input type="hidden" th:id="${idPrefix + '-styles-id'}">
+				<div class="input-group material-style-input">
+					<input type="text" class="form-control" th:id="${idPrefix + '-style-input'}" placeholder="품번을 선택하세요"
+						readonly>
+					<button class="btn btn-outline-secondary" type="button"
+						th:id="${idPrefix + '-style-search'}">품번 검색</button>
+				</div>
+			</div>
+			<div class="material-row">
+				<div class="material-meta-item">
+					<label class="form-label fw-bold mb-0">색상</label>
+					<select class="form-select material-color-select" th:id="${idPrefix + '-color-select'}" disabled>
+						<option value="">색상을 선택하세요</option>
+					</select>
+				</div>
+				<div class="material-meta-item">
+					<label class="form-label fw-bold mb-0">생산합의코드</label>
+					<select class="form-select material-agree-select" th:id="${idPrefix + '-agreement-select'}" disabled>
+						<option value="">생산합의 코드를 선택하세요</option>
+					</select>
+				</div>
+				<button class="btn btn-dark material-search-button" type="button"
+					th:id="${idPrefix + '-search-button'}">검색</button>
+			</div>
+		</div>
+
+		<div class="material-panel material-rule-card">
+			<div class="d-flex justify-content-between align-items-center">
+				<div>
+					<div class="fw-bold" th:text="${ruleTitle} ?: '색상 × 사이즈 요약'">색상 × 사이즈 요약</div>
+					<div class="text-muted small" th:text="${ruleSubtitle} ?: '선택된 품번의 스타일 규칙을 표시합니다.'">선택된 품번의 스타일 규칙을 표시합니다.</div>
+				</div>
+				<span class="badge text-bg-light" th:id="${idPrefix + '-style-chip'}">-</span>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-bordered align-middle mb-0">
+					<thead>
+						<tr th:id="${idPrefix + '-rule-head'}">
+							<th>색상</th>
+							<th class="text-muted">-</th>
+						</tr>
+					</thead>
+					<tbody th:id="${idPrefix + '-rule-body'}">
+						<tr>
+							<td colspan="2" class="text-center text-muted">품번을 선택하면 색상×사이즈 표가 표시됩니다.</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>

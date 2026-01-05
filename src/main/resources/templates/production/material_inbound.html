@@ -1,0 +1,456 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
+	<style>
+		.mi-layout {
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+		}
+
+		.material-panel {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+
+		.material-row {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			flex-wrap: wrap;
+		}
+
+		.material-row .form-label {
+			margin-bottom: 0;
+			white-space: nowrap;
+		}
+
+		.material-style-input {
+			flex: 1 1 260px;
+			max-width: 320px;
+			min-width: 240px;
+		}
+
+		.material-style-input .form-control {
+			max-width: 100%;
+			min-width: 0;
+		}
+
+		.material-style-input .btn {
+			white-space: nowrap;
+		}
+
+		.material-meta-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			flex: 1 1 auto;
+			min-width: 200px;
+		}
+
+		.material-meta-item .form-label {
+			margin-bottom: 0;
+			white-space: nowrap;
+		}
+
+		.material-color-select {
+			max-width: 160px;
+		}
+
+		.material-agree-select {
+			flex: 1 1 260px;
+			min-width: 240px;
+			max-width: 520px;
+		}
+
+		.mi-date-input {
+			min-width: 180px;
+			max-width: 220px;
+		}
+
+		.material-search-button {
+			width: 140px;
+			align-self: stretch;
+			min-height: 38px;
+		}
+
+		.mi-table thead th {
+			font-size: 13px;
+			font-weight: 800;
+			background: #f9fafb;
+			white-space: nowrap;
+		}
+
+		.mi-table tbody td {
+			font-size: 13px;
+			vertical-align: middle;
+			white-space: nowrap;
+		}
+
+		.mi-placeholder {
+			text-align: center;
+			color: #6b7280;
+		}
+	</style>
+
+	<div class="mb-3">
+		<h4 class="fw-bold mb-1">원부자재 입고 등록</h4>
+		<p class="text-muted mb-0">품번/색상/생산합의 기준으로 입고량을 입력해 저장하세요.</p>
+	</div>
+
+	<div class="mi-layout">
+		<div class="material-panel">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<h6 class="fw-bold mb-0">검색/선택</h6>
+				<small class="text-muted">품번 선택 전에는 색상/합의/입고일/검색이 비활성화됩니다.</small>
+			</div>
+			<div class="material-row mb-2">
+				<label class="form-label fw-bold mb-0">품번</label>
+				<input type="hidden" id="mi-styles-id">
+				<div class="input-group material-style-input">
+					<input type="text" id="mi-style-input" class="form-control" placeholder="품번을 선택하세요" readonly>
+					<button type="button" class="btn btn-outline-secondary" id="mi-style-search">품번 검색</button>
+				</div>
+			</div>
+			<div class="material-row">
+				<div class="material-meta-item">
+					<label class="form-label fw-bold mb-0">색상</label>
+					<select id="mi-color-select" class="form-select material-color-select" disabled>
+						<option value="">색상을 선택하세요</option>
+					</select>
+				</div>
+				<div class="material-meta-item">
+					<label class="form-label fw-bold mb-0">생산합의코드</label>
+					<select id="mi-agreement-select" class="form-select material-agree-select" disabled>
+						<option value="">생산합의 코드를 선택하세요</option>
+					</select>
+				</div>
+				<div class="material-meta-item">
+					<label class="form-label fw-bold mb-0">입고일</label>
+					<input type="date" id="mi-date-input" class="form-control mi-date-input" disabled>
+				</div>
+				<button type="button" class="btn btn-dark material-search-button" id="mi-search-button" disabled>검색</button>
+			</div>
+		</div>
+
+		<div class="material-panel">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<div>
+					<h6 class="fw-bold mb-0">입고 대상 목록</h6>
+					<small class="text-muted">입고량을 입력하고 저장을 눌러주세요.</small>
+				</div>
+				<button type="button" class="btn btn-primary" id="mi-save-button">저장</button>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-bordered align-middle mi-table">
+					<thead class="table-light">
+						<tr>
+							<th>품번</th>
+							<th>합의월</th>
+							<th>색상</th>
+							<th>원부자재구분</th>
+							<th>자재명칭</th>
+							<th>용도</th>
+							<th>자재규격</th>
+							<th>자재색상</th>
+							<th>소요량단위</th>
+							<th>1매소요량</th>
+							<th>자재처</th>
+							<th>생산담당</th>
+							<th>발주단위</th>
+							<th>단가</th>
+							<th>발주량</th>
+							<th>기입고량</th>
+							<th>입고량</th>
+						</tr>
+					</thead>
+					<tbody id="mi-table-body">
+						<tr>
+							<td colspan="17" class="mi-placeholder">품번/색상/생산합의/입고일을 선택한 뒤 검색하세요.</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="miStyleSearchModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title fw-bold">품번 검색</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="input-group mb-3">
+						<input type="text" class="form-control" id="mi-style-search-keyword" placeholder="품번 또는 아이템명 검색">
+						<button class="btn btn-outline-secondary" type="button" id="mi-style-search-btn">검색</button>
+					</div>
+					<div class="table-responsive">
+						<table class="table table-hover align-middle">
+							<thead class="table-light">
+								<tr>
+									<th>품번</th>
+									<th>아이템</th>
+									<th>상태</th>
+								</tr>
+							</thead>
+							<tbody id="mi-style-search-results">
+								<tr>
+									<td colspan="3" class="mi-placeholder">검색어를 입력하세요.</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+					<button type="button" class="btn btn-primary" id="mi-style-select-btn">선택</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const styleModal = new bootstrap.Modal(document.getElementById('miStyleSearchModal'));
+			const styleSearchBtn = document.getElementById('mi-style-search-btn');
+			const styleSearchKeyword = document.getElementById('mi-style-search-keyword');
+			const styleSearchResults = document.getElementById('mi-style-search-results');
+			const styleSelectBtn = document.getElementById('mi-style-select-btn');
+			const styleSearchTrigger = document.getElementById('mi-style-search');
+			const styleIdInput = document.getElementById('mi-styles-id');
+			const styleCodeInput = document.getElementById('mi-style-input');
+			const colorSelect = document.getElementById('mi-color-select');
+			const agreeSelect = document.getElementById('mi-agreement-select');
+			const dateInput = document.getElementById('mi-date-input');
+			const searchButton = document.getElementById('mi-search-button');
+			const saveButton = document.getElementById('mi-save-button');
+			const tableBody = document.getElementById('mi-table-body');
+
+			let selectedStyleRow = null;
+
+			styleSearchTrigger.addEventListener('click', () => {
+				styleModal.show();
+				styleSearchKeyword.focus();
+			});
+
+			styleSearchBtn.addEventListener('click', fetchStyles);
+			styleSearchKeyword.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					fetchStyles();
+				}
+			});
+
+			function fetchStyles() {
+				const keyword = styleSearchKeyword.value || '';
+				fetch(`/production/material-inbound/styles?keyword=${encodeURIComponent(keyword)}`)
+					.then(res => res.json())
+					.then(renderStyleResults)
+					.catch(() => renderStyleResults([]));
+			}
+
+			function renderStyleResults(list) {
+				styleSearchResults.innerHTML = '';
+				if (!list || list.length === 0) {
+					styleSearchResults.innerHTML = `<tr><td colspan="3" class="mi-placeholder">조건에 맞는 품번이 없습니다.</td></tr>`;
+					return;
+				}
+				list.forEach(item => {
+					const tr = document.createElement('tr');
+					tr.classList.add('mi-style-row');
+					tr.dataset.stylesId = item.stylesId;
+					tr.dataset.styleCode = item.styleCode;
+					tr.innerHTML = `
+						<td>${item.styleCode || '-'}</td>
+						<td>${item.item || '-'}</td>
+						<td>${item.active ? '사용' : '중지'}</td>
+					`;
+					tr.addEventListener('click', () => {
+						document.querySelectorAll('.mi-style-row').forEach(r => r.classList.remove('table-primary'));
+						tr.classList.add('table-primary');
+						selectedStyleRow = tr;
+					});
+					styleSearchResults.appendChild(tr);
+				});
+			}
+
+			styleSelectBtn.addEventListener('click', () => {
+				if (!selectedStyleRow) {
+					alert('품번을 선택하세요.');
+					return;
+				}
+				styleIdInput.value = selectedStyleRow.dataset.stylesId || '';
+				styleCodeInput.value = selectedStyleRow.dataset.styleCode || '';
+				colorSelect.disabled = false;
+				agreeSelect.disabled = false;
+				dateInput.disabled = false;
+				searchButton.disabled = false;
+				styleModal.hide();
+				loadSelectionOptions();
+			});
+
+			function loadSelectionOptions() {
+				const stylesId = styleIdInput.value;
+				const styleCode = styleCodeInput.value;
+				fetch(`/production/material-inbound/options?stylesId=${encodeURIComponent(stylesId)}&styleCode=${encodeURIComponent(styleCode)}`)
+					.then(res => res.json())
+					.then(data => {
+						renderSelectOptions(colorSelect, data.colors, '색상 선택');
+						renderSelectOptions(agreeSelect, data.agreements, '생산합의코드 선택');
+						resetTable();
+					})
+					.catch(() => {
+						renderSelectOptions(colorSelect, [], '색상 선택');
+						renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
+						resetTable();
+					});
+			}
+
+			function renderSelectOptions(selectEl, options, placeholder) {
+				selectEl.innerHTML = '';
+				const defaultOpt = document.createElement('option');
+				defaultOpt.value = '';
+				defaultOpt.textContent = placeholder;
+				selectEl.appendChild(defaultOpt);
+				(options || []).forEach(opt => {
+					const optionEl = document.createElement('option');
+					optionEl.value = opt;
+					optionEl.textContent = opt;
+					selectEl.appendChild(optionEl);
+				});
+			}
+
+			function resetTable() {
+				tableBody.innerHTML = `<tr><td colspan="17" class="mi-placeholder">조건을 선택한 뒤 검색하세요.</td></tr>`;
+			}
+
+			searchButton.addEventListener('click', () => {
+				if (!styleCodeInput.value) {
+					alert('품번을 먼저 선택하세요.');
+					return;
+				}
+				if (!colorSelect.value || !agreeSelect.value) {
+					alert('색상과 생산합의코드를 선택하세요.');
+					return;
+				}
+				if (!dateInput.value) {
+					alert('입고일을 선택하세요.');
+					return;
+				}
+				loadMaterials();
+			});
+
+			function loadMaterials() {
+				const stylesId = styleIdInput.value;
+				const styleCode = styleCodeInput.value;
+				const colorCode = colorSelect.value;
+				const prdAgreeCode = agreeSelect.value;
+				const url = `/production/material-inbound/list?stylesId=${encodeURIComponent(stylesId)}&styleCode=${encodeURIComponent(styleCode)}&prdAgreeCode=${encodeURIComponent(prdAgreeCode)}&colorCode=${encodeURIComponent(colorCode)}`;
+				fetch(url)
+					.then(res => res.json())
+					.then(renderTable)
+					.catch(() => renderTable([]));
+			}
+
+			function renderTable(list) {
+				tableBody.innerHTML = '';
+				if (!list || list.length === 0) {
+					tableBody.innerHTML = `<tr><td colspan="17" class="mi-placeholder">조회된 사양이 없습니다.</td></tr>`;
+					return;
+				}
+				list.forEach(item => {
+					const inboundQty = formatNumber(item.inboundQuantity);
+					const row = document.createElement('tr');
+					row.dataset.bomId = item.bomId || '';
+					row.dataset.orderUom = item.orderUom || '';
+					row.dataset.unitPrice = item.unitPrice || '';
+					row.innerHTML = `
+						<td>${item.styleCode || '-'}</td>
+						<td>${item.agreementMonth || item.prdAgreeCode || '-'}</td>
+						<td>${item.colorCode || '-'}</td>
+						<td>${item.category || '-'}</td>
+						<td>${item.materialName || '-'}</td>
+						<td>${item.materialUsage || '-'}</td>
+						<td>${item.spec || '-'}</td>
+						<td>${item.materialColor || '-'}</td>
+						<td>${item.uom || '-'}</td>
+						<td class="text-end">${formatDecimal(item.qtyPerPiece)}</td>
+						<td>${item.supplierName || item.supplierCode || '-'}</td>
+						<td>${item.productionManager || '-'}</td>
+						<td>${item.orderUom || '-'}</td>
+						<td class="text-end">${formatDecimal(item.unitPrice)}</td>
+						<td class="text-end">${formatDecimal(item.orderQuantity)}</td>
+						<td class="text-end">${inboundQty}</td>
+						<td><input type="number" class="form-control form-control-sm text-end mi-qty-input" min="0" step="0.01" value="0"></td>
+					`;
+					tableBody.appendChild(row);
+				});
+			}
+
+			saveButton.addEventListener('click', () => {
+				const rows = Array.from(tableBody.querySelectorAll('tr[data-bom-id]'));
+				const items = [];
+				rows.forEach(row => {
+					const qty = parseFloat(row.querySelector('.mi-qty-input')?.value || '0');
+					if (!isNaN(qty) && qty > 0) {
+						items.push({
+							bomId: row.dataset.bomId ? Number(row.dataset.bomId) : null,
+							quantity: qty,
+							orderUom: row.dataset.orderUom || null,
+							unitPrice: row.dataset.unitPrice ? Number(row.dataset.unitPrice) : null
+						});
+					}
+				});
+
+				if (items.length === 0) {
+					alert('입고량을 입력하세요.');
+					return;
+				}
+
+				const payload = {
+					stylesId: styleIdInput.value,
+					styleCode: styleCodeInput.value,
+					prdAgreeCode: agreeSelect.value,
+					colorCode: colorSelect.value,
+					tranDate: dateInput.value || null,
+					items
+				};
+
+				fetch('/production/material-inbound/save', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(payload)
+				})
+					.then(res => res.json())
+					.then(data => {
+						if (data.success) {
+							alert('입고 저장이 완료되었습니다.');
+							loadMaterials();
+						} else {
+							alert('입고 저장에 실패했습니다.');
+						}
+					})
+					.catch(() => alert('입고 저장 중 오류가 발생했습니다.'));
+			});
+
+			function formatNumber(value) {
+				if (value === null || value === undefined) {
+					return '-';
+				}
+				const num = Number(value);
+				return isNaN(num) ? '-' : num.toLocaleString();
+			}
+
+			function formatDecimal(value) {
+				if (value === null || value === undefined) {
+					return '-';
+				}
+				const num = Number(value);
+				return isNaN(num) ? '-' : num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+			}
+		});
+	</script>
+</div>

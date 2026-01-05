@@ -6,124 +6,6 @@
 			gap: 16px;
 		}
 
-		.ms-panel {
-			background: #ffffff;
-			border: 1px solid #e5e7eb;
-			border-radius: 12px;
-			padding: 16px;
-			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-		}
-
-		.ms-search {
-			display: flex;
-			gap: 16px;
-			align-items: stretch;
-			min-height: 240px;
-		}
-
-		.ms-search-grid {
-			display: grid;
-			grid-template-columns: 1fr;
-			grid-template-rows: auto auto;
-			gap: 14px;
-		}
-
-		.ms-search-controls {
-			flex: 1 1 55%;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-		}
-
-		.ms-row-top,
-		.ms-row-bottom {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-			flex-wrap: wrap;
-		}
-
-		.ms-row-top label,
-		.ms-row-bottom label {
-			margin-bottom: 0;
-			white-space: nowrap;
-		}
-
-		.ms-style-input {
-			flex: 1 1 260px;
-			max-width: 320px;
-			min-width: 240px;
-		}
-
-		.ms-style-input .form-control {
-			max-width: 100%;
-			min-width: 0;
-		}
-
-		.ms-style-input .btn {
-			white-space: nowrap;
-		}
-
-		.ms-meta-item {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			flex: 1 1 auto;
-			min-width: 200px;
-		}
-
-		.ms-meta-item .form-label {
-			margin-bottom: 0;
-			white-space: nowrap;
-		}
-
-		.ms-color-select {
-			max-width: 160px;
-		}
-
-		.ms-agree-select {
-			flex: 1 1 260px;
-			min-width: 240px;
-			max-width: 480px;
-		}
-
-		.ms-search-button {
-			width: 140px;
-			align-self: stretch;
-			min-height: 38px;
-		}
-
-		.ms-control-row .form-control[readonly] {
-			background-color: #f8fafc;
-			font-weight: 700;
-		}
-
-		.ms-color-size {
-			flex: 1 1 45%;
-			display: flex;
-			flex-direction: column;
-			gap: 12px;
-			min-width: 320px;
-		}
-
-		.ms-color-size .table-responsive {
-			max-height: 260px;
-		}
-
-		.ms-color-size table th {
-			font-size: 13px;
-			font-weight: 800;
-			background: #f9fafb;
-			text-align: center;
-			white-space: nowrap;
-		}
-
-		.ms-color-size table td {
-			font-size: 13px;
-			text-align: center;
-			white-space: nowrap;
-		}
-
 		.ms-table thead th {
 			font-size: 13px;
 			font-weight: 800;
@@ -165,16 +47,6 @@
 		.ms-modal .table-responsive {
 			max-height: 320px;
 		}
-
-		@media (max-width: 992px) {
-			.ms-search-grid {
-				grid-template-columns: 1fr;
-			}
-
-			.ms-row-bottom {
-				justify-content: flex-start;
-			}
-		}
 	</style>
 
 	<div class="mb-3">
@@ -183,59 +55,11 @@
 	</div>
 
 	<div class="ms-layout">
-		<div class="ms-panel ms-search">
-			<div class="ms-search-controls ms-search-grid">
-				<div class="ms-row-top">
-					<label class="form-label fw-bold mb-0">품번</label>
-					<div class="input-group ms-style-input">
-						<input type="text" class="form-control" id="ms-style-input" placeholder="품번을 선택하세요" readonly>
-						<button class="btn btn-outline-secondary" type="button" id="ms-style-search">품번 검색</button>
-					</div>
-				</div>
-				<div class="ms-row-bottom">
-					<div class="ms-meta-item">
-						<label class="form-label fw-bold mb-0">색상</label>
-						<select class="form-select ms-color-select" id="ms-color-select" disabled>
-							<option value="">색상을 선택하세요</option>
-						</select>
-					</div>
-					<div class="ms-meta-item">
-						<label class="form-label fw-bold mb-0">생산합의코드</label>
-						<select class="form-select ms-agree-select" id="ms-agreement-select" disabled>
-							<option value="">생산합의 코드를 선택하세요</option>
-						</select>
-					</div>
-					<button class="btn btn-dark ms-search-button" type="button" id="ms-search-button">검색</button>
-				</div>
-			</div>
-
-			<div class="ms-panel ms-color-size mb-0">
-				<div class="d-flex justify-content-between align-items-center">
-					<div>
-						<div class="fw-bold">색상 × 사이즈 요약</div>
-						<div class="text-muted small">선택된 품번의 스타일 규칙을 표시합니다.</div>
-					</div>
-					<span class="badge text-bg-light" id="ms-style-chip">-</span>
-				</div>
-				<div class="table-responsive">
-					<table class="table table-bordered align-middle mb-0">
-						<thead>
-							<tr id="ms-color-size-head">
-								<th>색상</th>
-								<th class="text-muted">-</th>
-							</tr>
-						</thead>
-						<tbody id="ms-color-size-body">
-							<tr>
-								<td colspan="2" class="text-center text-muted">품번을 선택하면 색상×사이즈 표가 표시됩니다.</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</div>
+		<div
+			th:replace="~{fragments/material-top-search-with-rule :: materialTopSearchWithRule('ms', '색상 × 사이즈 요약', '선택된 품번의 스타일 규칙을 표시합니다.')}">
 		</div>
 
-		<div class="ms-panel">
+		<div class="material-panel">
 			<div class="d-flex justify-content-between align-items-center mb-2">
 				<h6 class="mb-0 fw-bold">원부자재 사양서 목록</h6>
 				<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
@@ -324,19 +148,21 @@
 		const msStyles = /*[[${styles}]]*/[];
 		const msStyleRules = /*[[${styleRules}]]*/ {};
 		const styleInput = document.getElementById('ms-style-input');
+		const styleIdInput = document.getElementById('ms-styles-id');
 		const colorSelect = document.getElementById('ms-color-select');
 		const agreementSelect = document.getElementById('ms-agreement-select');
 		const styleChip = document.getElementById('ms-style-chip');
 		const modal = document.getElementById('style-search-modal');
 		const searchButton = document.getElementById('ms-search-button');
+		const ruleHead = document.getElementById('ms-rule-head');
+		const ruleBody = document.getElementById('ms-rule-body');
+		searchButton.disabled = true;
 
 		const closeModal = () => modal.classList.remove('active');
 
 		const renderColorSizeTable = (styleNo) => {
-			const tableHead = document.getElementById('ms-color-size-head');
-			const tableBody = document.getElementById('ms-color-size-body');
-			tableHead.innerHTML = '';
-			tableBody.innerHTML = '';
+			ruleHead.innerHTML = '';
+			ruleBody.innerHTML = '';
 
 			const rules = msStyleRules?.[styleNo];
 			if (!rules || Object.keys(rules).length === 0) {
@@ -346,7 +172,7 @@
 					th.textContent = label;
 					emptyHeadRow.appendChild(th);
 				});
-				tableHead.appendChild(emptyHeadRow);
+				ruleHead.appendChild(emptyHeadRow);
 
 				const emptyRow = document.createElement('tr');
 				const td = document.createElement('td');
@@ -354,7 +180,7 @@
 				td.className = 'text-center text-muted';
 				td.textContent = '선택된 품번의 스타일 규칙이 없습니다.';
 				emptyRow.appendChild(td);
-				tableBody.appendChild(emptyRow);
+				ruleBody.appendChild(emptyRow);
 				return;
 			}
 
@@ -376,7 +202,7 @@
 				th.textContent = size;
 				headRow.appendChild(th);
 			});
-			tableHead.appendChild(headRow);
+			ruleHead.appendChild(headRow);
 
 			Object.entries(rules).forEach(([color, sizes]) => {
 				const tr = document.createElement('tr');
@@ -388,7 +214,7 @@
 					td.textContent = '-';
 					tr.appendChild(td);
 				});
-				tableBody.appendChild(tr);
+				ruleBody.appendChild(tr);
 			});
 		};
 
@@ -399,6 +225,7 @@
 			const hasRules = rules && Object.keys(rules).length > 0;
 			colorSelect.disabled = !hasRules;
 			agreementSelect.disabled = !hasRules;
+			searchButton.disabled = !styleNo;
 			if (hasRules) {
 				Object.keys(rules).forEach((color) => {
 					const option = document.createElement('option');
@@ -412,6 +239,7 @@
 		const applyStyleSelection = (styleNo) => {
 			if (!styleNo) return;
 			styleInput.value = styleNo;
+			styleIdInput.value = styleNo;
 			styleChip.textContent = styleNo;
 			populateSelectors(styleNo);
 			renderColorSizeTable(styleNo);

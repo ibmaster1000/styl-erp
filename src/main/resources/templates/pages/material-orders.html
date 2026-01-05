@@ -1,10 +1,9 @@
 <div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
 	<style>
-		.mo-top {
-			display: grid;
-			grid-template-columns: minmax(0, 2fr) minmax(360px, 1fr);
+		.mo-layout {
+			display: flex;
+			flex-direction: column;
 			gap: 16px;
-			margin-bottom: 16px;
 		}
 
 		.mo-panel {
@@ -13,56 +12,6 @@
 			border-radius: 12px;
 			padding: 16px;
 			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-		}
-
-		.mo-row {
-			display: flex;
-			gap: 12px;
-			align-items: center;
-		}
-
-		.mo-row+.mo-row {
-			margin-top: 10px;
-		}
-
-		.mo-style-input {
-			max-width: 320px;
-			flex: 1 1 auto;
-		}
-
-		.mo-color-select {
-			max-width: 160px;
-			flex: 0 0 160px;
-		}
-
-		.mo-agree-select {
-			min-width: 240px;
-			max-width: 500px;
-			flex: 1 1 auto;
-		}
-
-		.mo-search-btn {
-			height: 38px;
-			align-self: stretch;
-			min-width: 88px;
-		}
-
-		.mo-style-rule {
-			min-height: 160px;
-		}
-
-		.mo-style-rule h6 {
-			font-weight: 800;
-		}
-
-		.mo-style-rule .table thead th {
-			white-space: nowrap;
-			font-size: 13px;
-		}
-
-		.mo-style-rule .table tbody td {
-			font-size: 13px;
-			white-space: nowrap;
 		}
 
 		.mo-table thead th {
@@ -98,12 +47,6 @@
 		.mo-delivery-select {
 			min-width: 140px;
 		}
-
-		@media (max-width: 1200px) {
-			.mo-top {
-				grid-template-columns: 1fr;
-			}
-		}
 	</style>
 
 	<div class="mb-3">
@@ -111,29 +54,35 @@
 		<p class="text-muted mb-0">선택된 품번/색상/생산합의 기준으로 자재처와 원부자재를 관리합니다.</p>
 	</div>
 
-	<div class="mo-top">
-		<div class="mo-panel">
+	<div class="mo-layout">
+		<div
+			th:replace="~{fragments/material-top-search-with-rule :: materialTopSearchWithRule('mo', 'styles_rule 기준 색상 × 사이즈', '선택한 품번에 따라 표시됩니다.')}">
+		</div>
+
+		<div class="material-panel mo-panel mb-0">
 			<div class="d-flex justify-content-between align-items-center mb-2">
-				<h6 class="fw-bold mb-0">검색/선택</h6>
-				<small class="text-muted">품번을 먼저 선택해주세요.</small>
+				<h6 class="fw-bold mb-0">자재처 목록</h6>
+				<small class="text-muted" id="supplierSummary">조건을 선택 후 검색하세요.</small>
 			</div>
-			<div class="mo-row">
-				<div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2 flex-wrap">
-					<label class="fw-semibold small mb-0">품번</label>
-					<input type="hidden" id="selectedStylesId" name="stylesId">
-					<input type="text" id="selectedStyleCode" class="form-control mo-style-input" readonly
-						placeholder="품번을 선택하세요">
-					<button type="button" class="btn btn-outline-secondary" id="openStyleSearchBtn">품번 검색</button>
-				</div>
-			</div>
-			<div class="mo-row">
-				<select id="colorSelect" class="form-select mo-color-select" disabled>
-					<option value="">색상 선택</option>
-				</select>
-				<select id="prdAgreeSelect" class="form-select mo-agree-select" disabled>
-					<option value="">생산합의코드 선택</option>
-				</select>
-				<button type="button" class="btn btn-dark mo-search-btn" id="materialSearchBtn">검색</button>
+			<div class="table-responsive">
+				<table class="table table-hover align-middle mo-table" id="supplierTable">
+					<thead class="table-light">
+						<tr>
+							<th>자재처 코드</th>
+							<th>자재처 명</th>
+							<th>발주일</th>
+							<th>납기일</th>
+							<th>납품장소</th>
+							<th>비고</th>
+							<th>발주여부</th>
+						</tr>
+					</thead>
+					<tbody id="supplierTableBody">
+						<tr>
+							<td colspan="7" class="mo-placeholder">검색된 자재처가 없습니다.</td>
+						</tr>
+					</tbody>
+				</table>
 			</div>
 		</div>
 
@@ -187,7 +136,7 @@
 		</div>
 	</div>
 
-	<div class="mo-panel">
+	<div class="material-panel mo-panel">
 		<div class="d-flex justify-content-between align-items-center mb-2">
 			<h6 class="fw-bold mb-0">원부자재 목록</h6>
 			<small class="text-muted mo-bottom-note" id="materialNote">자재처를 선택하면 목록이 표시됩니다.</small>
@@ -266,22 +215,25 @@
 			const styleSearchKeyword = document.getElementById('styleSearchKeyword');
 			const styleSearchResults = document.getElementById('styleSearchResults');
 			const styleSelectBtn = document.getElementById('styleSelectBtn');
-			const selectedStylesIdInput = document.getElementById('selectedStylesId');
-			const selectedStyleCodeInput = document.getElementById('selectedStyleCode');
-			const colorSelect = document.getElementById('colorSelect');
-			const prdAgreeSelect = document.getElementById('prdAgreeSelect');
-			const styleRuleHeaderRow = document.getElementById('styleRuleHeaderRow');
-			const styleRuleTableBody = document.querySelector('#styleRuleTable tbody');
-			const materialSearchBtn = document.getElementById('materialSearchBtn');
+			const selectedStylesIdInput = document.getElementById('mo-styles-id');
+			const selectedStyleCodeInput = document.getElementById('mo-style-input');
+			const styleSearchTrigger = document.getElementById('mo-style-search');
+			const colorSelect = document.getElementById('mo-color-select');
+			const prdAgreeSelect = document.getElementById('mo-agreement-select');
+			const styleRuleHeaderRow = document.getElementById('mo-rule-head');
+			const styleRuleTableBody = document.getElementById('mo-rule-body');
+			const styleChip = document.getElementById('mo-style-chip');
+			const materialSearchBtn = document.getElementById('mo-search-button');
 			const supplierTableBody = document.getElementById('supplierTableBody');
 			const supplierSummary = document.getElementById('supplierSummary');
 			const materialTableBody = document.getElementById('materialTableBody');
 			const materialNote = document.getElementById('materialNote');
+			materialSearchBtn.disabled = true;
 
 			let selectedStyleRow = null;
 			let selectedSupplierCode = null;
 
-			document.getElementById('openStyleSearchBtn').addEventListener('click', () => {
+			styleSearchTrigger.addEventListener('click', () => {
 				styleModal.show();
 				styleSearchKeyword.focus();
 			});
@@ -334,8 +286,10 @@
 				}
 				selectedStylesIdInput.value = selectedStyleRow.dataset.stylesId || '';
 				selectedStyleCodeInput.value = selectedStyleRow.dataset.styleCode || '';
+				styleChip.textContent = selectedStyleCodeInput.value || '-';
 				colorSelect.disabled = false;
 				prdAgreeSelect.disabled = false;
+				materialSearchBtn.disabled = false;
 				styleModal.hide();
 				loadSelectionOptions();
 			});
@@ -402,6 +356,9 @@
 			}
 
 			materialSearchBtn.addEventListener('click', () => {
+				if (materialSearchBtn.disabled) {
+					return;
+				}
 				if (!selectedStyleCodeInput.value) {
 					alert('품번을 먼저 선택하세요.');
 					return;
@@ -556,7 +513,7 @@
 
 				fetch('/production/material-orders/submit', {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: {'Content-Type': 'application/json'},
 					body: JSON.stringify(payload)
 				})
 					.then(res => res.json())
