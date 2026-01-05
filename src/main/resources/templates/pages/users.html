@@ -144,7 +144,7 @@
 				</select>
 			</div>
 			<div class="col-md-1 d-grid">
-				<button type="button" class="btn btn-dark">검색</button>
+				<button type="button" class="btn btn--primary">검색</button>
 			</div>
 		</div>
 	</form>
@@ -166,7 +166,7 @@
 							<button type="button" data-view="all" class="active">전체 보기</button>
 						</div>
 					</div>
-					<button type="button" class="btn btn-dark btn-sm" sec:authorize="hasRole('ADMIN')">
+					<button type="button" class="btn btn--primary btn-sm" sec:authorize="hasRole('ADMIN')">
 						<i class="bi bi-plus-circle"></i> 사용자 추가
 					</button>
 				</div>
@@ -179,23 +179,23 @@
 				<button type="button" class="user-manage-btn">계정 잠금</button>
 			</div>
 			<div class="table-responsive">
-				<table class="table table-hover align-middle mb-0">
+				<table class="table table-hover align-middle mb-0 data-table">
 					<thead class="table-light">
 						<tr>
 							<th class="text-center" style="width: 50px;">
 								<input id="selectAllUsers" class="form-check-input" type="checkbox">
 							</th>
-							<th><button type="button" class="table-sort" data-key="empNo">사번 <i
+							<th class="t-left"><button type="button" class="table-sort" data-key="empNo">사번 <i
 										class="bi bi-caret-up-fill sort-icon"></i></button></th>
-							<th><button type="button" class="table-sort" data-key="name">사원명 <i
+							<th class="t-left"><button type="button" class="table-sort" data-key="name">사원명 <i
 										class="bi bi-caret-up-fill sort-icon"></i></button></th>
-							<th><button type="button" class="table-sort" data-key="dept">부서 <i
+							<th class="t-left"><button type="button" class="table-sort" data-key="dept">부서 <i
 										class="bi bi-caret-up-fill sort-icon"></i></button></th>
-							<th><button type="button" class="table-sort" data-key="username">아이디 <i
+							<th class="t-left"><button type="button" class="table-sort" data-key="username">아이디 <i
 										class="bi bi-caret-up-fill sort-icon"></i></button></th>
-							<th><button type="button" class="table-sort" data-key="role">권한 <i
+							<th class="t-left"><button type="button" class="table-sort" data-key="role">권한 <i
 										class="bi bi-caret-up-fill sort-icon"></i></button></th>
-							<th><button type="button" class="table-sort" data-key="status">상태 <i
+							<th class="t-left"><button type="button" class="table-sort" data-key="status">상태 <i
 										class="bi bi-caret-up-fill sort-icon"></i></button></th>
 						</tr>
 					</thead>
@@ -208,12 +208,12 @@
 							<td class="text-center">
 								<input class="form-check-input user-select-checkbox" type="checkbox">
 							</td>
-							<td th:text="${u.empNo}">E0001</td>
-							<td th:text="${u.name}">홍길동</td>
-							<td th:text="${u.dept}">영업</td>
-							<td th:text="${u.username}">user1</td>
-							<td th:text="${u.role}">ROLE_ADMIN</td>
-							<td th:text="${u.active ? '활성' : '비활성'}">활성</td>
+							<td class="t-left" th:text="${u.empNo}">E0001</td>
+							<td class="t-left" th:text="${u.name}">홍길동</td>
+							<td class="t-left" th:text="${u.dept}">영업</td>
+							<td class="t-left" th:text="${u.username}">user1</td>
+							<td class="t-left" th:text="${u.role}">ROLE_ADMIN</td>
+							<td class="t-left" th:text="${u.active ? '활성' : '비활성'}">활성</td>
 						</tr>
 					</tbody>
 				</table>

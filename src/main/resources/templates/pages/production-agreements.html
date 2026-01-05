@@ -124,7 +124,7 @@
 							placeholder="생산합의 코드">
 					</div>
 					<div class="col-md-2 d-grid">
-						<button type="submit" class="btn btn-dark">검색</button>
+						<button type="submit" class="btn btn--primary">검색</button>
 					</div>
 				</div>
 			</form>
@@ -135,13 +135,13 @@
 					<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
 				</div>
 				<div class="table-responsive">
-					<table class="table table-hover align-middle mb-0 pa-table">
+					<table class="table table-hover align-middle mb-0 pa-table data-table">
 						<thead class="table-light">
 							<tr>
-								<th>품번</th>
-								<th>생산합의코드</th>
-								<th>색상</th>
-								<th>사이즈</th>
+								<th class="t-left">품번</th>
+								<th class="t-left">생산합의코드</th>
+								<th class="t-left">색상</th>
+								<th class="t-left">사이즈</th>
 								<th>합의량</th>
 								<th class="text-center">선택</th>
 							</tr>
@@ -153,10 +153,10 @@
 							<tr th:each="p, iter : ${list}" data-pa-row
 								th:attr="data-agreement=${p.agreementCode},data-style=${p.styleNo}"
 								th:classappend="${iter.index == 0} ? 'pa-row-selected'">
-								<td th:text="${p.styleNo}">ST-001</td>
-								<td th:text="${p.agreementCode}">PA-001</td>
-								<td th:text="${p.color}">RED</td>
-								<td th:text="${p.size}">L</td>
+								<td class="t-left" th:text="${p.styleNo}">ST-001</td>
+								<td class="t-left" th:text="${p.agreementCode}">PA-001</td>
+								<td class="t-left" th:text="${p.color}">RED</td>
+								<td class="t-left" th:text="${p.size}">L</td>
 								<td th:text="${p.quantity}">1000</td>
 								<td class="text-center">
 									<div class="form-check d-inline-flex justify-content-center">
@@ -193,11 +193,11 @@
 
 				<div id="pa-detail-panel" class="d-none flex-grow-1 d-flex flex-column">
 					<div class="table-responsive flex-grow-1">
-						<table class="table table-sm align-middle pa-detail-table">
+						<table class="table table-sm align-middle pa-detail-table data-table">
 							<thead class="table-light">
 								<tr>
-									<th>색상</th>
-									<th>사이즈</th>
+									<th class="t-left">색상</th>
+									<th class="t-left">사이즈</th>
 									<th>합의량</th>
 									<th>공급가</th>
 									<th>합의금액</th>
@@ -274,10 +274,12 @@
 				const row = document.createElement('tr');
 
 				const colorCell = document.createElement('td');
+				colorCell.classList.add('t-left');
 				colorCell.innerHTML = `<span class="pa-chip">${line.color}</span>`;
 				row.appendChild(colorCell);
 
 				const sizeCell = document.createElement('td');
+				sizeCell.classList.add('t-left');
 				sizeCell.textContent = line.size || '-';
 				row.appendChild(sizeCell);
 

@@ -19,7 +19,7 @@
 				<input type="text" class="form-control" placeholder="창고">
 			</div>
 			<div class="col-md-1 d-grid">
-				<button type="button" class="btn btn-dark">검색</button>
+				<button type="button" class="btn btn--primary">검색</button>
 			</div>
 		</div>
 	</form>
@@ -31,17 +31,16 @@
 				<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
 			</div>
 			<div class="table-responsive">
-				<table class="table table-hover align-middle mb-0">
+				<table class="table table-hover align-middle mb-0 data-table">
 					<thead class="table-light">
 						<tr>
-							<th>이동번호</th>
+							<th class="t-left">이동번호</th>
 							<th>이동일자</th>
-							<th>FROM L/C</th>
-							<th>TO L/C</th>
-							<th>품번</th>
-							<th>색상</th>
-							<th>사이즈</th>
-							<th>수량</th>
+							<th class="t-left">FROM L/C</th>
+							<th class="t-left">TO L/C</th>
+							<th class="t-left">품번</th>
+							<th class="t-left">색상</th>
+							<th class="t-left">사이즈</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -49,13 +48,13 @@
 							<td colspan="8" class="text-center text-muted">조회된 데이터가 없습니다.</td>
 						</tr>
 						<tr th:each="t : ${list}">
-							<td th:text="${t.transferNo}">TR-001</td>
+							<td class="t-left" th:text="${t.transferNo}">TR-001</td>
 							<td th:text="${t.transferDate}">2024-01-01</td>
-							<td th:text="${t.fromLocation}">WH-A</td>
-							<td th:text="${t.toLocation}">WH-B</td>
-							<td th:text="${t.styleNo}">ST-001</td>
-							<td th:text="${t.color}">RED</td>
-							<td th:text="${t.size}">L</td>
+							<td class="t-left" th:text="${t.fromLocation}">WH-A</td>
+														<td class="t-left" th:text="${t.toLocation}">WH-B</td>
+														<td class="t-left" th:text="${t.styleNo}">ST-001</td>
+														<td class="t-left" th:text="${t.color}">RED</td>
+														<td class="t-left" th:text="${t.size}">L</td>
 							<td th:text="${t.quantity}">30</td>
 						</tr>
 					</tbody>

@@ -65,15 +65,15 @@
 				<small class="text-muted" id="supplierSummary">조건을 선택 후 검색하세요.</small>
 			</div>
 			<div class="table-responsive">
-				<table class="table table-hover align-middle mo-table" id="supplierTable">
+				<table class="table table-hover align-middle mo-table data-table" id="supplierTable">
 					<thead class="table-light">
 						<tr>
-							<th>자재처 코드</th>
-							<th>자재처 명</th>
+							<th class="t-left">자재처 코드</th>
+							<th class="t-left">자재처 명</th>
 							<th>발주일</th>
 							<th>납기일</th>
-							<th>납품장소</th>
-							<th>비고</th>
+							<th class="t-left">납품장소</th>
+							<th class="t-left">비고</th>
 							<th>발주여부</th>
 						</tr>
 					</thead>
@@ -88,20 +88,20 @@
 
 		<div class="mo-panel mo-style-rule">
 			<div class="d-flex justify-content-between align-items-center mb-2">
-				<h6 class="mb-0 fw-bold">styles_rule 기준 색상 × 사이즈</h6>
+				<h6 class="mb-0 fw-bold">색상 x 사이즈</h6>
 				<small class="text-muted">선택한 품번에 따라 표시됩니다.</small>
 			</div>
 			<div class="table-responsive">
-				<table class="table table-bordered align-middle mb-0 mo-table" id="styleRuleTable">
+				<table class="table table-bordered align-middle mb-0 mo-table data-table" id="styleRuleTable">
 					<thead>
 						<tr id="styleRuleHeaderRow">
-							<th style="width: 140px;">색상</th>
+							<th class="t-left" style="width: 140px;">색상</th>
 							<th>사이즈</th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr>
-							<td colspan="2" class="mo-placeholder">품번 선택 후 규칙이 표시됩니다.</td>
+							<td colspan="2" class="mo-placeholder">품번 선택 후 적용 가능한 색상과 사이즈가 표시됩니다.</td>
 						</tr>
 					</tbody>
 				</table>
@@ -115,15 +115,15 @@
 			<small class="text-muted" id="supplierSummary">조건을 선택 후 검색하세요.</small>
 		</div>
 		<div class="table-responsive">
-			<table class="table table-hover align-middle mo-table" id="supplierTable">
+			<table class="table table-hover align-middle mo-table data-table" id="supplierTable">
 				<thead class="table-light">
 					<tr>
-						<th>자재처 코드</th>
-						<th>자재처 명</th>
+						<th class="t-left">자재처 코드</th>
+						<th class="t-left">자재처 명</th>
 						<th>발주일</th>
 						<th>납기일</th>
-						<th>납품장소</th>
-						<th>비고</th>
+						<th class="t-left">납품장소</th>
+						<th class="t-left">비고</th>
 						<th>발주여부</th>
 					</tr>
 				</thead>
@@ -142,24 +142,24 @@
 			<small class="text-muted mo-bottom-note" id="materialNote">자재처를 선택하면 목록이 표시됩니다.</small>
 		</div>
 		<div class="table-responsive">
-			<table class="table table-bordered table-sm align-middle mo-table" id="materialTable">
+			<table class="table table-bordered table-sm align-middle mo-table data-table" id="materialTable">
 				<thead class="table-light">
 					<tr>
 						<th>색상</th>
-						<th>구분</th>
-						<th>자재명칭</th>
-						<th>용도</th>
-						<th>자재규격</th>
-						<th>자재색상</th>
+						<th class="t-left">구분</th>
+						<th class="t-left">자재명칭</th>
+						<th class="t-left">용도</th>
+						<th class="t-left">자재규격</th>
+						<th class="t-left">자재색상</th>
 						<th>소요량단위</th>
 						<th>1매소요량</th>
-						<th>자재처</th>
+						<th class="t-left">자재처</th>
 						<th>LOSS율</th>
 						<th>발주단위</th>
 						<th>단가</th>
 						<th>발주량</th>
 						<th>발주금액</th>
-						<th>참고사항</th>
+						<th class="t-left">참고사항</th>
 					</tr>
 				</thead>
 				<tbody id="materialTableBody">
@@ -181,15 +181,14 @@
 				<div class="modal-body">
 					<div class="input-group mb-3">
 						<input type="text" class="form-control" id="styleSearchKeyword" placeholder="품번 또는 아이템명 검색">
-						<button class="btn btn-outline-secondary" type="button" id="styleSearchBtn">검색</button>
+						<button class="btn btn--primary" type="button" id="styleSearchBtn">검색</button>
 					</div>
 					<div class="table-responsive">
-						<table class="table table-hover align-middle">
+						<table class="table table-hover align-middle data-table">
 							<thead class="table-light">
 								<tr>
-									<th>품번</th>
-									<th>아이템</th>
-									<th>상태</th>
+									<th class="t-left">품번</th>
+									<th class="t-left">아이템</th>
 								</tr>
 							</thead>
 							<tbody id="styleSearchResults">
@@ -201,8 +200,8 @@
 					</div>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-					<button type="button" class="btn btn-primary" id="styleSelectBtn">선택</button>
+					<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
+					<button type="button" class="btn btn--primary" id="styleSelectBtn">선택</button>
 				</div>
 			</div>
 		</div>
@@ -266,8 +265,8 @@
 					tr.dataset.stylesId = item.stylesId;
 					tr.dataset.styleCode = item.styleCode;
 					tr.innerHTML = `
-						<td>${item.styleCode || '-'}</td>
-						<td>${item.item || '-'}</td>
+					<td class="t-left">${item.styleCode || '-'}</tdF>
+					<td class="t-left">${item.item || '-'}</td>
 						<td>${item.active ? '사용' : '중지'}</td>
 					`;
 					tr.addEventListener('click', () => {
@@ -334,7 +333,7 @@
 				styleRuleTableBody.innerHTML = '';
 				const colors = rule ? Object.keys(rule) : [];
 				if (!colors || colors.length === 0) {
-					styleRuleHeaderRow.innerHTML = `<th style="width: 140px;">색상</th><th>사이즈</th>`;
+					styleRuleHeaderRow.innerHTML = `<th class="t-left" style="width: 140px;">색상</th><th>사이즈</th>`;
 					styleRuleTableBody.innerHTML = `<tr><td colspan="2" class="mo-placeholder">styles_rule 정보가 없습니다.</td></tr>`;
 					return;
 				}
@@ -343,14 +342,14 @@
 					(rule[color] || []).forEach(size => allSizes.add(size));
 				});
 				const sizeList = Array.from(allSizes);
-				styleRuleHeaderRow.innerHTML = `<th style="width: 140px;">색상</th>${sizeList.map(size => `<th>${size}</th>`).join('')}`;
+				styleRuleHeaderRow.innerHTML = `<th class="t-left" style="width: 140px;">색상</th>${sizeList.map(size => `<th>${size}</th>`).join('')}`;
 				colors.forEach(color => {
 					const tr = document.createElement('tr');
 					const sizeCells = sizeList.map(size => {
 						const matched = (rule[color] || []).includes(size);
 						return `<td class="text-center">${matched ? '●' : '-'}</td>`;
 					}).join('');
-					tr.innerHTML = `<td class="fw-semibold">${color}</td>${sizeCells}`;
+					tr.innerHTML = `<td class="fw-semibold t-left">${color}</td>${sizeCells}`;
 					styleRuleTableBody.appendChild(tr);
 				});
 			}
@@ -396,8 +395,8 @@
 					tr.classList.add('mo-supplier-row');
 					tr.dataset.supplierCode = supplier.supplierCode;
 					tr.innerHTML = `
-						<td>${supplier.supplierCode || '-'}</td>
-						<td>${supplier.supplierName || '-'}</td>
+					<td class="t-left">${supplier.supplierCode || '-'}</td>
+					<td class="t-left">${supplier.supplierName || '-'}</td>
 						<td><input type="date" class="form-control form-control-sm order-date"></td>
 						<td><input type="date" class="form-control form-control-sm due-date"></td>
 						<td>
@@ -407,7 +406,7 @@
 						</td>
 						<td><input type="text" class="form-control form-control-sm order-remark" maxlength="200"></td>
 						<td>
-							<button type="button" class="btn ${supplier.ordered ? 'btn-success' : 'btn-outline-primary'} btn-sm order-action-btn" ${supplier.ordered ? 'disabled' : ''}>
+							<button type="button" class="btn ${supplier.ordered ? 'btn--outline' : 'btn--primary'} order-action-btn" ${supplier.ordered ? 'disabled' : ''}>
 								${supplier.ordered ? '발주 완료' : '발주 신청'}
 							</button>
 						</td>
@@ -467,20 +466,20 @@
 					const tr = document.createElement('tr');
 					tr.innerHTML = `
 						<td>${item.colorCode || '-'}</td>
-						<td>${item.category || '-'}</td>
-						<td>${item.materialName || '-'}</td>
-						<td>${item.materialUsage || '-'}</td>
-						<td>${item.spec || '-'}</td>
-						<td>${item.materialColor || '-'}</td>
+						<td class="t-left">${item.category || '-'}</td>
+						<td class="t-left">${item.materialName || '-'}</td>
+						<td class="t-left">${item.materialUsage || '-'}</td>
+						<td class="t-left">${item.spec || '-'}</td>
+						<td class="t-left">${item.materialColor || '-'}</td>
 						<td>${item.uom || '-'}</td>
 						<td>${formatNumber(item.qtyPerPiece)}</td>
-						<td>${item.supplierCode || '-'}</td>
+						<td class="t-left">${item.supplierCode || '-'}</td>
 						<td>${formatNumber(item.lossRate)}</td>
 						<td>${item.orderUom || '-'}</td>
 						<td>${formatCurrency(item.unitPrice)}</td>
 						<td><input type="number" class="form-control form-control-sm text-end material-qty" value="0" min="0" step="0.01"></td>
 						<td class="material-amount text-end">${formatCurrency(amount)}</td>
-						<td>${item.remark || '-'}</td>
+						<td class="t-left">${item.remark || '-'}</td>
 					`;
 					const qtyInput = tr.querySelector('.material-qty');
 					const amountCell = tr.querySelector('.material-amount');

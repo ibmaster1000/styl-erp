@@ -89,7 +89,7 @@
 				</select>
 			</div>
 			<div class="col-md-1 d-grid">
-				<button type="button" class="btn btn-dark">검색</button>
+				<button type="button" class="btn btn--primary">검색</button>
 			</div>
 		</div>
 	</form>
@@ -102,32 +102,32 @@
 					<p class="text-muted small mb-0">styles_rule 기반 색상/사이즈 묶음 표시</p>
 				</div>
 				<div class="style-toolbar">
-					<a class="btn btn-outline-secondary" th:href="@{/style}" role="button">기본 묶음</a>
-					<a class="btn btn-outline-secondary" th:href="@{/style(viewMode='flat',sort='productionManager')}"
-						role="button">생산담당 정렬</a>
-					<a class="btn btn-outline-secondary" th:href="@{/style(viewMode='flat',sort='salesManager')}"
-						role="button">영업담당 정렬</a>
-					<a class="btn btn-outline-secondary" th:href="@{/style(viewMode='flat',sort='transportManager')}"
-						role="button">운송담당 정렬</a>
-					<a class="btn btn-outline-secondary" th:href="@{/style(viewMode='flat',sort='amount')}"
-						role="button">금액 정렬</a>
+					< <a class="btn btn--outline" th:href="@{/style}" role="button">기본 묶음</a>
+						<a class="btn btn--outline" th:href="@{/style(viewMode='flat',sort='productionManager')}"
+							role="button">생산담당 정렬</a>
+						<a class="btn btn--outline" th:href="@{/style(viewMode='flat',sort='salesManager')}"
+							role="button">영업담당 정렬</a>
+						<a class="btn btn--outline" th:href="@{/style(viewMode='flat',sort='transportManager')}"
+							role="button">운송담당 정렬</a>
+						<a class="btn btn--outline" th:href="@{/style(viewMode='flat',sort='amount')}" role="button">금액
+							정렬</a>
 				</div>
 			</div>
 			<div class="style-table-wrap table-responsive">
-				<table class="table table-hover align-middle mb-0 style-table">
+				<table class="table table-hover align-middle mb-0 style-table data-table">
 					<thead class="table-light">
 						<tr>
-							<th>품번</th>
-							<th>아이템</th>
-							<th>색상</th>
-							<th>사이즈</th>
-							<th>디자이너</th>
-							<th>생산담당</th>
-							<th>영업담당</th>
-							<th>운송담당</th>
-							<th>금액</th>
+							<th class="t-left">품번</th>
+							<th class="t-left">아이템</th>
+							<th class="t-left">색상</th>
+							<th class="t-left">사이즈</th>
+							<th class="t-left">디자이너</th>
+							<th class="t-left">생산담당</th>
+							<th class="t-left">영업담당</th>
+							<th class="t-left">운송담당</th>
+							<th class="t-right">금액</th>
 							<th>시작일</th>
-							<th>상태</th>
+							<th class="t-left">상태</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -141,22 +141,22 @@
 							<th:block th:if="${flatView and rule != null}">
 								<th:block th:each="colorEntry : ${rule}" th:with="sizes=${colorEntry.value}">
 									<tr th:each="sz : ${sizes}">
-										<td th:text="${s.styleNo}">ST-001</td>
-										<td th:text="${s.item}">후드티</td>
-										<td>
+										<td class="t-left" th:text="${s.styleNo}">ST-001</td>
+										<td class="t-left" th:text="${s.item}">후드티</td>
+										<td class="t-left">
 											<span class="style-badge">
 												<span class="dot"></span>
 												<span th:text="${colorEntry.key}">블랙</span>
 											</span>
 										</td>
-										<td th:text="${sz}">M</td>
-										<td th:text="${s.designer}">김디</td>
-										<td th:text="${s.productionManager}">박생산</td>
-										<td th:text="${s.salesManager}">이영업</td>
-										<td>-</td>
-										<td>-</td>
+										<td class="t-left" th:text="${sz}">M</td>
+										<td class="t-left" th:text="${s.designer}">김디</td>
+										<td class="t-left" th:text="${s.productionManager}">박생산</td>
+										<td class="t-left" th:text="${s.salesManager}">이영업</td>
+										<td class="t-left">-</td>
+										<td class="t-right">-</td>
 										<td th:text="${s.startDate}">2024-01-01</td>
-										<td th:text="${s.active ? '사용' : '중지'}">사용</td>
+										<td class="t-left" th:text="${s.active ? '사용' : '중지'}">사용</td>
 									</tr>
 								</th:block>
 							</th:block>
@@ -164,46 +164,50 @@
 							<th:block th:if="${!flatView and rule != null}">
 								<th:block th:each="colorEntry : ${rule}" th:with="sizes=${colorEntry.value}">
 									<tr th:each="sz, szStat : ${sizes}">
-										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.styleNo}">ST-001</td>
-										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.item}">후드티</td>
-										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}">
+										<td class="t-left" th:if="${szStat.index == 0}"
+											th:rowspan="${#lists.size(sizes)}" th:text="${s.styleNo}">ST-001</td>
+										<td class="t-left" th:if="${szStat.index == 0}"
+											th:rowspan="${#lists.size(sizes)}" th:text="${s.item}">후드티</td>
+										<td class="t-left" th:if="${szStat.index == 0}"
+											th:rowspan="${#lists.size(sizes)}">
 											<span class="style-badge">
 												<span class="dot"></span>
 												<span th:text="${colorEntry.key}">블랙</span>
 											</span>
 										</td>
-										<td th:text="${sz}">M</td>
-										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.designer}">김디</td>
-										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.productionManager}">박생산</td>
-										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.salesManager}">이영업</td>
-										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}">-</td>
-										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}">-</td>
+										<td class="t-left" th:text="${sz}">M</td>
+										<td class="t-left" th:if="${szStat.index == 0}"
+											th:rowspan="${#lists.size(sizes)}" th:text="${s.designer}">김디</td>
+										<td class="t-left" th:if="${szStat.index == 0}"
+											th:rowspan="${#lists.size(sizes)}" th:text="${s.productionManager}">박생산</td>
+										<td class="t-left" th:if="${szStat.index == 0}"
+											th:rowspan="${#lists.size(sizes)}" th:text="${s.salesManager}">이영업</td>
+										<td class="t-left" th:if="${szStat.index == 0}"
+											th:rowspan="${#lists.size(sizes)}">-</td>
+										<td class="t-right" th:if="${szStat.index == 0}"
+											th:rowspan="${#lists.size(sizes)}">-</td>
 										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
 											th:text="${s.startDate}">2024-01-01</td>
-										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.active ? '사용' : '중지'}">사용</td>
+										<td class="t-left" th:if="${szStat.index == 0}"
+											th:rowspan="${#lists.size(sizes)}" th:text="${s.active ? '사용' : '중지'}">사용
+										</td>
 									</tr>
 								</th:block>
 							</th:block>
 
 							<th:block th:if="${rule == null}">
 								<tr>
-									<td th:text="${s.styleNo}">ST-001</td>
-									<td th:text="${s.item}">후드티</td>
-									<td>-</td>
-									<td>-</td>
-									<td th:text="${s.designer}">김디</td>
-									<td th:text="${s.productionManager}">박생산</td>
-									<td th:text="${s.salesManager}">이영업</td>
-									<td>-</td>
-									<td>-</td>
+									<td class="t-left" th:text="${s.styleNo}">ST-001</td>
+									<td class="t-left" th:text="${s.item}">후드티</td>
+									<td class="t-left">-</td>
+									<td class="t-left">-</td>
+									<td class="t-left" th:text="${s.designer}">김디</td>
+									<td class="t-left" th:text="${s.productionManager}">박생산</td>
+									<td class="t-left" th:text="${s.salesManager}">이영업</td>
+									<td class="t-left">-</td>
+									<td class="t-left">-</td>
 									<td th:text="${s.startDate}">2024-01-01</td>
-									<td th:text="${s.active ? '사용' : '중지'}">사용</td>
+									<td class="t-left" th:text="${s.active ? '사용' : '중지'}">사용</td>
 								</tr>
 							</th:block>
 						</th:block>

@@ -113,17 +113,16 @@
 
 	<div class="material-top-layout" th:attr="data-prefix=${idPrefix}">
 		<div class="material-panel material-search-controls">
-			<div class="material-row">
+			<div class="material-row form-row">
 				<label class="form-label fw-bold mb-0">품번</label>
 				<input type="hidden" th:id="${idPrefix + '-styles-id'}">
 				<div class="input-group material-style-input">
 					<input type="text" class="form-control" th:id="${idPrefix + '-style-input'}" placeholder="품번을 선택하세요"
 						readonly>
-					<button class="btn btn-outline-secondary" type="button"
-						th:id="${idPrefix + '-style-search'}">품번 검색</button>
+					<button class="btn btn--outline" type="button" th:id="${idPrefix + '-style-search'}">품번 검색</button>
 				</div>
 			</div>
-			<div class="material-row">
+			<div class="material-row form-row">
 				<div class="material-meta-item">
 					<label class="form-label fw-bold mb-0">색상</label>
 					<select class="form-select material-color-select" th:id="${idPrefix + '-color-select'}" disabled>
@@ -132,12 +131,15 @@
 				</div>
 				<div class="material-meta-item">
 					<label class="form-label fw-bold mb-0">생산합의코드</label>
-					<select class="form-select material-agree-select" th:id="${idPrefix + '-agreement-select'}" disabled>
+					<select class="form-select material-agree-select" th:id="${idPrefix + '-agreement-select'}"
+						disabled>
 						<option value="">생산합의 코드를 선택하세요</option>
 					</select>
 				</div>
-				<button class="btn btn-dark material-search-button" type="button"
-					th:id="${idPrefix + '-search-button'}">검색</button>
+				<div class="actions">
+					<button class="btn btn--primary material-search-button" type="button"
+						th:id="${idPrefix + '-search-button'}">검색</button>
+				</div>
 			</div>
 		</div>
 
@@ -145,14 +147,15 @@
 			<div class="d-flex justify-content-between align-items-center">
 				<div>
 					<div class="fw-bold" th:text="${ruleTitle} ?: '색상 × 사이즈 요약'">색상 × 사이즈 요약</div>
-					<div class="text-muted small" th:text="${ruleSubtitle} ?: '선택된 품번의 스타일 규칙을 표시합니다.'">선택된 품번의 스타일 규칙을 표시합니다.</div>
+					<div class="text-muted small" th:text="${ruleSubtitle} ?: '선택된 품번의 스타일 규칙을 표시합니다.'">선택된 품번의 스타일 규칙을
+						표시합니다.</div>
 				</div>
 				<span class="badge text-bg-light" th:id="${idPrefix + '-style-chip'}">-</span>
 			</div>
 			<div class="table-responsive">
-				<table class="table table-bordered align-middle mb-0">
+				<table class="table data-table mb-0">
 					<thead>
-						<tr th:id="${idPrefix + '-rule-head'}">
+						<th class="t-left">색상</th>
 							<th>색상</th>
 							<th class="text-muted">-</th>
 						</tr>

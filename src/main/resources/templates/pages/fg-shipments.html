@@ -19,7 +19,7 @@
 				<input type="text" class="form-control" placeholder="품번">
 			</div>
 			<div class="col-md-1 d-grid">
-				<button type="button" class="btn btn-dark">검색</button>
+				<button type="button" class="btn btn--primary">검색</button>
 			</div>
 		</div>
 	</form>
@@ -31,15 +31,15 @@
 				<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
 			</div>
 			<div class="table-responsive">
-				<table class="table table-hover align-middle mb-0">
+				<table class="table table-hover align-middle mb-0 data-table">
 					<thead class="table-light">
 						<tr>
-							<th>출고번호</th>
+							<th class="t-left">출고번호</th>
 							<th>출고일</th>
-							<th>거래처</th>
-							<th>품번</th>
-							<th>색상</th>
-							<th>사이즈</th>
+							<th class="t-left">거래처</th>
+							<th class="t-left">품번</th>
+							<th class="t-left">색상</th>
+							<th class="t-left">사이즈</th>
 							<th>수량</th>
 						</tr>
 					</thead>
@@ -48,12 +48,12 @@
 							<td colspan="7" class="text-center text-muted">조회된 데이터가 없습니다.</td>
 						</tr>
 						<tr th:each="s : ${list}">
-							<td th:text="${s.shipmentNo}">SH-001</td>
+							<td class="t-left" th:text="${s.shipmentNo}">SH-001</td>
 							<td th:text="${s.shipmentDate}">2024-01-01</td>
-							<td th:text="${s.customer}">ABC상사</td>
-							<td th:text="${s.styleNo}">ST-001</td>
-							<td th:text="${s.color}">RED</td>
-							<td th:text="${s.size}">L</td>
+							<td class="t-left" th:text="${s.customer}">ABC상사</td>
+							<td class="t-left" th:text="${s.styleNo}">ST-001</td>
+							<td class="t-left" th:text="${s.color}">RED</td>
+							<td class="t-left" th:text="${s.size}">L</td>
 							<td th:text="${s.quantity}">40</td>
 						</tr>
 					</tbody>

@@ -23,7 +23,7 @@
 				</select>
 			</div>
 			<div class="col-md-1 d-grid">
-				<button type="button" class="btn btn-dark">검색</button>
+				<button type="button" class="btn btn--primary">검색</button>
 			</div>
 		</div>
 	</form>
@@ -35,15 +35,15 @@
 				<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
 			</div>
 			<div class="table-responsive">
-				<table class="table table-hover align-middle mb-0">
+				<table class="table table-hover align-middle mb-0 data-table">
 					<thead class="table-light">
 						<tr>
-							<th>시간</th>
-							<th>사용자</th>
-							<th>IP</th>
-							<th>브라우저</th>
-							<th>결과</th>
-							<th>메시지</th>
+							<th class="t-left">시간</th>
+							<th class="t-left">사용자</th>
+							<th class="t-left">IP</th>
+							<th class="t-left">브라우저</th>
+							<th class="t-left">결과</th>
+							<th class="t-left">메시지</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -51,12 +51,12 @@
 							<td colspan="6" class="text-center text-muted">조회된 데이터가 없습니다.</td>
 						</tr>
 						<tr th:each="row : ${list}">
-							<td th:text="${row['time']}">2024-01-01 12:00</td>
-							<td th:text="${row['user']}">admin</td>
-							<td th:text="${row['ip']}">127.0.0.1</td>
-							<td th:text="${row['agent']}">Chrome</td>
-							<td th:text="${row['result']}">성공</td>
-							<td th:text="${row['message']}">로그인 성공</td>
+							<td class="t-left" th:text="${row['time']}">2024-01-01 12:00</td>
+							<td class="t-left" th:text="${row['user']}">admin</td>
+							<td class="t-left" th:text="${row['ip']}">127.0.0.1</td>
+							<td class="t-left" th:text="${row['agent']}">Chrome</td>
+							<td class="t-left" th:text="${row['result']}">성공</td>
+							<td class="t-left" th:text="${row['message']}">로그인 성공</td>
 						</tr>
 					</tbody>
 				</table>
