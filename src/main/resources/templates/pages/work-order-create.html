@@ -1,0 +1,552 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
+	<style>
+		.wo-panel {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+
+		.wo-search-grid {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 14px;
+			align-items: end;
+		}
+
+		.wo-search-grid .form-field {
+			min-width: 0;
+		}
+
+		.wo-actions {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			white-space: nowrap;
+		}
+
+		.wo-layout {
+			display: flex;
+			gap: 16px;
+			align-items: stretch;
+		}
+
+		.wo-col {
+			flex: 1 1 50%;
+			min-width: 0;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.wo-table-title {
+			font-weight: 800;
+			margin-bottom: 10px;
+		}
+
+		.wo-table-wrap {
+			flex: 1;
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 12px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+
+		.wo-row-disabled {
+			opacity: 0.6;
+		}
+
+		.wo-inline-field {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			flex-wrap: nowrap;
+		}
+
+		.wo-inline-field input[readonly] {
+			background: #f9fafb;
+		}
+
+		.wo-sticky-actions {
+			display: flex;
+			justify-content: flex-end;
+			align-items: center;
+			gap: 8px;
+			margin-top: 10px;
+		}
+
+		@media (max-width: 1200px) {
+			.wo-layout {
+				flex-direction: column;
+			}
+
+			.wo-col {
+				width: 100%;
+			}
+		}
+	</style>
+
+	<div class="mb-3">
+		<h4 class="fw-bold mb-1">작업지시</h4>
+		<p class="text-muted mb-0">품번별 생산합의를 조회하고 작업지시를 생성합니다.</p>
+	</div>
+
+	<div class="wo-panel mb-3">
+		<div class="wo-search-grid">
+			<div class="form-field">
+				<label class="form-label fw-semibold mb-1">품번</label>
+				<input type="text" class="form-control" id="styleNoInput" placeholder="품번을 입력하세요">
+			</div>
+			<div class="form-field">
+				<label class="form-label fw-semibold mb-1 d-flex justify-content-between align-items-center">
+					<span>색상 / 생산합의코드</span>
+					<small class="text-muted">품번 선택 후 옵션 로드</small>
+				</label>
+				<div class="form-row">
+					<select class="form-select" id="colorSelect" disabled>
+						<option value="">색상 전체</option>
+					</select>
+					<select class="form-select" id="agreementSelect" disabled>
+						<option value="">생산합의 전체</option>
+					</select>
+					<div class="actions">
+						<button type="button" class="btn btn--primary" id="searchButton">검색</button>
+					</div>
+				</div>
+			</div>
+			<div class="form-field">
+				<label class="form-label fw-semibold mb-1">생산담당</label>
+				<div class="form-row">
+					<input type="text" class="form-control" id="empNoInput" placeholder="사번">
+					<input type="text" class="form-control" id="empNameInput" placeholder="이름">
+					<div class="actions">
+						<button type="button" class="btn btn--outline" id="employeeSearchButton" title="사원 검색">
+							<i class="bi bi-search"></i>
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="wo-layout">
+		<div class="wo-col">
+			<div class="wo-table-title">품번 기준 전체 생산합의 목록</div>
+			<div class="wo-table-wrap">
+				<div class="table-responsive">
+					<table class="data-table align-middle">
+						<thead>
+							<tr>
+								<th class="t-left" style="width: 20%;">품번</th>
+								<th class="t-left" style="width: 18%;">생산합의코드</th>
+								<th class="t-left" style="width: 16%;">색상</th>
+								<th style="width: 14%;">합의량</th>
+								<th class="t-left" style="width: 18%;">생산처</th>
+								<th style="width: 14%;">체크</th>
+							</tr>
+						</thead>
+						<tbody id="agreementTableBody">
+							<tr>
+								<td colspan="6" class="text-center text-muted">품번을 먼저 검색하세요.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+		<div class="wo-col">
+			<div class="wo-table-title d-flex justify-content-between align-items-center">
+				<span>상세 (필터 적용)</span>
+				<div class="actions">
+					<button type="button" class="btn btn--primary btn-sm" id="saveDetailsButton">저장</button>
+				</div>
+			</div>
+			<div class="wo-table-wrap d-flex flex-column">
+				<div class="table-responsive">
+					<table class="data-table align-middle">
+						<thead>
+							<tr>
+								<th class="t-left" style="width: 18%;">품번</th>
+								<th class="t-left" style="width: 18%;">생산합의코드(합의월)</th>
+								<th class="t-left" style="width: 14%;">색상</th>
+								<th style="width: 10%;">합의량</th>
+								<th class="t-left" style="width: 16%;">생산처</th>
+								<th style="width: 12%;">납기일</th>
+								<th class="t-left" style="width: 16%;">납품장소</th>
+							</tr>
+						</thead>
+						<tbody id="detailTableBody">
+							<tr>
+								<td colspan="7" class="text-center text-muted">검색 결과가 여기에 표시됩니다.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	(() => {
+		const styleNoInput = document.getElementById('styleNoInput');
+		const colorSelect = document.getElementById('colorSelect');
+		const agreementSelect = document.getElementById('agreementSelect');
+		const searchButton = document.getElementById('searchButton');
+		const empNoInput = document.getElementById('empNoInput');
+		const empNameInput = document.getElementById('empNameInput');
+		const employeeSearchButton = document.getElementById('employeeSearchButton');
+		const agreementTableBody = document.getElementById('agreementTableBody');
+		const detailTableBody = document.getElementById('detailTableBody');
+		const saveDetailsButton = document.getElementById('saveDetailsButton');
+
+		const originalDetails = new Map();
+		const changedDetails = new Map();
+		let currentCodeTarget = null;
+		let currentStyle = '';
+		let agreementData = [];
+
+		const buildKey = (styleNo, agreementCode, color) => [styleNo || '', agreementCode || '', color || ''].join('|');
+		const escapeSelector = (value) => {
+			if (window.CSS && CSS.escape) {
+				return CSS.escape(value);
+			}
+			return value.replace(/"/g, '\\"').replace(/'/g, "\\'");
+		};
+
+		function setFilterDisabled(disabled) {
+			colorSelect.disabled = disabled;
+			agreementSelect.disabled = disabled;
+		}
+
+		function populateSelect(select, items, placeholder) {
+			select.innerHTML = '';
+			const defaultOption = document.createElement('option');
+			defaultOption.value = '';
+			defaultOption.textContent = placeholder;
+			select.appendChild(defaultOption);
+			items.forEach(item => {
+				const option = document.createElement('option');
+				option.value = item;
+				option.textContent = item;
+				select.appendChild(option);
+			});
+		}
+
+		async function fetchJson(url, options = {}) {
+			const response = await fetch(url, {
+				headers: { 'Content-Type': 'application/json' },
+				...options
+			});
+			if (!response.ok) {
+				throw new Error('요청에 실패했습니다.');
+			}
+			return response.json();
+		}
+
+		async function loadFilters(styleNo) {
+			const data = await fetchJson(`/api/work-orders/${encodeURIComponent(styleNo)}/filters`);
+			populateSelect(colorSelect, data.colors || [], '색상 전체');
+			populateSelect(agreementSelect, data.agreementCodes || [], '생산합의 전체');
+			setFilterDisabled(false);
+		}
+
+		async function loadAgreements(styleNo) {
+			const data = await fetchJson(`/api/work-orders/${encodeURIComponent(styleNo)}/agreements`);
+			agreementData = data || [];
+			renderAgreementTable();
+		}
+
+		async function loadDetail(styleNo) {
+			const params = new URLSearchParams();
+			if (colorSelect.value) params.append('color', colorSelect.value);
+			if (agreementSelect.value) params.append('agreementCode', agreementSelect.value);
+			const data = await fetchJson(`/api/work-orders/${encodeURIComponent(styleNo)}/agreements/detail?${params.toString()}`);
+			resetDetailState();
+			data.forEach(item => {
+				const key = buildKey(item.styleNo, item.agreementCode, item.color);
+			originalDetails.set(key, normalizeDetail(item));
+		});
+		renderDetailTable(data || []);
+	}
+
+		function resetDetailState() {
+			originalDetails.clear();
+			changedDetails.clear();
+		}
+
+		function normalizeDetail(detail) {
+			return {
+				styleNo: detail.styleNo,
+				agreementCode: detail.agreementCode,
+				color: detail.color,
+				factoryCode: detail.factoryCode || '',
+				factoryName: detail.factoryName || '',
+				deliveryPlaceCode: detail.deliveryPlaceCode || '',
+				deliveryPlaceName: detail.deliveryPlaceName || '',
+				dueDate: detail.dueDate || ''
+			};
+		}
+
+		function renderAgreementTable() {
+			if (!agreementData.length) {
+				agreementTableBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">조건에 맞는 생산합의가 없습니다.</td></tr>`;
+				return;
+			}
+			let prevStyle = '';
+			let prevAgreement = '';
+			agreementTableBody.innerHTML = '';
+			agreementData.forEach(item => {
+				const row = document.createElement('tr');
+				row.dataset.styleNo = item.styleNo;
+				row.dataset.agreementCode = item.agreementCode;
+				row.dataset.color = item.color;
+				const isSameStyle = prevStyle === item.styleNo;
+				const isSameAgreement = prevAgreement === item.agreementCode && isSameStyle;
+
+				row.classList.toggle('wo-row-disabled', item.dispatched);
+
+				row.innerHTML = `
+					<td class="t-left">${isSameStyle ? '' : (item.styleNo || '')}</td>
+					<td class="t-left">${isSameAgreement ? '' : (item.agreementCode || '')}</td>
+					<td class="t-left">${item.color || ''}</td>
+					<td>${item.quantity ?? ''}</td>
+					<td class="t-left">${item.productionSite || ''}</td>
+					<td>
+						<button type="button" class="btn btn--primary btn-sm" data-action="dispatch" ${item.dispatched ? 'disabled' : ''}>
+							${item.dispatched ? '지시 완료' : '지시'}
+						</button>
+					</td>
+				`;
+
+				prevStyle = item.styleNo;
+				prevAgreement = item.agreementCode;
+				agreementTableBody.appendChild(row);
+			});
+		}
+
+		function renderDetailTable(details) {
+			if (!details.length) {
+				detailTableBody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">상세 데이터가 없습니다.</td></tr>`;
+				return;
+			}
+			detailTableBody.innerHTML = '';
+			details.forEach(detail => {
+				const key = buildKey(detail.styleNo, detail.agreementCode, detail.color);
+				const current = changedDetails.get(key) || normalizeDetail(detail);
+				const row = document.createElement('tr');
+				row.dataset.key = key;
+				row.innerHTML = `
+					<td class="t-left">${detail.styleNo || ''}</td>
+					<td class="t-left">${detail.agreementLabel || detail.agreementCode || ''}</td>
+					<td class="t-left">${detail.color || ''}</td>
+					<td>${detail.quantity ?? ''}</td>
+					<td class="t-left">
+						<div class="wo-inline-field">
+							<input type="text" class="form-control form-control-sm" data-field="factoryName" value="${current.factoryName || ''}" readonly>
+							<input type="hidden" data-field="factoryCode" value="${current.factoryCode || ''}">
+							<button type="button" class="btn btn--outline btn-sm" data-action="choose-factory"><i class="bi bi-search"></i></button>
+						</div>
+					</td>
+					<td>
+						<input type="date" class="form-control form-control-sm" data-field="dueDate" value="${current.dueDate || ''}">
+					</td>
+					<td class="t-left">
+						<div class="wo-inline-field">
+							<input type="text" class="form-control form-control-sm" data-field="deliveryPlaceName" value="${current.deliveryPlaceName || ''}" readonly>
+							<input type="hidden" data-field="deliveryPlaceCode" value="${current.deliveryPlaceCode || ''}">
+							<button type="button" class="btn btn--outline btn-sm" data-action="choose-delivery"><i class="bi bi-search"></i></button>
+						</div>
+					</td>
+				`;
+				detailTableBody.appendChild(row);
+			});
+		}
+
+		async function handleSearch() {
+			const styleNo = styleNoInput.value.trim();
+			if (!styleNo) {
+				alert('품번을 입력하세요.');
+				return;
+			}
+			currentStyle = styleNo;
+			try {
+				setFilterDisabled(true);
+				await loadFilters(styleNo);
+				await loadAgreements(styleNo);
+				await loadDetail(styleNo);
+			} catch (e) {
+				console.error(e);
+				alert('검색 중 문제가 발생했습니다.');
+			}
+		}
+
+		async function handleDispatch(button) {
+			const row = button.closest('tr');
+			const payload = {
+				styleNo: row.dataset.styleNo,
+				agreementCode: row.dataset.agreementCode,
+				color: row.dataset.color,
+				empNo: empNoInput.value.trim(),
+				empName: empNameInput.value.trim()
+			};
+			if (!payload.styleNo) {
+				alert('품번 정보가 없습니다.');
+				return;
+			}
+			if (!confirm('작업을 지시하시겠습니까?')) {
+				return;
+			}
+			try {
+				const response = await fetchJson('/api/work-orders/dispatch', {
+					method: 'POST',
+					body: JSON.stringify(payload)
+				});
+				if (response.success) {
+					button.disabled = true;
+					button.textContent = '지시 완료';
+					row.classList.add('wo-row-disabled');
+				} else if (response.message) {
+					alert(response.message);
+				}
+			} catch (e) {
+				console.error(e);
+				alert('작업지시 생성에 실패했습니다.');
+			}
+		}
+
+		function captureDetailChange(key, patch) {
+			const base = originalDetails.get(key) || {};
+			const existing = changedDetails.get(key) || {};
+			const merged = { ...base, ...existing, ...patch };
+
+			const isSame = ['factoryCode', 'factoryName', 'deliveryPlaceCode', 'deliveryPlaceName', 'dueDate']
+				.every(field => (base[field] || '') === (merged[field] || ''));
+
+			if (isSame) {
+				changedDetails.delete(key);
+			} else {
+				changedDetails.set(key, merged);
+			}
+		}
+
+		function updateRowValues(row, key) {
+			const current = changedDetails.get(key) || originalDetails.get(key) || {};
+			row.querySelector('[data-field="factoryName"]').value = current.factoryName || '';
+			row.querySelector('[data-field="factoryCode"]').value = current.factoryCode || '';
+			row.querySelector('[data-field="deliveryPlaceName"]').value = current.deliveryPlaceName || '';
+			row.querySelector('[data-field="deliveryPlaceCode"]').value = current.deliveryPlaceCode || '';
+			row.querySelector('[data-field="dueDate"]').value = current.dueDate || '';
+		}
+
+		async function handleSave() {
+			if (!changedDetails.size) {
+				alert('변경된 항목이 없습니다.');
+				return;
+			}
+			const items = Array.from(changedDetails.values()).map(item => ({
+				styleNo: item.styleNo,
+				agreementCode: item.agreementCode,
+				color: item.color,
+				factoryCode: item.factoryCode,
+				factoryName: item.factoryName,
+				dueDate: item.dueDate,
+				deliveryPlaceCode: item.deliveryPlaceCode,
+				deliveryPlaceName: item.deliveryPlaceName
+			}));
+			try {
+				const response = await fetchJson('/api/work-orders/detail/save', {
+					method: 'POST',
+					body: JSON.stringify({ items })
+				});
+				if (response.success) {
+					alert('저장되었습니다.');
+					if (currentStyle) {
+						await loadDetail(currentStyle);
+					}
+				} else {
+					alert('저장에 실패했습니다.');
+				}
+			} catch (e) {
+				console.error(e);
+				alert('저장 중 오류가 발생했습니다.');
+			}
+		}
+
+		function openCodePopup(type, key, fieldPrefix) {
+			currentCodeTarget = { key, fieldPrefix };
+			const url = `/popup/codes?codeType=${encodeURIComponent(type)}`;
+			window.open(url, 'code-search', 'width=980,height=640,scrollbars=yes');
+		}
+
+		colorSelect.addEventListener('change', () => {
+			if (currentStyle) {
+				loadDetail(currentStyle);
+			}
+		});
+		agreementSelect.addEventListener('change', () => {
+			if (currentStyle) {
+				loadDetail(currentStyle);
+			}
+		});
+		searchButton.addEventListener('click', handleSearch);
+		saveDetailsButton.addEventListener('click', handleSave);
+
+		agreementTableBody.addEventListener('click', (event) => {
+			const button = event.target.closest('[data-action="dispatch"]');
+			if (button) {
+				handleDispatch(button);
+			}
+		});
+
+		detailTableBody.addEventListener('change', (event) => {
+			const field = event.target.dataset.field;
+			if (!field) return;
+			const row = event.target.closest('tr');
+			const key = row.dataset.key;
+			const patch = { [field]: event.target.value };
+			captureDetailChange(key, patch);
+		});
+
+		detailTableBody.addEventListener('click', (event) => {
+			const actionButton = event.target.closest('[data-action]');
+			if (!actionButton) return;
+			const row = actionButton.closest('tr');
+			const key = row.dataset.key;
+			if (actionButton.dataset.action === 'choose-factory') {
+				openCodePopup('FACTORY', key, 'factory');
+			}
+			if (actionButton.dataset.action === 'choose-delivery') {
+				openCodePopup('WAREHOUSE', key, 'deliveryPlace');
+			}
+		});
+
+		employeeSearchButton.addEventListener('click', () => {
+			window.open('/popup/employees', 'employee-search', 'width=980,height=640,scrollbars=yes');
+		});
+
+		window.onEmployeeSelected = (employee) => {
+			if (!employee) return;
+			empNoInput.value = employee.empNo || '';
+			empNameInput.value = employee.name || '';
+		};
+
+		window.onCodeSelected = (payload) => {
+			if (!payload || !currentCodeTarget) return;
+			const targetKey = currentCodeTarget.key;
+			const fieldPrefix = currentCodeTarget.fieldPrefix;
+			const codeValue = payload.code;
+			const nameValue = payload.codeName || payload.name;
+			const patch = {};
+			patch[`${fieldPrefix}Code`] = codeValue;
+			patch[`${fieldPrefix}Name`] = nameValue;
+			captureDetailChange(targetKey, patch);
+			const targetRow = detailTableBody.querySelector(`tr[data-key="${escapeSelector(targetKey)}"]`);
+			if (targetRow) {
+				updateRowValues(targetRow, targetKey);
+			}
+			currentCodeTarget = null;
+		};
+	})();
+</script>

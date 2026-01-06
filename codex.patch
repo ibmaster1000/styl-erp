@@ -1,1187 +1,1349 @@
-diff --git a/src/main/resources/static/css/app.css b/src/main/resources/static/css/app.css
-index eb811ffed1f88f81ff02eec6188e3b65167b1253..03592033d42558e8b42f3d68e07cee3b28ebe453 100644
---- a/src/main/resources/static/css/app.css
-+++ b/src/main/resources/static/css/app.css
-@@ -35,91 +35,92 @@
- 	background: #ffffff;
- 	color: #0f172a;
- 	border-color: #0f172a;
- }
+diff --git a/src/main/java/com/example/erp/controller/ProductionWorkOrderController.java b/src/main/java/com/example/erp/controller/ProductionWorkOrderController.java
+index 9e1966bdbf4e669a69dc7ae2fab8fb377b1cb0b0..f607c9dd03cb5b2a56e8f5314562824019afde18 100644
+--- a/src/main/java/com/example/erp/controller/ProductionWorkOrderController.java
++++ b/src/main/java/com/example/erp/controller/ProductionWorkOrderController.java
+@@ -1,20 +1,20 @@
+ package com.example.erp.controller;
  
- .btn--outline:hover:not(:disabled) {
- 	background: #0f172a;
- 	color: #ffffff;
- }
+ import com.example.erp.controller.support.PageViewSupport;
+ import org.springframework.stereotype.Controller;
+ import org.springframework.ui.Model;
+ import org.springframework.web.bind.annotation.GetMapping;
+ import org.springframework.web.bind.annotation.RequestMapping;
  
- .btn--outline:disabled {
- 	color: #9ca3af;
- 	border-color: #d1d5db;
- 	background: #f8fafc;
- }
+ import java.util.Collections;
  
- .btn.btn-sm {
- 	padding: 6px 10px;
- 	font-size: 13px;
- }
+ @Controller
+ @RequestMapping("/production/work-orders")
+ public class ProductionWorkOrderController extends PageViewSupport {
  
- .form-row {
- 	display: flex;
- 	align-items: center;
- 	gap: 12px;
--	flex-wrap: wrap;
-+	flex-wrap: nowrap;
- }
- 
- .form-field {
- 	display: flex;
- 	align-items: center;
- 	gap: 8px;
- 	flex: 1 1 auto;
- 	min-width: 220px;
-+	flex-wrap: nowrap;
- }
- 
- .actions {
- 	display: flex;
- 	align-items: center;
- 	gap: 8px;
--	flex-wrap: nowrap;
- 	white-space: nowrap;
-+	flex-wrap: nowrap;
- }
- 
- .actions .btn {
- 	flex-shrink: 0;
- }
- 
- .data-table {
- 	width: 100%;
- 	border-collapse: collapse;
- 	table-layout: fixed;
- 	background: #ffffff;
- 	border: 1px solid #e5e7eb;
- }
- 
- .data-table thead th {
- 	background: #f9fafb;
- 	font-weight: 800;
- 	font-size: 13px;
- }
- 
- .data-table th,
- .data-table td {
- 	padding: 10px 12px;
- 	font-size: 13px;
- 	text-align: center;
- 	border-right: 1px solid #e5e7eb;
- 	border-bottom: 1px solid #e5e7eb;
- 	white-space: nowrap;
- 	overflow: hidden;
- 	text-overflow: ellipsis;
- 	vertical-align: middle;
- }
- 
- .data-table th:last-child,
- .data-table td:last-child {
- 	border-right: none;
- }
- 
- .data-table tbody tr:nth-child(even) {
- 	background: #fcfcfd;
- }
- 
- .t-left {
- 	text-align: left !important;
- }
- 
- .t-right {
- 	text-align: right !important;
+     @GetMapping
+     public String view(Model model) {
+-        populate(model, "작업지시", "work-instructions", "production/work-orders", Collections.emptyList());
++        populate(model, "작업지시", "work-instructions", "pages/work-order-create", Collections.emptyList());
+         return "layout/layout";
+     }
 -}
 \ No newline at end of file
 +}
 
-diff --git a/src/main/resources/templates/codes.html b/src/main/resources/templates/codes.html
-index f4c9e96667f11c80ff7f5579c1ad6a1253dce4ae..3390930959db1fb867d377aab83afa0d570c4843 100644
---- a/src/main/resources/templates/codes.html
-+++ b/src/main/resources/templates/codes.html
-@@ -59,75 +59,75 @@
- 										<div class="table-responsive">
- 											<table class="table table-hover align-middle mb-0 data-table">
- 												<thead class="table-light">
- 													<tr>
- 														<th style="width: 12%" class="t-left">분류</th>
- 														<th style="width: 12%" class="t-left">코드</th>
- 														<th style="width: 20%" class="t-left">코드명</th>
- 														<th style="width: 10%">정렬</th>
- 														<th class="t-left">설명</th>
- 														<th style="width: 120px;" class="text-center">관리</th>
- 													</tr>
- 												</thead>
- 												<tbody>
- 													<tr th:if="${#lists.isEmpty(codes)}">
- 														<td colspan="6" class="text-center text-muted">등록된 코드가 없습니다.
- 														</td>
- 													</tr>
- 													<tr th:each="code : ${codes}">
- 														<td class="t-left" th:text="${code.codeType}">COLOR</td>
- 														<td class="t-left" th:text="${code.code}">RED</td>
- 														<td class="t-left" th:text="${code.name}">빨강</td>
- 														<td th:text="${code.sortOrder}">0</td>
- 														<td class="t-left" th:text="${code.description}">설명</td>
- 														<td class="text-center">
- 															<div class="btn-group btn-group-sm" role="group"> <button
--																	type="button" class="btn btn-outline-primary"
-+																	type="button" class="btn btn--outline"
- 																	th:attr="data-type=${code.id.codeType}, data-code=${code.id.code}, data-name=${code.name}, data-sort=${code.sortOrder}, data-desc=${code.description}"
- 																	onclick="fillForm(this)"> <i
- 																		class="bi bi-pencil"></i> </button>
- 																<form
- 																	th:action="@{'/codes/' + ${code.id.codeType} + '/' + ${code.id.code} + '/delete'}"
- 																	method="post" class="d-inline"> <button
--																		type="submit" class="btn btn-outline-danger"
-+																		type="submit" class="btn btn--outline"
- 																		onclick="return confirm('삭제하시겠습니까?');"> <i
- 																			class="bi bi-trash"></i> </button> </form>
- 															</div>
- 														</td>
- 													</tr>
- 												</tbody>
- 											</table>
- 										</div>
- 									</div>
- 								</div>
- 							</div>
- 							<script>
- 								const formEl = document.getElementById('codeForm');
- 								const submitLabel = document.getElementById('submitLabel');
- 								const submitBtn = document.getElementById('submitBtn');
- 								const resetBtn = document.getElementById('resetBtn');
- 								const createAction = formEl?.dataset.createAction;
- 								function resetForm() {
- 									if (!formEl) return;
- 									formEl.reset();
- 									formEl.action = createAction || '/codes';
- 									submitLabel.textContent = '추가';
- 									submitBtn.className = 'btn btn--primary flex-grow-1';
- 								}
+diff --git a/src/main/java/com/example/erp/controller/WorkOrderCreatePageController.java b/src/main/java/com/example/erp/controller/WorkOrderCreatePageController.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..dd76588d301041512f4dbe2cf6227c6f4eab4258
+--- /dev/null
++++ b/src/main/java/com/example/erp/controller/WorkOrderCreatePageController.java
+@@ -0,0 +1,18 @@
++package com.example.erp.controller;
++
++import com.example.erp.controller.support.PageViewSupport;
++import org.springframework.stereotype.Controller;
++import org.springframework.ui.Model;
++import org.springframework.web.bind.annotation.GetMapping;
++
++import java.util.Collections;
++
++@Controller
++public class WorkOrderCreatePageController extends PageViewSupport {
++
++    @GetMapping({"/work-order-create", "/work-orders/create"})
++    public String view(Model model) {
++        populate(model, "작업지시", "work-instructions", "pages/work-order-create", Collections.emptyList());
++        return "layout/layout";
++    }
++}
+
+diff --git a/src/main/java/com/example/erp/controller/WorkOrderInstructionApiController.java b/src/main/java/com/example/erp/controller/WorkOrderInstructionApiController.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8afcb846cc2e989fd263791cb504561d588b2d3a
+--- /dev/null
++++ b/src/main/java/com/example/erp/controller/WorkOrderInstructionApiController.java
+@@ -0,0 +1,66 @@
++package com.example.erp.controller;
++
++import com.example.erp.controller.dto.WorkOrderAgreementDetail;
++import com.example.erp.controller.dto.WorkOrderAgreementSummary;
++import com.example.erp.controller.dto.WorkOrderDetailSavePayload;
++import com.example.erp.controller.dto.WorkOrderDispatchRequest;
++import com.example.erp.service.WorkOrderInstructionService;
++import org.springframework.http.ResponseEntity;
++import org.springframework.util.CollectionUtils;
++import org.springframework.web.bind.annotation.GetMapping;
++import org.springframework.web.bind.annotation.PathVariable;
++import org.springframework.web.bind.annotation.PostMapping;
++import org.springframework.web.bind.annotation.RequestBody;
++import org.springframework.web.bind.annotation.RequestMapping;
++import org.springframework.web.bind.annotation.RequestParam;
++import org.springframework.web.bind.annotation.RestController;
++
++import java.util.Collections;
++import java.util.List;
++import java.util.Map;
++
++@RestController
++@RequestMapping("/api/work-orders")
++public class WorkOrderInstructionApiController {
++
++    private final WorkOrderInstructionService workOrderInstructionService;
++
++    public WorkOrderInstructionApiController(WorkOrderInstructionService workOrderInstructionService) {
++        this.workOrderInstructionService = workOrderInstructionService;
++    }
++
++    @GetMapping("/{styleNo}/filters")
++    public Map<String, List<String>> loadFilters(@PathVariable String styleNo) {
++        return workOrderInstructionService.findFilters(styleNo);
++    }
++
++    @GetMapping("/{styleNo}/agreements")
++    public List<WorkOrderAgreementSummary> loadAgreements(@PathVariable String styleNo) {
++        return workOrderInstructionService.findAgreementSummaries(styleNo);
++    }
++
++    @GetMapping("/{styleNo}/agreements/detail")
++    public List<WorkOrderAgreementDetail> loadAgreementDetails(@PathVariable String styleNo,
++            @RequestParam(required = false) String color,
++            @RequestParam(required = false) String agreementCode,
++            @RequestParam(required = false) String empNo) {
++        return workOrderInstructionService.findAgreementDetails(styleNo, color, agreementCode);
++    }
++
++    @PostMapping("/dispatch")
++    public ResponseEntity<Map<String, Object>> dispatch(@RequestBody WorkOrderDispatchRequest request) {
++        boolean success = workOrderInstructionService.dispatch(request);
++        if (success) {
++            return ResponseEntity.ok(Map.of("success", true));
++        }
++        return ResponseEntity.badRequest().body(Map.of("success", false, "message", "요청 정보를 확인해주세요."));
++    }
++
++    @PostMapping("/detail/save")
++    public ResponseEntity<Map<String, Object>> saveDetails(@RequestBody(required = false) WorkOrderDetailSavePayload payload) {
++        int saved = workOrderInstructionService.saveDetails(
++                payload != null ? payload.getItems() : Collections.emptyList());
++        boolean success = saved > 0 || (payload != null && CollectionUtils.isEmpty(payload.getItems()));
++        return ResponseEntity.ok(Map.of("success", success, "savedCount", saved));
++    }
++}
+
+diff --git a/src/main/java/com/example/erp/controller/dto/WorkOrderAgreementDetail.java b/src/main/java/com/example/erp/controller/dto/WorkOrderAgreementDetail.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..521f6da5d6cd357651c8195ee83317bb44b04b22
+--- /dev/null
++++ b/src/main/java/com/example/erp/controller/dto/WorkOrderAgreementDetail.java
+@@ -0,0 +1,125 @@
++package com.example.erp.controller.dto;
++
++import java.time.LocalDate;
++
++public class WorkOrderAgreementDetail {
++
++    private String styleNo;
++    private String agreementCode;
++    private String agreementLabel;
++    private String color;
++    private Integer quantity;
++    private String productionSite;
++    private String factoryCode;
++    private String factoryName;
++    private LocalDate dueDate;
++    private String deliveryPlaceCode;
++    private String deliveryPlaceName;
++
++    public WorkOrderAgreementDetail() {
++    }
++
++    public WorkOrderAgreementDetail(String styleNo, String agreementCode, String agreementLabel, String color,
++            Integer quantity, String productionSite, String factoryCode, String factoryName, LocalDate dueDate,
++            String deliveryPlaceCode, String deliveryPlaceName) {
++        this.styleNo = styleNo;
++        this.agreementCode = agreementCode;
++        this.agreementLabel = agreementLabel;
++        this.color = color;
++        this.quantity = quantity;
++        this.productionSite = productionSite;
++        this.factoryCode = factoryCode;
++        this.factoryName = factoryName;
++        this.dueDate = dueDate;
++        this.deliveryPlaceCode = deliveryPlaceCode;
++        this.deliveryPlaceName = deliveryPlaceName;
++    }
++
++    public String getStyleNo() {
++        return styleNo;
++    }
++
++    public void setStyleNo(String styleNo) {
++        this.styleNo = styleNo;
++    }
++
++    public String getAgreementCode() {
++        return agreementCode;
++    }
++
++    public void setAgreementCode(String agreementCode) {
++        this.agreementCode = agreementCode;
++    }
++
++    public String getAgreementLabel() {
++        return agreementLabel;
++    }
++
++    public void setAgreementLabel(String agreementLabel) {
++        this.agreementLabel = agreementLabel;
++    }
++
++    public String getColor() {
++        return color;
++    }
++
++    public void setColor(String color) {
++        this.color = color;
++    }
++
++    public Integer getQuantity() {
++        return quantity;
++    }
++
++    public void setQuantity(Integer quantity) {
++        this.quantity = quantity;
++    }
++
++    public String getProductionSite() {
++        return productionSite;
++    }
++
++    public void setProductionSite(String productionSite) {
++        this.productionSite = productionSite;
++    }
++
++    public String getFactoryCode() {
++        return factoryCode;
++    }
++
++    public void setFactoryCode(String factoryCode) {
++        this.factoryCode = factoryCode;
++    }
++
++    public String getFactoryName() {
++        return factoryName;
++    }
++
++    public void setFactoryName(String factoryName) {
++        this.factoryName = factoryName;
++    }
++
++    public LocalDate getDueDate() {
++        return dueDate;
++    }
++
++    public void setDueDate(LocalDate dueDate) {
++        this.dueDate = dueDate;
++    }
++
++    public String getDeliveryPlaceCode() {
++        return deliveryPlaceCode;
++    }
++
++    public void setDeliveryPlaceCode(String deliveryPlaceCode) {
++        this.deliveryPlaceCode = deliveryPlaceCode;
++    }
++
++    public String getDeliveryPlaceName() {
++        return deliveryPlaceName;
++    }
++
++    public void setDeliveryPlaceName(String deliveryPlaceName) {
++        this.deliveryPlaceName = deliveryPlaceName;
++    }
++}
+
+diff --git a/src/main/java/com/example/erp/controller/dto/WorkOrderAgreementSummary.java b/src/main/java/com/example/erp/controller/dto/WorkOrderAgreementSummary.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cb5f86a55543a4e7edb9f021db84441843f6ab7a
+--- /dev/null
++++ b/src/main/java/com/example/erp/controller/dto/WorkOrderAgreementSummary.java
+@@ -0,0 +1,72 @@
++package com.example.erp.controller.dto;
++
++public class WorkOrderAgreementSummary {
++
++    private String styleNo;
++    private String agreementCode;
++    private String color;
++    private Integer quantity;
++    private String productionSite;
++    private boolean dispatched;
++
++    public WorkOrderAgreementSummary() {
++    }
++
++    public WorkOrderAgreementSummary(String styleNo, String agreementCode, String color, Integer quantity,
++            String productionSite, boolean dispatched) {
++        this.styleNo = styleNo;
++        this.agreementCode = agreementCode;
++        this.color = color;
++        this.quantity = quantity;
++        this.productionSite = productionSite;
++        this.dispatched = dispatched;
++    }
++
++    public String getStyleNo() {
++        return styleNo;
++    }
++
++    public void setStyleNo(String styleNo) {
++        this.styleNo = styleNo;
++    }
++
++    public String getAgreementCode() {
++        return agreementCode;
++    }
++
++    public void setAgreementCode(String agreementCode) {
++        this.agreementCode = agreementCode;
++    }
++
++    public String getColor() {
++        return color;
++    }
++
++    public void setColor(String color) {
++        this.color = color;
++    }
++
++    public Integer getQuantity() {
++        return quantity;
++    }
++
++    public void setQuantity(Integer quantity) {
++        this.quantity = quantity;
++    }
++
++    public String getProductionSite() {
++        return productionSite;
++    }
++
++    public void setProductionSite(String productionSite) {
++        this.productionSite = productionSite;
++    }
++
++    public boolean isDispatched() {
++        return dispatched;
++    }
++
++    public void setDispatched(boolean dispatched) {
++        this.dispatched = dispatched;
++    }
++}
+
+
+diff --git a/src/main/java/com/example/erp/controller/dto/WorkOrderDetailSavePayload.java b/src/main/java/com/example/erp/controller/dto/WorkOrderDetailSavePayload.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..48ddcf88cafd377582afdc322bc533e4b8265c91
+--- /dev/null
++++ b/src/main/java/com/example/erp/controller/dto/WorkOrderDetailSavePayload.java
+@@ -0,0 +1,15 @@
++package com.example.erp.controller.dto;
++
++import java.util.List;
++
++public class WorkOrderDetailSavePayload {
++    private List<WorkOrderDetailSaveRequest> items;
++
++    public List<WorkOrderDetailSaveRequest> getItems() {
++        return items;
++    }
++
++    public void setItems(List<WorkOrderDetailSaveRequest> items) {
++        this.items = items;
++    }
++}
+
+
+diff --git a/src/main/java/com/example/erp/controller/dto/WorkOrderDetailSaveRequest.java b/src/main/java/com/example/erp/controller/dto/WorkOrderDetailSaveRequest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..371f87f6e5cd8e445a3f8d7d6310bc9f2baaef69
+--- /dev/null
++++ b/src/main/java/com/example/erp/controller/dto/WorkOrderDetailSaveRequest.java
+@@ -0,0 +1,76 @@
++package com.example.erp.controller.dto;
++
++public class WorkOrderDetailSaveRequest {
++    private String styleNo;
++    private String agreementCode;
++    private String color;
++    private String factoryCode;
++    private String factoryName;
++    private String dueDate;
++    private String deliveryPlaceCode;
++    private String deliveryPlaceName;
++
++    public String getStyleNo() {
++        return styleNo;
++    }
++
++    public void setStyleNo(String styleNo) {
++        this.styleNo = styleNo;
++    }
++
++    public String getAgreementCode() {
++        return agreementCode;
++    }
++
++    public void setAgreementCode(String agreementCode) {
++        this.agreementCode = agreementCode;
++    }
++
++    public String getColor() {
++        return color;
++    }
++
++    public void setColor(String color) {
++        this.color = color;
++    }
++
++    public String getFactoryCode() {
++        return factoryCode;
++    }
++
++    public void setFactoryCode(String factoryCode) {
++        this.factoryCode = factoryCode;
++    }
++
++    public String getFactoryName() {
++        return factoryName;
++    }
++
++    public void setFactoryName(String factoryName) {
++        this.factoryName = factoryName;
++    }
++
++    public String getDueDate() {
++        return dueDate;
++    }
++
++    public void setDueDate(String dueDate) {
++        this.dueDate = dueDate;
++    }
++
++    public String getDeliveryPlaceCode() {
++        return deliveryPlaceCode;
++    }
++
++    public void setDeliveryPlaceCode(String deliveryPlaceCode) {
++        this.deliveryPlaceCode = deliveryPlaceCode;
++    }
++
++    public String getDeliveryPlaceName() {
++        return deliveryPlaceName;
++    }
++
++    public void setDeliveryPlaceName(String deliveryPlaceName) {
++        this.deliveryPlaceName = deliveryPlaceName;
++    }
++}
+
+
+diff --git a/src/main/java/com/example/erp/controller/dto/WorkOrderDispatchRequest.java b/src/main/java/com/example/erp/controller/dto/WorkOrderDispatchRequest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7a4cc0eca684ae64e8b3a773a6eb402dd8f2b10d
+--- /dev/null
++++ b/src/main/java/com/example/erp/controller/dto/WorkOrderDispatchRequest.java
+@@ -0,0 +1,49 @@
++package com.example.erp.controller.dto;
++
++public class WorkOrderDispatchRequest {
++    private String styleNo;
++    private String agreementCode;
++    private String color;
++    private String empNo;
++    private String empName;
++
++    public String getStyleNo() {
++        return styleNo;
++    }
++
++    public void setStyleNo(String styleNo) {
++        this.styleNo = styleNo;
++    }
++
++    public String getAgreementCode() {
++        return agreementCode;
++    }
++
++    public void setAgreementCode(String agreementCode) {
++        this.agreementCode = agreementCode;
++    }
++
++    public String getColor() {
++        return color;
++    }
++
++    public void setColor(String color) {
++        this.color = color;
++    }
++
++    public String getEmpNo() {
++        return empNo;
++    }
++
++    public void setEmpNo(String empNo) {
++        this.empNo = empNo;
++    }
++
++    public String getEmpName() {
++        return empName;
++    }
++
++    public void setEmpName(String empName) {
++        this.empName = empName;
++    }
++}
+
+
+diff --git a/src/main/java/com/example/erp/repository/ProductionAgreementRepository.java b/src/main/java/com/example/erp/repository/ProductionAgreementRepository.java
+index 74b2a3f8cc3dab98c18b384e33c8ce13b53847c6..487643499340ffe20c81fda4450efca428fe5cb5 100644
+--- a/src/main/java/com/example/erp/repository/ProductionAgreementRepository.java
++++ b/src/main/java/com/example/erp/repository/ProductionAgreementRepository.java
+@@ -1,9 +1,12 @@
+ package com.example.erp.repository;
  
- 								function fillForm(button) {
- 									if (!formEl || !button) return;
- 									formEl.action = `/codes/${button.dataset.type}/${button.dataset.code}/update`;
- 									document.getElementById('codeType').value = button.dataset.type || '';
- 									document.getElementById('code').value = button.dataset.code || '';
- 									document.getElementById('name').value = button.dataset.name || '';
- 									document.getElementById('sortOrder').value = button.dataset.sort || 0;
- 									document.getElementById('description').value = button.dataset.desc || '';
- 									submitLabel.textContent = '수정';
- 									submitBtn.className = 'btn btn--primary flex-grow-1';
- 								}
+ import com.example.erp.domain.ProductionAgreement;
+ import org.springframework.data.jpa.repository.JpaRepository;
+ import org.springframework.stereotype.Repository;
  
- 								resetBtn?.addEventListener('click', resetForm);
- 							</script>
- </body>
- 
--</html>
++import java.util.List;
++
+ @Repository
+ public interface ProductionAgreementRepository extends JpaRepository<ProductionAgreement, String> {
+-}
 \ No newline at end of file
-+</html>
++    List<ProductionAgreement> findByStyleNoOrderByAgreementCodeAscColorAscSizeAsc(String styleNo);
++}
 
 
-diff --git a/src/main/resources/templates/pages/work-orders.html b/src/main/resources/templates/pages/work-orders.html
-index 4181a24e660c2d32d5a779f4ffb2fe3371cda64c..adf2ef8c8fcb9db01d41323acb9b4c9910aa5f0f 100644
---- a/src/main/resources/templates/pages/work-orders.html
-+++ b/src/main/resources/templates/pages/work-orders.html
-@@ -194,166 +194,172 @@
- 			.wo-layout {
- 				flex-direction: column;
- 			}
- 		}
- 	</style>
- 
- 	<div class="mb-3">
- 		<h4 class="fw-bold mb-1">작업지시서 관리</h4>
- 		<p class="text-muted mb-0">치수표와 첨부 문서를 동시에 확인하세요.</p>
- 	</div>
- 	<div class="wo-layout">
- 		<div class="wo-left">
- 			<form class="wo-panel mb-1" method="get" th:action="@{/work-orders}">
- 				<div class="row g-3 align-items-end">
- 					<div class="col-md-5">
- 						<label class="form-label fw-semibold">품번</label>
- 						<input type="text" class="form-control" name="styleNo" th:value="${param.styleNo}"
- 							placeholder="품번 코드">
- 					</div>
- 					<div class="col-md-5">
- 						<label class="form-label fw-semibold">작업지시</label>
- 						<input type="text" class="form-control" name="workOrderId" th:value="${param.workOrderId}"
- 							placeholder="작업지시 코드">
- 					</div>
- 					<div class="col-md-2 d-grid">
--						<button type="submit" class="btn btn-dark">검색</button>
-+						<div class="actions">
-+							<button type="submit" class="btn btn--primary w-100">검색</button>
-+						</div>
- 					</div>
- 				</div>
- 			</form>
- 
- 			<div class="wo-panel">
- 				<div class="d-flex justify-content-between align-items-center mb-2">
- 					<h6 class="mb-0 fw-bold">작업지시 목록</h6>
- 					<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
- 				</div>
- 				<div class="table-responsive" style="max-height: 240px;">
--					<table class="table table-hover align-middle mb-0 wo-table">
-+					<table class="table table-hover align-middle mb-0 wo-table data-table">
- 						<thead class="table-light">
- 							<tr>
--								<th>작업지시</th>
--								<th>품번</th>
--								<th>생산합의</th>
--								<th>색상</th>
--								<th>사이즈</th>
-+								<th class="t-left">작업지시</th>
-+								<th class="t-left">품번</th>
-+								<th class="t-left">생산합의</th>
-+								<th class="t-left">색상</th>
-+								<th class="t-left">사이즈</th>
- 								<th>수량</th>
--								<th>납기일</th>
--								<th>상태</th>
-+								<th class="t-left">납기일</th>
-+								<th class="t-left">상태</th>
- 							</tr>
- 						</thead>
- 						<tbody id="wo-list-body">
- 							<tr th:if="${#lists.isEmpty(list)}">
- 								<td colspan="8" class="text-center text-muted">조회된 데이터가 없습니다.</td>
- 							</tr>
- 							<tr th:each="w, iter : ${list}" data-wo-row
- 								th:classappend="${iter.index == 0} ? 'wo-row-selected'">
--								<td th:text="${w.workOrderId}" data-field="workOrderId">WO-001</td>
--								<td th:text="${w.styleNo}" data-field="styleNo">ST-001</td>
--								<td th:text="${w.agreementCode}" data-field="agreementCode">PA-001</td>
--								<td th:text="${w.color}" data-field="color">RED</td>
--								<td th:text="${w.size}" data-field="size">L</td>
-+								<td class="t-left" th:text="${w.workOrderId}" data-field="workOrderId">WO-001</td>
-+								<td class="t-left" th:text="${w.styleNo}" data-field="styleNo">ST-001</td>
-+								<td class="t-left" th:text="${w.agreementCode}" data-field="agreementCode">PA-001</td>
-+								<td class="t-left" th:text="${w.color}" data-field="color">RED</td>
-+								<td class="t-left" th:text="${w.size}" data-field="size">L</td>
- 								<td th:text="${w.quantity}" data-field="quantity">100</td>
--								<td th:text="${w.dueDate}" data-field="dueDate">2024-01-10</td>
--								<td th:text="${w.status}" data-field="status">진행</td>
-+								<td class="t-left" th:text="${w.dueDate}" data-field="dueDate">2024-01-10</td>
-+								<td class="t-left" th:text="${w.status}" data-field="status">진행</td>
- 							</tr>
- 						</tbody>
- 					</table>
- 				</div>
- 			</div>
- 			<div class="wo-panel">
- 				<div class="d-flex justify-content-between align-items-center mb-3">
- 					<h6 class="mb-0 fw-bold">작업지시 기본 정보</h6>
- 					<span class="text-muted small">선택한 작업지시 기준</span>
- 				</div>
- 				<div class="wo-summary-grid">
- 					<div>
- 						<div class="text-muted small">작업지시</div>
- 						<div class="fw-bold" id="wo-summary-id">-</div>
- 					</div>
- 					<div>
- 						<div class="text-muted small">품번</div>
- 						<div class="fw-bold" id="wo-summary-style">-</div>
- 					</div>
- 					<div>
- 						<div class="text-muted small">생산합의</div>
- 						<div class="fw-bold" id="wo-summary-agreement">-</div>
- 					</div>
- 					<div>
- 						<div class="text-muted small">납기일</div>
- 						<div class="fw-bold" id="wo-summary-due">-</div>
- 					</div>
- 				</div>
- 			</div>
- 			<div class="wo-panel">
- 				<div class="d-flex justify-content-between align-items-center mb-2">
- 					<h6 class="mb-0 fw-bold">치수표</h6>
- 					<span class="text-muted small">구분 × 사이즈별 입력</span>
- 				</div>
- 				<div class="table-responsive" style="max-height: 420px;">
--					<table class="table table-sm align-middle measure-table" id="measure-table">
-+					<table class="table table-sm align-middle measure-table data-table" id="measure-table">
- 						<thead>
- 							<tr id="measure-head-row"></tr>
- 						</thead>
- 						<tbody id="measure-body"></tbody>
- 					</table>
- 				</div>
- 			</div>
- 		</div>
- 		<div class="wo-right">
- 			<div class="wo-panel wo-attachments-panel h-100">
- 							<div class="attachment-section">
- 					<div class="attachment-header">
- 						<div>
- 							<div class="fw-bold">도식화</div>
- 							<div class="text-muted small">등록된 도식화를 확인하세요.</div>
- 						</div>
--						<button type="button" class="btn btn-outline-secondary btn-sm">도식화 등록</button>
-+						<div class="actions">
-+							<button type="button" class="btn btn--outline btn-sm">도식화 등록</button>
-+						</div>
- 					</div>
- 					<div class="attachment-grid" id="illustration-grid"></div>
- 				</div>
- 
- 				<div class="attachment-section">
- 					<div class="attachment-header">
- 						<div>
- 							<div class="fw-bold">봉제방법</div>
- 							<div class="text-muted small">등록된 봉제방법을 확인하세요.</div>
- 						</div>
--						<button type="button" class="btn btn-outline-secondary btn-sm">봉제방법 등록</button>
-+						<div class="actions">
-+							<button type="button" class="btn btn--outline btn-sm">봉제방법 등록</button>
-+						</div>
- 					</div>
- 					<div class="attachment-grid" id="sewing-grid"></div>
- 				</div>
- 			</div>
- 		</div>
- 	</div>
- 
- 	<div class="modal-backdrop" id="wo-preview-modal">
- 		<div class="modal-body">
- 			<img id="wo-preview-image" alt="미리보기">
- 			<div class="modal-actions">
--				<button type="button" class="btn btn-outline-light btn-sm">편집(준비중)</button>
--				<button type="button" class="btn btn-outline-light btn-sm">다운로드(준비중)</button>
--				<button type="button" class="btn btn-outline-danger btn-sm">삭제(준비중)</button>
-+				<button type="button" class="btn btn--outline btn-sm">편집(준비중)</button>
-+				<button type="button" class="btn btn--outline btn-sm">다운로드(준비중)</button>
-+				<button type="button" class="btn btn--primary btn-sm">삭제(준비중)</button>
- 			</div>
- 			<button type="button" class="modal-close" id="wo-modal-close">×</button>
- 		</div>
- 	</div>
- 	<script th:inline="javascript">
- 		/*<![CDATA[*/
- 		const workOrders = /*[[${list}]]*/[];
- 		const styleRules = /*[[${styleRules}]]*/ {};
- 		const attachments = /*[[${attachments}]]*/ {};
- 
- 		const defaultSizes = ['095', '100', '105', '110'];
- 		const measureItems = ['총기장', '허리폭', '다리폭', '둔폭', '밑길이'];
- 		const measureState = {};
- 
- 		const getSizesByStyle = (styleNo) => {
- 			if (!styleNo || !styleRules || !styleRules[styleNo]) return defaultSizes;
- 			const rule = styleRules[styleNo];
- 			const sizes = new Set();
- 			Object.values(rule).forEach((list) => {
- 				if (Array.isArray(list)) {
- 					list.forEach((size) => sizes.add(size));
- 				}
- 			});
- 			return sizes.size ? Array.from(sizes) : defaultSizes;
- 		};
-@@ -459,26 +465,26 @@
- 
- 		const modal = document.getElementById('wo-preview-modal');
- 		const modalImg = document.getElementById('wo-preview-image');
- 		const openModal = (src) => {
- 			if (!src) return;
- 			modalImg.src = src;
- 			modal.classList.add('active');
- 		};
- 		const closeModal = () => modal.classList.remove('active');
- 
- 		document.getElementById('wo-modal-close').addEventListener('click', closeModal);
- 		document.addEventListener('keydown', (e) => {
- 			if (e.key === 'Escape') closeModal();
- 		});
- 		modal.addEventListener('click', (e) => {
- 			if (e.target === modal) closeModal();
- 		});
- 
- 		document.addEventListener('DOMContentLoaded', () => {
- 			bindRowEvents();
- 			renderAttachments(attachments.ILLUSTRATION, 'illustration-grid', '도식화가 없습니다.');
- 			renderAttachments(attachments.SEWING, 'sewing-grid', '봉제방법이 없습니다.');
- 		});
- 		/*]]>*/
- 	</script>
--</div>
-\ No newline at end of file
-+</div>
+diff --git a/src/main/java/com/example/erp/service/WorkOrderInstructionService.java b/src/main/java/com/example/erp/service/WorkOrderInstructionService.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..41ac46f752dfa67d396e971164c364fc96744e5f
+--- /dev/null
++++ b/src/main/java/com/example/erp/service/WorkOrderInstructionService.java
+@@ -0,0 +1,258 @@
++package com.example.erp.service;
++
++import com.example.erp.controller.dto.WorkOrderAgreementDetail;
++import com.example.erp.controller.dto.WorkOrderAgreementSummary;
++import com.example.erp.controller.dto.WorkOrderDetailSaveRequest;
++import com.example.erp.controller.dto.WorkOrderDispatchRequest;
++import com.example.erp.domain.Code;
++import com.example.erp.domain.CodeId;
++import com.example.erp.domain.ProductionAgreement;
++import com.example.erp.domain.WorkOrder;
++import com.example.erp.repository.CodeRepository;
++import com.example.erp.repository.ProductionAgreementRepository;
++import com.example.erp.repository.WorkOrderRepository;
++import org.springframework.stereotype.Service;
++import org.springframework.util.CollectionUtils;
++import org.springframework.util.StringUtils;
++
++import java.time.LocalDate;
++import java.time.format.DateTimeFormatter;
++import java.util.Collections;
++import java.util.Comparator;
++import java.util.LinkedHashMap;
++import java.util.List;
++import java.util.Locale;
++import java.util.Map;
++import java.util.Objects;
++import java.util.Optional;
++import java.util.Set;
++import java.util.UUID;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.stream.Collectors;
++
++@Service
++public class WorkOrderInstructionService {
++
++    private final ProductionAgreementRepository productionAgreementRepository;
++    private final WorkOrderRepository workOrderRepository;
++    private final CodeRepository codeRepository;
++
++    private final Map<String, WorkOrderDetailState> detailState = new ConcurrentHashMap<>();
++    private final Set<String> dispatchedKeys = ConcurrentHashMap.newKeySet();
++    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
++
++    public WorkOrderInstructionService(ProductionAgreementRepository productionAgreementRepository,
++            WorkOrderRepository workOrderRepository, CodeRepository codeRepository) {
++        this.productionAgreementRepository = productionAgreementRepository;
++        this.workOrderRepository = workOrderRepository;
++        this.codeRepository = codeRepository;
++    }
++
++    public Map<String, List<String>> findFilters(String styleNo) {
++        if (!StringUtils.hasText(styleNo)) {
++            return Map.of("colors", Collections.emptyList(), "agreementCodes", Collections.emptyList());
++        }
++        List<ProductionAgreement> agreements = productionAgreementRepository
++                .findByStyleNoOrderByAgreementCodeAscColorAscSizeAsc(styleNo.trim());
++        List<String> colors = agreements.stream().map(ProductionAgreement::getColor).filter(StringUtils::hasText)
++                .distinct().sorted(String.CASE_INSENSITIVE_ORDER).toList();
++        List<String> agreementCodes = agreements.stream().map(ProductionAgreement::getAgreementCode)
++                .filter(StringUtils::hasText).distinct().sorted(String.CASE_INSENSITIVE_ORDER).toList();
++        return Map.of("colors", colors, "agreementCodes", agreementCodes);
++    }
++
++    public List<WorkOrderAgreementSummary> findAgreementSummaries(String styleNo) {
++        if (!StringUtils.hasText(styleNo)) {
++            return Collections.emptyList();
++        }
++        List<ProductionAgreement> agreements = productionAgreementRepository
++                .findByStyleNoOrderByAgreementCodeAscColorAscSizeAsc(styleNo.trim());
++        if (agreements.isEmpty()) {
++            return Collections.emptyList();
++        }
++
++        Map<AgreementKey, Integer> aggregated = new LinkedHashMap<>();
++        agreements.forEach(item -> {
++            AgreementKey key = new AgreementKey(valueOf(item.getStyleNo()), valueOf(item.getAgreementCode()),
++                    valueOf(item.getColor()));
++            int quantity = item.getQuantity() != null ? item.getQuantity() : 0;
++            aggregated.put(key, aggregated.getOrDefault(key, 0) + quantity);
++        });
++
++        return aggregated.entrySet().stream()
++                .sorted(Map.Entry.comparingByKey(Comparator
++                        .comparing(AgreementKey::agreementCode, String.CASE_INSENSITIVE_ORDER)
++                        .thenComparing(AgreementKey::color, String.CASE_INSENSITIVE_ORDER)))
++                .map(entry -> toSummary(entry.getKey(), entry.getValue())).collect(Collectors.toList());
++    }
++
++    public List<WorkOrderAgreementDetail> findAgreementDetails(String styleNo, String color, String agreementCode) {
++        List<WorkOrderAgreementSummary> summaries = findAgreementSummaries(styleNo);
++        if (summaries.isEmpty()) {
++            return Collections.emptyList();
++        }
++        return summaries.stream()
++                .filter(summary -> matches(color, summary.getColor()) && matches(agreementCode, summary.getAgreementCode()))
++                .map(this::toDetail).toList();
++    }
++
++    public boolean dispatch(WorkOrderDispatchRequest request) {
++        if (request == null || !StringUtils.hasText(request.getStyleNo()) || !StringUtils.hasText(request.getAgreementCode())
++                || !StringUtils.hasText(request.getColor())) {
++            return false;
++        }
++        String key = buildKey(request.getStyleNo(), request.getAgreementCode(), request.getColor());
++        if (dispatchedKeys.contains(key)) {
++            return true;
++        }
++
++        WorkOrder entity = new WorkOrder();
++        entity.setWorkOrderId(UUID.randomUUID().toString());
++        entity.setStyleNo(request.getStyleNo().trim());
++        entity.setAgreementCode(request.getAgreementCode().trim());
++        entity.setColor(request.getColor().trim());
++        entity.setStatus("DISPATCHED");
++        workOrderRepository.save(entity);
++
++        dispatchedKeys.add(key);
++        return true;
++    }
++
++    public int saveDetails(List<WorkOrderDetailSaveRequest> requests) {
++        if (CollectionUtils.isEmpty(requests)) {
++            return 0;
++        }
++        int saved = 0;
++        for (WorkOrderDetailSaveRequest request : requests) {
++            if (request == null || !StringUtils.hasText(request.getStyleNo())
++                    || !StringUtils.hasText(request.getAgreementCode()) || !StringUtils.hasText(request.getColor())) {
++                continue;
++            }
++            String key = buildKey(request.getStyleNo(), request.getAgreementCode(), request.getColor());
++            WorkOrderDetailState state = detailState.computeIfAbsent(key, k -> new WorkOrderDetailState());
++
++            state.setFactoryCode(trimToNull(request.getFactoryCode()));
++            state.setFactoryName(resolveName("FACTORY", request.getFactoryCode(), request.getFactoryName()));
++
++            state.setDeliveryPlaceCode(trimToNull(request.getDeliveryPlaceCode()));
++            state.setDeliveryPlaceName(resolveName("WAREHOUSE", request.getDeliveryPlaceCode(),
++                    request.getDeliveryPlaceName()));
++
++            state.setDueDate(parseDate(request.getDueDate()));
++            saved++;
++        }
++        return saved;
++    }
++
++    private WorkOrderAgreementSummary toSummary(AgreementKey key, Integer quantity) {
++        return new WorkOrderAgreementSummary(key.styleNo(), key.agreementCode(), key.color(), quantity, "-", dispatchedKeys.contains(key.key()));
++    }
++
++    private WorkOrderAgreementDetail toDetail(WorkOrderAgreementSummary summary) {
++        WorkOrderDetailState state = detailState.get(buildKey(summary.getStyleNo(), summary.getAgreementCode(), summary.getColor()));
++        String agreementLabel = summary.getAgreementCode();
++        return new WorkOrderAgreementDetail(summary.getStyleNo(), summary.getAgreementCode(), agreementLabel,
++                summary.getColor(), summary.getQuantity(), summary.getProductionSite(),
++                state != null ? state.getFactoryCode() : null,
++                state != null ? state.getFactoryName() : null,
++                state != null ? state.getDueDate() : null,
++                state != null ? state.getDeliveryPlaceCode() : null,
++                state != null ? state.getDeliveryPlaceName() : null);
++    }
++
++    private LocalDate parseDate(String value) {
++        if (!StringUtils.hasText(value)) {
++            return null;
++        }
++        try {
++            return LocalDate.parse(value.trim(), DATE_FORMATTER);
++        } catch (Exception ignored) {
++            return null;
++        }
++    }
++
++    private String resolveName(String codeType, String code, String fallbackName) {
++        if (!StringUtils.hasText(code)) {
++            return trimToNull(fallbackName);
++        }
++        Optional<Code> found = codeRepository.findByIdAndDeletedFalse(new CodeId(codeType, code.trim()));
++        return found.map(Code::getCodeName).orElseGet(() -> trimToNull(fallbackName));
++    }
++
++    private boolean matches(String expected, String actual) {
++        if (!StringUtils.hasText(expected)) {
++            return true;
++        }
++        return Objects.equals(expected.trim().toLowerCase(Locale.ROOT),
++                actual != null ? actual.trim().toLowerCase(Locale.ROOT) : null);
++    }
++
++    private String trimToNull(String value) {
++        if (!StringUtils.hasText(value)) {
++            return null;
++        }
++        return value.trim();
++    }
++
++    private String buildKey(String styleNo, String agreementCode, String color) {
++        return String.join("|", valueOf(styleNo), valueOf(agreementCode), valueOf(color));
++    }
++
++    private String valueOf(String value) {
++        return value != null ? value.trim() : "";
++    }
++
++    private record AgreementKey(String styleNo, String agreementCode, String color) {
++        String key() {
++            return String.join("|", styleNo, agreementCode, color);
++        }
++    }
++
++    private static class WorkOrderDetailState {
++        private String factoryCode;
++        private String factoryName;
++        private LocalDate dueDate;
++        private String deliveryPlaceCode;
++        private String deliveryPlaceName;
++
++        public String getFactoryCode() {
++            return factoryCode;
++        }
++
++        public void setFactoryCode(String factoryCode) {
++            this.factoryCode = factoryCode;
++        }
++
++        public String getFactoryName() {
++            return factoryName;
++        }
++
++        public void setFactoryName(String factoryName) {
++            this.factoryName = factoryName;
++        }
++
++        public LocalDate getDueDate() {
++            return dueDate;
++        }
++
++        public void setDueDate(LocalDate dueDate) {
++            this.dueDate = dueDate;
++        }
++
++        public String getDeliveryPlaceCode() {
++            return deliveryPlaceCode;
++        }
++
++        public void setDeliveryPlaceCode(String deliveryPlaceCode) {
++            this.deliveryPlaceCode = deliveryPlaceCode;
++        }
++
++        public String getDeliveryPlaceName() {
++            return deliveryPlaceName;
++        }
++
++        public void setDeliveryPlaceName(String deliveryPlaceName) {
++            this.deliveryPlaceName = deliveryPlaceName;
++        }
++    }
++}
 
-diff --git a/src/main/resources/templates/popup/code-search.html b/src/main/resources/templates/popup/code-search.html
-index b13685992bb7596a1be85dae0bdd8dff9155a636..09e9f461dae4fa331c703f955c1b9c21ddd24b79 100644
---- a/src/main/resources/templates/popup/code-search.html
-+++ b/src/main/resources/templates/popup/code-search.html
-@@ -1,114 +1,115 @@
- <!doctype html>
- <html lang="ko" xmlns:th="http://www.thymeleaf.org">
- <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1">
-     <title>공통 코드 검색</title>
-     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-+    <link rel="stylesheet" href="/css/app.css">
-     <style>
-         body { background-color: #f8f9fa; }
-         .table-container { max-height: 420px; overflow-y: auto; }
-         .clickable-row { cursor: pointer; }
-         .clickable-row.selected { background-color: var(--bs-primary-bg-subtle) !important; }
-         .search-card { border: 1px solid #dee2e6; }
-     </style>
- </head>
- <body>
- <div class="container py-3">
-     <div class="bg-white rounded shadow-sm p-3 search-card">
-         <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
-             <h5 class="mb-0 fw-bold">공통 코드 검색</h5>
--            <div class="btn-group">
--                <button type="submit" form="codeSearchForm" class="btn btn-secondary btn-sm">검색</button>
--                <button type="button" id="btnCodeSelect" class="btn btn-primary btn-sm">선택</button>
-+            <div class="actions">
-+                <button type="submit" form="codeSearchForm" class="btn btn--primary btn-sm">검색</button>
-+                <button type="button" id="btnCodeSelect" class="btn btn--primary btn-sm">선택</button>
-             </div>
-         </div>
- 
-         <form id="codeSearchForm" method="get" class="row gy-2 gx-3 mb-3">
-             <div class="col-md-3 col-6">
-                 <label class="form-label small fw-semibold mb-1">분류</label>
-                 <select class="form-select form-select-sm" name="codeType">
-                     <option value="">전체</option>
-                     <option th:each="type : ${codeTypes}"
-                             th:value="${type}"
-                             th:text="${type}"
-                             th:selected="${type} == ${searchCodeType}">분류</option>
-                 </select>
-             </div>
-             <div class="col-md-3 col-6">
-                 <label class="form-label small fw-semibold mb-1">코드</label>
-                 <input type="text" name="code" class="form-control form-control-sm" th:value="${searchCode}">
-             </div>
-             <div class="col-md-3 col-6">
-                 <label class="form-label small fw-semibold mb-1">명칭</label>
-                 <input type="text" name="codeName" class="form-control form-control-sm" th:value="${searchCodeName}">
-             </div>
-             <div class="col-md-3 col-6">
-                 <label class="form-label small fw-semibold mb-1">비고</label>
-                 <input type="text" name="remark" class="form-control form-control-sm" th:value="${searchRemark}">
-             </div>
-         </form>
- 
-         <div class="table-responsive table-container border rounded">
--            <table class="table table-hover mb-0 align-middle">
-+            <table class="table table-hover mb-0 align-middle data-table">
-                 <thead class="table-light">
-                 <tr>
--                    <th style="width: 20%">분류</th>
--                    <th style="width: 20%">코드</th>
--                    <th style="width: 30%">명칭</th>
--                    <th>비고</th>
-+                    <th style="width: 20%" class="t-left">분류</th>
-+                    <th style="width: 20%" class="t-left">코드</th>
-+                    <th style="width: 30%" class="t-left">명칭</th>
-+                    <th class="t-left">비고</th>
-                 </tr>
-                 </thead>
-                 <tbody>
-                 <tr th:if="${#lists.isEmpty(codes)}">
-                     <td colspan="4" class="text-center text-muted">조건에 해당하는 코드가 없습니다.</td>
-                 </tr>
-                 <tr th:each="code : ${codes}"
-                     class="clickable-row"
-                     th:data-code-type="${code.codeType}"
-                     th:data-code="${code.code}"
-                     th:data-code-name="${code.codeName} ?: ${code.name}">
--                    <td th:text="${code.codeType}">분류</td>
--                    <td th:text="${code.code}">CODE</td>
--                    <td th:text="${code.codeName} ?: ${code.name}">명칭</td>
--                    <td th:text="${code.remark}">비고</td>
-+                    <td class="t-left" th:text="${code.codeType}">분류</td>
-+                    <td class="t-left" th:text="${code.code}">CODE</td>
-+                    <td class="t-left" th:text="${code.codeName} ?: ${code.name}">명칭</td>
-+                    <td class="t-left" th:text="${code.remark}">비고</td>
-                 </tr>
-                 </tbody>
-             </table>
-         </div>
-     </div>
- </div>
- 
- <script>
-     const codeRows = document.querySelectorAll('.clickable-row');
-     const codeSelectBtn = document.getElementById('btnCodeSelect');
-     let selectedCodeRow = null;
- 
-     codeRows.forEach(row => {
-         row.addEventListener('click', () => {
-             codeRows.forEach(r => r.classList.remove('table-primary', 'selected'));
-             row.classList.add('table-primary', 'selected');
-             selectedCodeRow = row;
-         });
-     });
- 
-     codeSelectBtn?.addEventListener('click', () => {
-         if (!selectedCodeRow) {
-             alert('선택된 코드가 없습니다.');
-             return;
-         }
-         if (!window.opener || typeof window.opener.onCodeSelected !== 'function') {
-             alert('부모창 콜백이 없습니다.');
-             return;
-         }
-         const payload = {
-             codeType: selectedCodeRow.dataset.codeType,
-             code: selectedCodeRow.dataset.code,
-             codeName: selectedCodeRow.dataset.codeName
-         };
-         window.opener.onCodeSelected(payload);
-         window.close();
-     });
- </script>
- </body>
--</html>
-\ No newline at end of file
-+</html>
 
-diff --git a/src/main/resources/templates/popup/employee-search.html b/src/main/resources/templates/popup/employee-search.html
-index e42282b1034a05b712ea15b300b53d3c2918b749..cc3fe8d2dd0d42a59a47ee4148c379ba61d4e617 100644
---- a/src/main/resources/templates/popup/employee-search.html
-+++ b/src/main/resources/templates/popup/employee-search.html
-@@ -1,109 +1,110 @@
- <!doctype html>
- <html lang="ko" xmlns:th="http://www.thymeleaf.org">
- <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1">
-     <title>사원 검색</title>
-     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-+    <link rel="stylesheet" href="/css/app.css">
-     <style>
-         body { background-color: #f8f9fa; }
-         .table-container { max-height: 420px; overflow-y: auto; }
-         .clickable-row { cursor: pointer; }
-         .clickable-row.selected { background-color: var(--bs-primary-bg-subtle) !important; }
-         .search-card { border: 1px solid #dee2e6; }
-     </style>
- </head>
- <body>
- <div class="container py-3">
-     <div class="bg-white rounded shadow-sm p-3 search-card">
-         <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
-             <h5 class="mb-0 fw-bold">사원 검색</h5>
--            <div class="btn-group">
--                <button type="submit" form="employeeSearchForm" class="btn btn-secondary btn-sm">검색</button>
--                <button type="button" id="btnEmployeeSelect" class="btn btn-primary btn-sm">선택</button>
-+            <div class="actions">
-+                <button type="submit" form="employeeSearchForm" class="btn btn--primary btn-sm">검색</button>
-+                <button type="button" id="btnEmployeeSelect" class="btn btn--primary btn-sm">선택</button>
-             </div>
-         </div>
- 
-         <form id="employeeSearchForm" method="get" class="row gy-2 gx-3 mb-2">
-             <div class="col-md-4 col-6">
-                 <label class="form-label small fw-semibold mb-1">사번</label>
-                 <input type="text" name="empNo" class="form-control form-control-sm" th:value="${searchEmpNo}">
-             </div>
-             <div class="col-md-4 col-6">
-                 <label class="form-label small fw-semibold mb-1">이름</label>
-                 <input type="text" name="name" class="form-control form-control-sm" th:value="${searchName}">
-             </div>
-             <div class="col-md-4 col-12">
-                 <label class="form-label small fw-semibold mb-1">부서</label>
-                 <select name="dept" class="form-select form-select-sm">
-                     <option value="">전체</option>
-                     <option th:each="dept : ${departments}"
-                             th:value="${dept}"
-                             th:text="${dept}"
-                             th:selected="${dept} == ${searchDept}">부서</option>
-                 </select>
-                 <div class="text-muted small mt-1">부서를 특정해서 검색할 때는 부서 자동 입력, 입력 불가</div>
-             </div>
-         </form>
- 
-         <div class="table-responsive table-container border rounded mt-2">
--            <table class="table table-hover mb-0 align-middle">
-+            <table class="table table-hover mb-0 align-middle data-table">
-                 <thead class="table-light">
-                 <tr>
--                    <th style="width: 25%">사번</th>
--                    <th style="width: 35%">이름</th>
--                    <th>부서</th>
-+                    <th style="width: 25%" class="t-left">사번</th>
-+                    <th style="width: 35%" class="t-left">이름</th>
-+                    <th class="t-left">부서</th>
-                 </tr>
-                 </thead>
-                 <tbody>
-                 <tr th:if="${#lists.isEmpty(employees)}">
-                     <td colspan="3" class="text-center text-muted">조건에 해당하는 사원이 없습니다.</td>
-                 </tr>
-                 <tr th:each="emp : ${employees}"
-                     class="clickable-row"
-                     th:data-emp-no="${emp.empNo}"
-                     th:data-name="${emp.name}"
-                     th:data-dept="${emp.dept}">
--                    <td th:text="${emp.empNo}">EMP001</td>
--                    <td th:text="${emp.name}">홍길동</td>
--                    <td th:text="${emp.dept}">부서</td>
-+                    <td class="t-left" th:text="${emp.empNo}">EMP001</td>
-+                    <td class="t-left" th:text="${emp.name}">홍길동</td>
-+                    <td class="t-left" th:text="${emp.dept}">부서</td>
-                 </tr>
-                 </tbody>
-             </table>
-         </div>
-     </div>
- </div>
- 
- <script>
-     const employeeRows = document.querySelectorAll('.clickable-row');
-     const employeeSelectBtn = document.getElementById('btnEmployeeSelect');
-     let selectedEmployeeRow = null;
- 
-     employeeRows.forEach(row => {
-         row.addEventListener('click', () => {
-             employeeRows.forEach(r => r.classList.remove('table-primary', 'selected'));
-             row.classList.add('table-primary', 'selected');
-             selectedEmployeeRow = row;
-         });
-     });
- 
-     employeeSelectBtn?.addEventListener('click', () => {
-         if (!selectedEmployeeRow) {
-             alert('선택된 사원이 없습니다.');
-             return;
-         }
-         if (!window.opener || typeof window.opener.onEmployeeSelected !== 'function') {
-             alert('부모창 콜백이 없습니다.');
-             return;
-         }
-         const payload = {
-             empNo: selectedEmployeeRow.dataset.empNo,
-             name: selectedEmployeeRow.dataset.name,
-             dept: selectedEmployeeRow.dataset.dept
-         };
-         window.opener.onEmployeeSelected(payload);
-         window.close();
-     });
- </script>
- </body>
--</html>
-\ No newline at end of file
-+</html>
-
-diff --git a/src/main/resources/templates/production/material-inbound.html b/src/main/resources/templates/production/material-inbound.html
-index fb03df3b77a98c1339ee38813456fa6d78f8c943..6b116a2b710f049697cd44b5ae72bd069c94064f 100644
---- a/src/main/resources/templates/production/material-inbound.html
-+++ b/src/main/resources/templates/production/material-inbound.html
-@@ -83,155 +83,159 @@
- 		}
- 
- 		.mi-table tbody td {
- 			font-size: 13px;
- 			vertical-align: middle;
- 			white-space: nowrap;
- 		}
- 
- 		.mi-placeholder {
- 			text-align: center;
- 			color: #6b7280;
- 		}
- 	</style>
- 
- 	<div class="mb-3">
- 		<h4 class="fw-bold mb-1">원부자재 입고 등록</h4>
- 		<p class="text-muted mb-0">품번/색상/생산합의 기준으로 입고량을 입력해 저장하세요.</p>
- 	</div>
- 
- 	<div class="mi-layout">
- 		<div class="material-panel">
- 			<div class="d-flex justify-content-between align-items-center mb-2">
- 				<h6 class="fw-bold mb-0">검색/선택</h6>
- 				<small class="text-muted">품번 선택 전에는 색상/합의/입고일/검색이 비활성화됩니다.</small>
- 			</div>
--			<div class="material-row mb-2">
-+			<div class="material-row form-row mb-2">
- 				<label class="form-label fw-bold mb-0">품번</label>
- 				<input type="hidden" id="mi-styles-id">
- 				<div class="input-group material-style-input">
- 					<input type="text" id="mi-style-input" class="form-control" placeholder="품번을 선택하세요" readonly>
--					<button type="button" class="btn btn-outline-secondary" id="mi-style-search">품번 검색</button>
-+					<button type="button" class="btn btn--primary" id="mi-style-search">품번 검색</button>
- 				</div>
- 			</div>
--			<div class="material-row">
-+			<div class="material-row form-row">
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">색상</label>
- 					<select id="mi-color-select" class="form-select material-color-select" disabled>
- 						<option value="">색상을 선택하세요</option>
- 					</select>
- 				</div>
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">생산합의코드</label>
- 					<select id="mi-agreement-select" class="form-select material-agree-select" disabled>
- 						<option value="">생산합의 코드를 선택하세요</option>
- 					</select>
- 				</div>
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">입고일</label>
- 					<input type="date" id="mi-date-input" class="form-control mi-date-input" disabled>
- 				</div>
--				<button type="button" class="btn btn-dark material-search-button" id="mi-search-button" disabled>검색</button>
-+				<div class="actions">
-+					<button type="button" class="btn btn--primary material-search-button" id="mi-search-button" disabled>검색</button>
+diff --git a/src/main/resources/templates/pages/work-order-create.html b/src/main/resources/templates/pages/work-order-create.html
+new file mode 100644
+index 0000000000000000000000000000000000000000..8a0265368ac5c6b2b5475a7958a50f73d2bf6211
+--- /dev/null
++++ b/src/main/resources/templates/pages/work-order-create.html
+@@ -0,0 +1,552 @@
++<div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
++	<style>
++		.wo-panel {
++			background: #ffffff;
++			border: 1px solid #e5e7eb;
++			border-radius: 12px;
++			padding: 16px;
++			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
++		}
++
++		.wo-search-grid {
++			display: grid;
++			grid-template-columns: repeat(3, minmax(0, 1fr));
++			gap: 14px;
++			align-items: end;
++		}
++
++		.wo-search-grid .form-field {
++			min-width: 0;
++		}
++
++		.wo-actions {
++			display: flex;
++			align-items: center;
++			gap: 8px;
++			white-space: nowrap;
++		}
++
++		.wo-layout {
++			display: flex;
++			gap: 16px;
++			align-items: stretch;
++		}
++
++		.wo-col {
++			flex: 1 1 50%;
++			min-width: 0;
++			display: flex;
++			flex-direction: column;
++		}
++
++		.wo-table-title {
++			font-weight: 800;
++			margin-bottom: 10px;
++		}
++
++		.wo-table-wrap {
++			flex: 1;
++			background: #ffffff;
++			border: 1px solid #e5e7eb;
++			border-radius: 12px;
++			padding: 12px;
++			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
++		}
++
++		.wo-row-disabled {
++			opacity: 0.6;
++		}
++
++		.wo-inline-field {
++			display: flex;
++			align-items: center;
++			gap: 6px;
++			flex-wrap: nowrap;
++		}
++
++		.wo-inline-field input[readonly] {
++			background: #f9fafb;
++		}
++
++		.wo-sticky-actions {
++			display: flex;
++			justify-content: flex-end;
++			align-items: center;
++			gap: 8px;
++			margin-top: 10px;
++		}
++
++		@media (max-width: 1200px) {
++			.wo-layout {
++				flex-direction: column;
++			}
++
++			.wo-col {
++				width: 100%;
++			}
++		}
++	</style>
++
++	<div class="mb-3">
++		<h4 class="fw-bold mb-1">작업지시</h4>
++		<p class="text-muted mb-0">품번별 생산합의를 조회하고 작업지시를 생성합니다.</p>
++	</div>
++
++	<div class="wo-panel mb-3">
++		<div class="wo-search-grid">
++			<div class="form-field">
++				<label class="form-label fw-semibold mb-1">품번</label>
++				<input type="text" class="form-control" id="styleNoInput" placeholder="품번을 입력하세요">
++			</div>
++			<div class="form-field">
++				<label class="form-label fw-semibold mb-1 d-flex justify-content-between align-items-center">
++					<span>색상 / 생산합의코드</span>
++					<small class="text-muted">품번 선택 후 옵션 로드</small>
++				</label>
++				<div class="form-row">
++					<select class="form-select" id="colorSelect" disabled>
++						<option value="">색상 전체</option>
++					</select>
++					<select class="form-select" id="agreementSelect" disabled>
++						<option value="">생산합의 전체</option>
++					</select>
++					<div class="actions">
++						<button type="button" class="btn btn--primary" id="searchButton">검색</button>
++					</div>
 +				</div>
- 			</div>
- 		</div>
- 
- 		<div class="material-panel">
- 			<div class="d-flex justify-content-between align-items-center mb-2">
- 				<div>
- 					<h6 class="fw-bold mb-0">입고 대상 목록</h6>
- 					<small class="text-muted">입고량을 입력하고 저장을 눌러주세요.</small>
- 				</div>
--				<button type="button" class="btn btn-primary" id="mi-save-button">저장</button>
-+				<div class="actions">
-+					<button type="button" class="btn btn--primary" id="mi-save-button">저장</button>
++			</div>
++			<div class="form-field">
++				<label class="form-label fw-semibold mb-1">생산담당</label>
++				<div class="form-row">
++					<input type="text" class="form-control" id="empNoInput" placeholder="사번">
++					<input type="text" class="form-control" id="empNameInput" placeholder="이름">
++					<div class="actions">
++						<button type="button" class="btn btn--outline" id="employeeSearchButton" title="사원 검색">
++							<i class="bi bi-search"></i>
++						</button>
++					</div>
 +				</div>
- 			</div>
- 			<div class="table-responsive">
--				<table class="table table-bordered align-middle mi-table">
-+				<table class="table table-bordered align-middle mi-table data-table">
- 					<thead class="table-light">
- 						<tr>
--							<th>품번</th>
--							<th>합의월</th>
-+							<th class="t-left">품번</th>
-+							<th class="t-left">합의월</th>
- 							<th>색상</th>
--							<th>원부자재구분</th>
--							<th>자재명칭</th>
--							<th>용도</th>
--							<th>자재규격</th>
--							<th>자재색상</th>
-+							<th class="t-left">원부자재구분</th>
-+							<th class="t-left">자재명칭</th>
-+							<th class="t-left">용도</th>
-+							<th class="t-left">자재규격</th>
-+							<th class="t-left">자재색상</th>
- 							<th>소요량단위</th>
- 							<th>1매소요량</th>
--							<th>자재처</th>
--							<th>생산담당</th>
-+							<th class="t-left">자재처</th>
-+							<th class="t-left">생산담당</th>
- 							<th>발주단위</th>
- 							<th>단가</th>
- 							<th>발주량</th>
- 							<th>기입고량</th>
- 							<th>입고량</th>
- 						</tr>
- 					</thead>
- 					<tbody id="mi-table-body">
- 						<tr>
- 							<td colspan="17" class="mi-placeholder">품번/색상/생산합의/입고일을 선택한 뒤 검색하세요.</td>
- 						</tr>
- 					</tbody>
- 				</table>
- 			</div>
- 		</div>
- 	</div>
- 
- 	<div class="modal fade" id="miStyleSearchModal" tabindex="-1" aria-hidden="true">
- 		<div class="modal-dialog modal-lg modal-dialog-scrollable">
- 			<div class="modal-content">
- 				<div class="modal-header">
- 					<h5 class="modal-title fw-bold">품번 검색</h5>
- 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
- 				</div>
--				<div class="modal-body">
--					<div class="input-group mb-3">
--						<input type="text" class="form-control" id="mi-style-search-keyword" placeholder="품번 또는 아이템명 검색">
--						<button class="btn btn-outline-secondary" type="button" id="mi-style-search-btn">검색</button>
--					</div>
--					<div class="table-responsive">
--						<table class="table table-hover align-middle">
--							<thead class="table-light">
--								<tr>
--									<th>품번</th>
--									<th>아이템</th>
--									<th>상태</th>
--								</tr>
--							</thead>
--							<tbody id="mi-style-search-results">
--								<tr>
--									<td colspan="3" class="mi-placeholder">검색어를 입력하세요.</td>
-+			<div class="modal-body">
-+				<div class="input-group mb-3">
-+					<input type="text" class="form-control" id="mi-style-search-keyword" placeholder="품번 또는 아이템명 검색">
-+					<button class="btn btn--primary" type="button" id="mi-style-search-btn">검색</button>
-+				</div>
++			</div>
++		</div>
++	</div>
++
++	<div class="wo-layout">
++		<div class="wo-col">
++			<div class="wo-table-title">품번 기준 전체 생산합의 목록</div>
++			<div class="wo-table-wrap">
 +				<div class="table-responsive">
-+					<table class="table table-hover align-middle data-table">
-+						<thead class="table-light">
++					<table class="data-table align-middle">
++						<thead>
 +							<tr>
-+								<th class="t-left">품번</th>
-+								<th class="t-left">아이템</th>
-+								<th>상태</th>
++								<th class="t-left" style="width: 20%;">품번</th>
++								<th class="t-left" style="width: 18%;">생산합의코드</th>
++								<th class="t-left" style="width: 16%;">색상</th>
++								<th style="width: 14%;">합의량</th>
++								<th class="t-left" style="width: 18%;">생산처</th>
++								<th style="width: 14%;">체크</th>
 +							</tr>
 +						</thead>
-+						<tbody id="mi-style-search-results">
++						<tbody id="agreementTableBody">
 +							<tr>
-+								<td colspan="3" class="mi-placeholder">검색어를 입력하세요.</td>
- 								</tr>
- 							</tbody>
- 						</table>
- 					</div>
--				</div>
--				<div class="modal-footer">
--					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
--					<button type="button" class="btn btn-primary" id="mi-style-select-btn">선택</button>
--				</div>
--			</div>
- 		</div>
-+		<div class="modal-footer">
-+			<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
-+			<button type="button" class="btn btn--primary" id="mi-style-select-btn">선택</button>
++								<td colspan="6" class="text-center text-muted">품번을 먼저 검색하세요.</td>
++							</tr>
++						</tbody>
++					</table>
++				</div>
++			</div>
++		</div>
++		<div class="wo-col">
++			<div class="wo-table-title d-flex justify-content-between align-items-center">
++				<span>상세 (필터 적용)</span>
++				<div class="actions">
++					<button type="button" class="btn btn--primary btn-sm" id="saveDetailsButton">저장</button>
++				</div>
++			</div>
++			<div class="wo-table-wrap d-flex flex-column">
++				<div class="table-responsive">
++					<table class="data-table align-middle">
++						<thead>
++							<tr>
++								<th class="t-left" style="width: 18%;">품번</th>
++								<th class="t-left" style="width: 18%;">생산합의코드(합의월)</th>
++								<th class="t-left" style="width: 14%;">색상</th>
++								<th style="width: 10%;">합의량</th>
++								<th class="t-left" style="width: 16%;">생산처</th>
++								<th style="width: 12%;">납기일</th>
++								<th class="t-left" style="width: 16%;">납품장소</th>
++							</tr>
++						</thead>
++						<tbody id="detailTableBody">
++							<tr>
++								<td colspan="7" class="text-center text-muted">검색 결과가 여기에 표시됩니다.</td>
++							</tr>
++						</tbody>
++					</table>
++				</div>
++			</div>
 +		</div>
 +	</div>
 +</div>
- 	</div>
- 
- 	<script>
- 		document.addEventListener('DOMContentLoaded', () => {
- 			const styleModal = new bootstrap.Modal(document.getElementById('miStyleSearchModal'));
- 			const styleSearchBtn = document.getElementById('mi-style-search-btn');
- 			const styleSearchKeyword = document.getElementById('mi-style-search-keyword');
- 			const styleSearchResults = document.getElementById('mi-style-search-results');
- 			const styleSelectBtn = document.getElementById('mi-style-select-btn');
- 			const styleSearchTrigger = document.getElementById('mi-style-search');
- 			const styleIdInput = document.getElementById('mi-styles-id');
- 			const styleCodeInput = document.getElementById('mi-style-input');
- 			const colorSelect = document.getElementById('mi-color-select');
- 			const agreeSelect = document.getElementById('mi-agreement-select');
- 			const dateInput = document.getElementById('mi-date-input');
- 			const searchButton = document.getElementById('mi-search-button');
- 			const saveButton = document.getElementById('mi-save-button');
- 			const tableBody = document.getElementById('mi-table-body');
- 
- 			let selectedStyleRow = null;
- 
- 			styleSearchTrigger.addEventListener('click', () => {
- 				styleModal.show();
- 				styleSearchKeyword.focus();
- 			});
-@@ -431,26 +435,26 @@
- 							loadMaterials();
- 						} else {
- 							alert('입고 저장에 실패했습니다.');
- 						}
- 					})
- 					.catch(() => alert('입고 저장 중 오류가 발생했습니다.'));
- 			});
- 
- 			function formatNumber(value) {
- 				if (value === null || value === undefined) {
- 					return '-';
- 				}
- 				const num = Number(value);
- 				return isNaN(num) ? '-' : num.toLocaleString();
- 			}
- 
- 			function formatDecimal(value) {
- 				if (value === null || value === undefined) {
- 					return '-';
- 				}
- 				const num = Number(value);
- 				return isNaN(num) ? '-' : num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
- 			}
- 		});
- 	</script>
--</div>
-\ No newline at end of file
-+</div>
++
++<script>
++	(() => {
++		const styleNoInput = document.getElementById('styleNoInput');
++		const colorSelect = document.getElementById('colorSelect');
++		const agreementSelect = document.getElementById('agreementSelect');
++		const searchButton = document.getElementById('searchButton');
++		const empNoInput = document.getElementById('empNoInput');
++		const empNameInput = document.getElementById('empNameInput');
++		const employeeSearchButton = document.getElementById('employeeSearchButton');
++		const agreementTableBody = document.getElementById('agreementTableBody');
++		const detailTableBody = document.getElementById('detailTableBody');
++		const saveDetailsButton = document.getElementById('saveDetailsButton');
++
++		const originalDetails = new Map();
++		const changedDetails = new Map();
++		let currentCodeTarget = null;
++		let currentStyle = '';
++		let agreementData = [];
++
++		const buildKey = (styleNo, agreementCode, color) => [styleNo || '', agreementCode || '', color || ''].join('|');
++		const escapeSelector = (value) => {
++			if (window.CSS && CSS.escape) {
++				return CSS.escape(value);
++			}
++			return value.replace(/"/g, '\\"').replace(/'/g, "\\'");
++		};
++
++		function setFilterDisabled(disabled) {
++			colorSelect.disabled = disabled;
++			agreementSelect.disabled = disabled;
++		}
++
++		function populateSelect(select, items, placeholder) {
++			select.innerHTML = '';
++			const defaultOption = document.createElement('option');
++			defaultOption.value = '';
++			defaultOption.textContent = placeholder;
++			select.appendChild(defaultOption);
++			items.forEach(item => {
++				const option = document.createElement('option');
++				option.value = item;
++				option.textContent = item;
++				select.appendChild(option);
++			});
++		}
++
++		async function fetchJson(url, options = {}) {
++			const response = await fetch(url, {
++				headers: { 'Content-Type': 'application/json' },
++				...options
++			});
++			if (!response.ok) {
++				throw new Error('요청에 실패했습니다.');
++			}
++			return response.json();
++		}
++
++		async function loadFilters(styleNo) {
++			const data = await fetchJson(`/api/work-orders/${encodeURIComponent(styleNo)}/filters`);
++			populateSelect(colorSelect, data.colors || [], '색상 전체');
++			populateSelect(agreementSelect, data.agreementCodes || [], '생산합의 전체');
++			setFilterDisabled(false);
++		}
++
++		async function loadAgreements(styleNo) {
++			const data = await fetchJson(`/api/work-orders/${encodeURIComponent(styleNo)}/agreements`);
++			agreementData = data || [];
++			renderAgreementTable();
++		}
++
++		async function loadDetail(styleNo) {
++			const params = new URLSearchParams();
++			if (colorSelect.value) params.append('color', colorSelect.value);
++			if (agreementSelect.value) params.append('agreementCode', agreementSelect.value);
++			const data = await fetchJson(`/api/work-orders/${encodeURIComponent(styleNo)}/agreements/detail?${params.toString()}`);
++			resetDetailState();
++			data.forEach(item => {
++				const key = buildKey(item.styleNo, item.agreementCode, item.color);
++			originalDetails.set(key, normalizeDetail(item));
++		});
++		renderDetailTable(data || []);
++	}
++
++		function resetDetailState() {
++			originalDetails.clear();
++			changedDetails.clear();
++		}
++
++		function normalizeDetail(detail) {
++			return {
++				styleNo: detail.styleNo,
++				agreementCode: detail.agreementCode,
++				color: detail.color,
++				factoryCode: detail.factoryCode || '',
++				factoryName: detail.factoryName || '',
++				deliveryPlaceCode: detail.deliveryPlaceCode || '',
++				deliveryPlaceName: detail.deliveryPlaceName || '',
++				dueDate: detail.dueDate || ''
++			};
++		}
++
++		function renderAgreementTable() {
++			if (!agreementData.length) {
++				agreementTableBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">조건에 맞는 생산합의가 없습니다.</td></tr>`;
++				return;
++			}
++			let prevStyle = '';
++			let prevAgreement = '';
++			agreementTableBody.innerHTML = '';
++			agreementData.forEach(item => {
++				const row = document.createElement('tr');
++				row.dataset.styleNo = item.styleNo;
++				row.dataset.agreementCode = item.agreementCode;
++				row.dataset.color = item.color;
++				const isSameStyle = prevStyle === item.styleNo;
++				const isSameAgreement = prevAgreement === item.agreementCode && isSameStyle;
++
++				row.classList.toggle('wo-row-disabled', item.dispatched);
++
++				row.innerHTML = `
++					<td class="t-left">${isSameStyle ? '' : (item.styleNo || '')}</td>
++					<td class="t-left">${isSameAgreement ? '' : (item.agreementCode || '')}</td>
++					<td class="t-left">${item.color || ''}</td>
++					<td>${item.quantity ?? ''}</td>
++					<td class="t-left">${item.productionSite || ''}</td>
++					<td>
++						<button type="button" class="btn btn--primary btn-sm" data-action="dispatch" ${item.dispatched ? 'disabled' : ''}>
++							${item.dispatched ? '지시 완료' : '지시'}
++						</button>
++					</td>
++				`;
++
++				prevStyle = item.styleNo;
++				prevAgreement = item.agreementCode;
++				agreementTableBody.appendChild(row);
++			});
++		}
++
++		function renderDetailTable(details) {
++			if (!details.length) {
++				detailTableBody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">상세 데이터가 없습니다.</td></tr>`;
++				return;
++			}
++			detailTableBody.innerHTML = '';
++			details.forEach(detail => {
++				const key = buildKey(detail.styleNo, detail.agreementCode, detail.color);
++				const current = changedDetails.get(key) || normalizeDetail(detail);
++				const row = document.createElement('tr');
++				row.dataset.key = key;
++				row.innerHTML = `
++					<td class="t-left">${detail.styleNo || ''}</td>
++					<td class="t-left">${detail.agreementLabel || detail.agreementCode || ''}</td>
++					<td class="t-left">${detail.color || ''}</td>
++					<td>${detail.quantity ?? ''}</td>
++					<td class="t-left">
++						<div class="wo-inline-field">
++							<input type="text" class="form-control form-control-sm" data-field="factoryName" value="${current.factoryName || ''}" readonly>
++							<input type="hidden" data-field="factoryCode" value="${current.factoryCode || ''}">
++							<button type="button" class="btn btn--outline btn-sm" data-action="choose-factory"><i class="bi bi-search"></i></button>
++						</div>
++					</td>
++					<td>
++						<input type="date" class="form-control form-control-sm" data-field="dueDate" value="${current.dueDate || ''}">
++					</td>
++					<td class="t-left">
++						<div class="wo-inline-field">
++							<input type="text" class="form-control form-control-sm" data-field="deliveryPlaceName" value="${current.deliveryPlaceName || ''}" readonly>
++							<input type="hidden" data-field="deliveryPlaceCode" value="${current.deliveryPlaceCode || ''}">
++							<button type="button" class="btn btn--outline btn-sm" data-action="choose-delivery"><i class="bi bi-search"></i></button>
++						</div>
++					</td>
++				`;
++				detailTableBody.appendChild(row);
++			});
++		}
++
++		async function handleSearch() {
++			const styleNo = styleNoInput.value.trim();
++			if (!styleNo) {
++				alert('품번을 입력하세요.');
++				return;
++			}
++			currentStyle = styleNo;
++			try {
++				setFilterDisabled(true);
++				await loadFilters(styleNo);
++				await loadAgreements(styleNo);
++				await loadDetail(styleNo);
++			} catch (e) {
++				console.error(e);
++				alert('검색 중 문제가 발생했습니다.');
++			}
++		}
++
++		async function handleDispatch(button) {
++			const row = button.closest('tr');
++			const payload = {
++				styleNo: row.dataset.styleNo,
++				agreementCode: row.dataset.agreementCode,
++				color: row.dataset.color,
++				empNo: empNoInput.value.trim(),
++				empName: empNameInput.value.trim()
++			};
++			if (!payload.styleNo) {
++				alert('품번 정보가 없습니다.');
++				return;
++			}
++			if (!confirm('작업을 지시하시겠습니까?')) {
++				return;
++			}
++			try {
++				const response = await fetchJson('/api/work-orders/dispatch', {
++					method: 'POST',
++					body: JSON.stringify(payload)
++				});
++				if (response.success) {
++					button.disabled = true;
++					button.textContent = '지시 완료';
++					row.classList.add('wo-row-disabled');
++				} else if (response.message) {
++					alert(response.message);
++				}
++			} catch (e) {
++				console.error(e);
++				alert('작업지시 생성에 실패했습니다.');
++			}
++		}
++
++		function captureDetailChange(key, patch) {
++			const base = originalDetails.get(key) || {};
++			const existing = changedDetails.get(key) || {};
++			const merged = { ...base, ...existing, ...patch };
++
++			const isSame = ['factoryCode', 'factoryName', 'deliveryPlaceCode', 'deliveryPlaceName', 'dueDate']
++				.every(field => (base[field] || '') === (merged[field] || ''));
++
++			if (isSame) {
++				changedDetails.delete(key);
++			} else {
++				changedDetails.set(key, merged);
++			}
++		}
++
++		function updateRowValues(row, key) {
++			const current = changedDetails.get(key) || originalDetails.get(key) || {};
++			row.querySelector('[data-field="factoryName"]').value = current.factoryName || '';
++			row.querySelector('[data-field="factoryCode"]').value = current.factoryCode || '';
++			row.querySelector('[data-field="deliveryPlaceName"]').value = current.deliveryPlaceName || '';
++			row.querySelector('[data-field="deliveryPlaceCode"]').value = current.deliveryPlaceCode || '';
++			row.querySelector('[data-field="dueDate"]').value = current.dueDate || '';
++		}
++
++		async function handleSave() {
++			if (!changedDetails.size) {
++				alert('변경된 항목이 없습니다.');
++				return;
++			}
++			const items = Array.from(changedDetails.values()).map(item => ({
++				styleNo: item.styleNo,
++				agreementCode: item.agreementCode,
++				color: item.color,
++				factoryCode: item.factoryCode,
++				factoryName: item.factoryName,
++				dueDate: item.dueDate,
++				deliveryPlaceCode: item.deliveryPlaceCode,
++				deliveryPlaceName: item.deliveryPlaceName
++			}));
++			try {
++				const response = await fetchJson('/api/work-orders/detail/save', {
++					method: 'POST',
++					body: JSON.stringify({ items })
++				});
++				if (response.success) {
++					alert('저장되었습니다.');
++					if (currentStyle) {
++						await loadDetail(currentStyle);
++					}
++				} else {
++					alert('저장에 실패했습니다.');
++				}
++			} catch (e) {
++				console.error(e);
++				alert('저장 중 오류가 발생했습니다.');
++			}
++		}
++
++		function openCodePopup(type, key, fieldPrefix) {
++			currentCodeTarget = { key, fieldPrefix };
++			const url = `/popup/codes?codeType=${encodeURIComponent(type)}`;
++			window.open(url, 'code-search', 'width=980,height=640,scrollbars=yes');
++		}
++
++		colorSelect.addEventListener('change', () => {
++			if (currentStyle) {
++				loadDetail(currentStyle);
++			}
++		});
++		agreementSelect.addEventListener('change', () => {
++			if (currentStyle) {
++				loadDetail(currentStyle);
++			}
++		});
++		searchButton.addEventListener('click', handleSearch);
++		saveDetailsButton.addEventListener('click', handleSave);
++
++		agreementTableBody.addEventListener('click', (event) => {
++			const button = event.target.closest('[data-action="dispatch"]');
++			if (button) {
++				handleDispatch(button);
++			}
++		});
++
++		detailTableBody.addEventListener('change', (event) => {
++			const field = event.target.dataset.field;
++			if (!field) return;
++			const row = event.target.closest('tr');
++			const key = row.dataset.key;
++			const patch = { [field]: event.target.value };
++			captureDetailChange(key, patch);
++		});
++
++		detailTableBody.addEventListener('click', (event) => {
++			const actionButton = event.target.closest('[data-action]');
++			if (!actionButton) return;
++			const row = actionButton.closest('tr');
++			const key = row.dataset.key;
++			if (actionButton.dataset.action === 'choose-factory') {
++				openCodePopup('FACTORY', key, 'factory');
++			}
++			if (actionButton.dataset.action === 'choose-delivery') {
++				openCodePopup('WAREHOUSE', key, 'deliveryPlace');
++			}
++		});
++
++		employeeSearchButton.addEventListener('click', () => {
++			window.open('/popup/employees', 'employee-search', 'width=980,height=640,scrollbars=yes');
++		});
++
++		window.onEmployeeSelected = (employee) => {
++			if (!employee) return;
++			empNoInput.value = employee.empNo || '';
++			empNameInput.value = employee.name || '';
++		};
++
++		window.onCodeSelected = (payload) => {
++			if (!payload || !currentCodeTarget) return;
++			const targetKey = currentCodeTarget.key;
++			const fieldPrefix = currentCodeTarget.fieldPrefix;
++			const codeValue = payload.code;
++			const nameValue = payload.codeName || payload.name;
++			const patch = {};
++			patch[`${fieldPrefix}Code`] = codeValue;
++			patch[`${fieldPrefix}Name`] = nameValue;
++			captureDetailChange(targetKey, patch);
++			const targetRow = detailTableBody.querySelector(`tr[data-key="${escapeSelector(targetKey)}"]`);
++			if (targetRow) {
++				updateRowValues(targetRow, targetKey);
++			}
++			currentCodeTarget = null;
++		};
++	})();
++</script>
 
-diff --git a/src/main/resources/templates/production/material-outbound.html b/src/main/resources/templates/production/material-outbound.html
-index 0185e4b8ebafa237c8ff3293eb8f16cc4eae60e2..2dd00e30c85ab376e93927dd6b67f6fe2f6a3f99 100644
---- a/src/main/resources/templates/production/material-outbound.html
-+++ b/src/main/resources/templates/production/material-outbound.html
-@@ -83,157 +83,161 @@
- 		}
- 
- 		.moout-table tbody td {
- 			font-size: 13px;
- 			vertical-align: middle;
- 			white-space: nowrap;
- 		}
- 
- 		.moout-placeholder {
- 			text-align: center;
- 			color: #6b7280;
- 		}
- 	</style>
- 
- 	<div class="mb-3">
- 		<h4 class="fw-bold mb-1">원부자재 출고 등록</h4>
- 		<p class="text-muted mb-0">입고 대비 출고량을 입력하고 생산처를 지정하세요.</p>
- 	</div>
- 
- 	<div class="moout-layout">
- 		<div class="material-panel">
- 			<div class="d-flex justify-content-between align-items-center mb-2">
- 				<h6 class="fw-bold mb-0">검색/선택</h6>
- 				<small class="text-muted">품번 선택 전에는 색상/합의/출고일/검색이 비활성화됩니다.</small>
- 			</div>
--			<div class="material-row mb-2">
-+			<div class="material-row form-row mb-2">
- 				<label class="form-label fw-bold mb-0">품번</label>
- 				<input type="hidden" id="mout-styles-id">
- 				<div class="input-group material-style-input">
- 					<input type="text" id="mout-style-input" class="form-control" placeholder="품번을 선택하세요" readonly>
--					<button type="button" class="btn btn-outline-secondary" id="mout-style-search">품번 검색</button>
-+					<button type="button" class="btn btn--primary" id="mout-style-search">품번 검색</button>
- 				</div>
- 			</div>
--			<div class="material-row">
-+			<div class="material-row form-row">
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">색상</label>
- 					<select id="mout-color-select" class="form-select material-color-select" disabled>
- 						<option value="">색상을 선택하세요</option>
- 					</select>
- 				</div>
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">생산합의코드</label>
- 					<select id="mout-agreement-select" class="form-select material-agree-select" disabled>
- 						<option value="">생산합의 코드를 선택하세요</option>
- 					</select>
- 				</div>
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">출고일</label>
- 					<input type="date" id="mout-date-input" class="form-control moout-date-input" disabled>
- 				</div>
--				<button type="button" class="btn btn-dark material-search-button" id="mout-search-button" disabled>검색</button>
-+				<div class="actions">
-+					<button type="button" class="btn btn--primary material-search-button" id="mout-search-button" disabled>검색</button>
-+				</div>
- 			</div>
- 		</div>
- 
- 		<div class="material-panel">
- 			<div class="d-flex justify-content-between align-items-center mb-2">
- 				<div>
- 					<h6 class="fw-bold mb-0">출고 대상 목록</h6>
- 					<small class="text-muted">입고량-기출고량보다 많은 출고량은 저장이 차단됩니다.</small>
- 				</div>
--				<button type="button" class="btn btn-primary" id="mout-save-button">저장</button>
-+				<div class="actions">
-+					<button type="button" class="btn btn--primary" id="mout-save-button">저장</button>
-+				</div>
- 			</div>
- 			<div class="table-responsive">
--				<table class="table table-bordered align-middle moout-table">
-+				<table class="table table-bordered align-middle moout-table data-table">
- 					<thead class="table-light">
- 						<tr>
--							<th>품번</th>
-+							<th class="t-left">품번</th>
- 							<th>색상</th>
--							<th>합의월</th>
--							<th>원부자재구분</th>
--							<th>자재명칭</th>
--							<th>용도</th>
--							<th>자재규격</th>
--							<th>자재색상</th>
-+							<th class="t-left">합의월</th>
-+							<th class="t-left">원부자재구분</th>
-+							<th class="t-left">자재명칭</th>
-+							<th class="t-left">용도</th>
-+							<th class="t-left">자재규격</th>
-+							<th class="t-left">자재색상</th>
- 							<th>소요량단위</th>
- 							<th>1매소요량</th>
--							<th>자재처</th>
--							<th>생산담당</th>
-+							<th class="t-left">자재처</th>
-+							<th class="t-left">생산담당</th>
- 							<th>발주단위</th>
- 							<th>단가</th>
- 							<th>발주량</th>
- 							<th>입고량</th>
- 							<th>기출고량</th>
- 							<th>출고량</th>
- 							<th>생산처</th>
- 						</tr>
- 					</thead>
- 					<tbody id="mout-table-body">
- 						<tr>
- 							<td colspan="19" class="moout-placeholder">품번/색상/생산합의/출고일을 선택한 뒤 검색하세요.</td>
- 						</tr>
- 					</tbody>
- 				</table>
- 			</div>
- 		</div>
- 	</div>
- 
- 	<div class="modal fade" id="moutStyleSearchModal" tabindex="-1" aria-hidden="true">
- 		<div class="modal-dialog modal-lg modal-dialog-scrollable">
- 			<div class="modal-content">
- 				<div class="modal-header">
- 					<h5 class="modal-title fw-bold">품번 검색</h5>
- 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
- 				</div>
--				<div class="modal-body">
--					<div class="input-group mb-3">
--						<input type="text" class="form-control" id="mout-style-search-keyword" placeholder="품번 또는 아이템명 검색">
--						<button class="btn btn-outline-secondary" type="button" id="mout-style-search-btn">검색</button>
--					</div>
--					<div class="table-responsive">
--						<table class="table table-hover align-middle">
--							<thead class="table-light">
--								<tr>
--									<th>품번</th>
--									<th>아이템</th>
--									<th>상태</th>
--								</tr>
--							</thead>
--							<tbody id="mout-style-search-results">
--								<tr>
--									<td colspan="3" class="moout-placeholder">검색어를 입력하세요.</td>
-+			<div class="modal-body">
-+				<div class="input-group mb-3">
-+					<input type="text" class="form-control" id="mout-style-search-keyword" placeholder="품번 또는 아이템명 검색">
-+					<button class="btn btn--primary" type="button" id="mout-style-search-btn">검색</button>
-+				</div>
-+				<div class="table-responsive">
-+					<table class="table table-hover align-middle data-table">
-+						<thead class="table-light">
-+							<tr>
-+								<th class="t-left">품번</th>
-+								<th class="t-left">아이템</th>
-+								<th>상태</th>
-+							</tr>
-+						</thead>
-+						<tbody id="mout-style-search-results">
-+							<tr>
-+								<td colspan="3" class="moout-placeholder">검색어를 입력하세요.</td>
- 								</tr>
- 							</tbody>
- 						</table>
- 					</div>
--				</div>
--				<div class="modal-footer">
--					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
--					<button type="button" class="btn btn-primary" id="mout-style-select-btn">선택</button>
--				</div>
--			</div>
- 		</div>
-+		<div class="modal-footer">
-+			<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
-+			<button type="button" class="btn btn--primary" id="mout-style-select-btn">선택</button>
-+		</div>
-+	</div>
-+</div>
- 	</div>
- 
- 	<script th:inline="javascript">
- 		/*<![CDATA[*/
- 		const factoryOptions = /*[[${factories}]]*/ [];
- 
- 		document.addEventListener('DOMContentLoaded', () => {
- 			const styleModal = new bootstrap.Modal(document.getElementById('moutStyleSearchModal'));
- 			const styleSearchBtn = document.getElementById('mout-style-search-btn');
- 			const styleSearchKeyword = document.getElementById('mout-style-search-keyword');
- 			const styleSearchResults = document.getElementById('mout-style-search-results');
- 			const styleSelectBtn = document.getElementById('mout-style-select-btn');
- 			const styleSearchTrigger = document.getElementById('mout-style-search');
- 			const styleIdInput = document.getElementById('mout-styles-id');
- 			const styleCodeInput = document.getElementById('mout-style-input');
- 			const colorSelect = document.getElementById('mout-color-select');
- 			const agreeSelect = document.getElementById('mout-agreement-select');
- 			const dateInput = document.getElementById('mout-date-input');
- 			const searchButton = document.getElementById('mout-search-button');
- 			const saveButton = document.getElementById('mout-save-button');
- 			const tableBody = document.getElementById('mout-table-body');
- 
- 			let selectedStyleRow = null;
- 
- 			styleSearchTrigger.addEventListener('click', () => {
-@@ -473,26 +477,26 @@
- 						if (data.success) {
- 							alert('출고 저장이 완료되었습니다.');
- 							loadMaterials();
- 						} else {
- 							alert('출고 저장에 실패했습니다.');
- 						}
- 					})
- 					.catch(() => alert('출고 저장 중 오류가 발생했습니다.'));
- 			});
- 
- 			function formatDecimal(value) {
- 				if (value === null || value === undefined) {
- 					return '-';
- 				}
- 				const num = Number(value);
- 				return isNaN(num) ? '-' : num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
- 			}
- 
- 			function safeNumber(value) {
- 				const num = Number(value);
- 				return isNaN(num) ? 0 : num;
- 			}
- 		});
- 		/*]]>*/
- 	</script>
--</div>
-\ No newline at end of file
-+</div>
-
-diff --git a/src/main/resources/templates/signup.html b/src/main/resources/templates/signup.html
-index dd8b7270a1e03204292cb28bc1eb0f2b198a2c34..3e1183dda77cdf03bce65eab9bd531ca592c0907 100644
---- a/src/main/resources/templates/signup.html
-+++ b/src/main/resources/templates/signup.html
-@@ -62,33 +62,33 @@
-             <label class="form-label fw-semibold">비밀번호 *</label>
-             <input type="password" th:field="*{password}" class="form-control" placeholder="8자 이상 비밀번호">
-             <div class="text-danger small" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
-           </div>
-           <div class="col-md-6">
-             <label class="form-label fw-semibold">이름 *</label>
-             <input type="text" th:field="*{name}" class="form-control" placeholder="이름">
-             <div class="text-danger small" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
-           </div>
-           <div class="col-md-6">
-             <label class="form-label fw-semibold">부서</label>
-             <input type="text" th:field="*{dept}" class="form-control" placeholder="부서명">
-           </div>
-           <div class="col-md-6">
-             <label class="form-label fw-semibold">이메일</label>
-             <input type="email" th:field="*{email}" class="form-control" placeholder="email@example.com">
-           </div>
-           <div class="col-md-6">
-             <label class="form-label fw-semibold">전화번호</label>
-             <input type="text" th:field="*{phone}" class="form-control" placeholder="010-0000-0000">
-           </div>
-         </div>
- 
-         <div class="d-flex justify-content-between align-items-center mt-4">
-           <a class="text-decoration-none" th:href="@{/login}">이미 계정이 있으신가요? 로그인</a>
--          <button type="submit" class="btn btn-primary btn-rounded">회원가입</button>
-+          <button type="submit" class="btn btn--primary btn-rounded">회원가입</button>
-         </div>
-       </form>
-     </div>
-   </div>
- </div>
- </body>
--</html>
-\ No newline at end of file
-+</html>
