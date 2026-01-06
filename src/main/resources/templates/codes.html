@@ -81,14 +81,14 @@
 														<td class="t-left" th:text="${code.description}">설명</td>
 														<td class="text-center">
 															<div class="btn-group btn-group-sm" role="group"> <button
-																	type="button" class="btn btn-outline-primary"
+																	type="button" class="btn btn--outline"
 																	th:attr="data-type=${code.id.codeType}, data-code=${code.id.code}, data-name=${code.name}, data-sort=${code.sortOrder}, data-desc=${code.description}"
 																	onclick="fillForm(this)"> <i
 																		class="bi bi-pencil"></i> </button>
 																<form
 																	th:action="@{'/codes/' + ${code.id.codeType} + '/' + ${code.id.code} + '/delete'}"
 																	method="post" class="d-inline"> <button
-																		type="submit" class="btn btn-outline-danger"
+																		type="submit" class="btn btn--outline"
 																		onclick="return confirm('삭제하시겠습니까?');"> <i
 																			class="bi bi-trash"></i> </button> </form>
 															</div>

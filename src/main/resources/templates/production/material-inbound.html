@@ -105,15 +105,15 @@
 				<h6 class="fw-bold mb-0">검색/선택</h6>
 				<small class="text-muted">품번 선택 전에는 색상/합의/입고일/검색이 비활성화됩니다.</small>
 			</div>
-			<div class="material-row mb-2">
+			<div class="material-row form-row mb-2">
 				<label class="form-label fw-bold mb-0">품번</label>
 				<input type="hidden" id="mi-styles-id">
 				<div class="input-group material-style-input">
 					<input type="text" id="mi-style-input" class="form-control" placeholder="품번을 선택하세요" readonly>
-					<button type="button" class="btn btn-outline-secondary" id="mi-style-search">품번 검색</button>
+					<button type="button" class="btn btn--primary" id="mi-style-search">품번 검색</button>
 				</div>
 			</div>
-			<div class="material-row">
+			<div class="material-row form-row">
 				<div class="material-meta-item">
 					<label class="form-label fw-bold mb-0">색상</label>
 					<select id="mi-color-select" class="form-select material-color-select" disabled>
@@ -130,7 +130,9 @@
 					<label class="form-label fw-bold mb-0">입고일</label>
 					<input type="date" id="mi-date-input" class="form-control mi-date-input" disabled>
 				</div>
-				<button type="button" class="btn btn-dark material-search-button" id="mi-search-button" disabled>검색</button>
+				<div class="actions">
+					<button type="button" class="btn btn--primary material-search-button" id="mi-search-button" disabled>검색</button>
+				</div>
 			</div>
 		</div>
 
@@ -140,24 +142,26 @@
 					<h6 class="fw-bold mb-0">입고 대상 목록</h6>
 					<small class="text-muted">입고량을 입력하고 저장을 눌러주세요.</small>
 				</div>
-				<button type="button" class="btn btn-primary" id="mi-save-button">저장</button>
+				<div class="actions">
+					<button type="button" class="btn btn--primary" id="mi-save-button">저장</button>
+				</div>
 			</div>
 			<div class="table-responsive">
-				<table class="table table-bordered align-middle mi-table">
+				<table class="table table-bordered align-middle mi-table data-table">
 					<thead class="table-light">
 						<tr>
-							<th>품번</th>
-							<th>합의월</th>
+							<th class="t-left">품번</th>
+							<th class="t-left">합의월</th>
 							<th>색상</th>
-							<th>원부자재구분</th>
-							<th>자재명칭</th>
-							<th>용도</th>
-							<th>자재규격</th>
-							<th>자재색상</th>
+							<th class="t-left">원부자재구분</th>
+							<th class="t-left">자재명칭</th>
+							<th class="t-left">용도</th>
+							<th class="t-left">자재규격</th>
+							<th class="t-left">자재색상</th>
 							<th>소요량단위</th>
 							<th>1매소요량</th>
-							<th>자재처</th>
-							<th>생산담당</th>
+							<th class="t-left">자재처</th>
+							<th class="t-left">생산담당</th>
 							<th>발주단위</th>
 							<th>단가</th>
 							<th>발주량</th>
@@ -182,34 +186,34 @@
 					<h5 class="modal-title fw-bold">품번 검색</h5>
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
-				<div class="modal-body">
-					<div class="input-group mb-3">
-						<input type="text" class="form-control" id="mi-style-search-keyword" placeholder="품번 또는 아이템명 검색">
-						<button class="btn btn-outline-secondary" type="button" id="mi-style-search-btn">검색</button>
-					</div>
-					<div class="table-responsive">
-						<table class="table table-hover align-middle">
-							<thead class="table-light">
-								<tr>
-									<th>품번</th>
-									<th>아이템</th>
-									<th>상태</th>
-								</tr>
-							</thead>
-							<tbody id="mi-style-search-results">
-								<tr>
-									<td colspan="3" class="mi-placeholder">검색어를 입력하세요.</td>
+			<div class="modal-body">
+				<div class="input-group mb-3">
+					<input type="text" class="form-control" id="mi-style-search-keyword" placeholder="품번 또는 아이템명 검색">
+					<button class="btn btn--primary" type="button" id="mi-style-search-btn">검색</button>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-hover align-middle data-table">
+						<thead class="table-light">
+							<tr>
+								<th class="t-left">품번</th>
+								<th class="t-left">아이템</th>
+								<th>상태</th>
+							</tr>
+						</thead>
+						<tbody id="mi-style-search-results">
+							<tr>
+								<td colspan="3" class="mi-placeholder">검색어를 입력하세요.</td>
 								</tr>
 							</tbody>
 						</table>
 					</div>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-					<button type="button" class="btn btn-primary" id="mi-style-select-btn">선택</button>
-				</div>
-			</div>
 		</div>
+		<div class="modal-footer">
+			<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
+			<button type="button" class="btn btn--primary" id="mi-style-select-btn">선택</button>
+		</div>
+	</div>
+</div>
 	</div>
 
 	<script>

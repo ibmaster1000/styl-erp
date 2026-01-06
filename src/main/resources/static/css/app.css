@@ -57,7 +57,7 @@
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 }
 
 .form-field {
@@ -66,14 +66,15 @@
 	gap: 8px;
 	flex: 1 1 auto;
 	min-width: 220px;
+	flex-wrap: nowrap;
 }
 
 .actions {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	flex-wrap: nowrap;
 	white-space: nowrap;
+	flex-wrap: nowrap;
 }
 
 .actions .btn {

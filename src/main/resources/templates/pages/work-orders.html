@@ -216,7 +216,9 @@
 							placeholder="작업지시 코드">
 					</div>
 					<div class="col-md-2 d-grid">
-						<button type="submit" class="btn btn-dark">검색</button>
+						<div class="actions">
+							<button type="submit" class="btn btn--primary w-100">검색</button>
+						</div>
 					</div>
 				</div>
 			</form>
@@ -227,17 +229,17 @@
 					<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
 				</div>
 				<div class="table-responsive" style="max-height: 240px;">
-					<table class="table table-hover align-middle mb-0 wo-table">
+					<table class="table table-hover align-middle mb-0 wo-table data-table">
 						<thead class="table-light">
 							<tr>
-								<th>작업지시</th>
-								<th>품번</th>
-								<th>생산합의</th>
-								<th>색상</th>
-								<th>사이즈</th>
+								<th class="t-left">작업지시</th>
+								<th class="t-left">품번</th>
+								<th class="t-left">생산합의</th>
+								<th class="t-left">색상</th>
+								<th class="t-left">사이즈</th>
 								<th>수량</th>
-								<th>납기일</th>
-								<th>상태</th>
+								<th class="t-left">납기일</th>
+								<th class="t-left">상태</th>
 							</tr>
 						</thead>
 						<tbody id="wo-list-body">
@@ -246,14 +248,14 @@
 							</tr>
 							<tr th:each="w, iter : ${list}" data-wo-row
 								th:classappend="${iter.index == 0} ? 'wo-row-selected'">
-								<td th:text="${w.workOrderId}" data-field="workOrderId">WO-001</td>
-								<td th:text="${w.styleNo}" data-field="styleNo">ST-001</td>
-								<td th:text="${w.agreementCode}" data-field="agreementCode">PA-001</td>
-								<td th:text="${w.color}" data-field="color">RED</td>
-								<td th:text="${w.size}" data-field="size">L</td>
+								<td class="t-left" th:text="${w.workOrderId}" data-field="workOrderId">WO-001</td>
+								<td class="t-left" th:text="${w.styleNo}" data-field="styleNo">ST-001</td>
+								<td class="t-left" th:text="${w.agreementCode}" data-field="agreementCode">PA-001</td>
+								<td class="t-left" th:text="${w.color}" data-field="color">RED</td>
+								<td class="t-left" th:text="${w.size}" data-field="size">L</td>
 								<td th:text="${w.quantity}" data-field="quantity">100</td>
-								<td th:text="${w.dueDate}" data-field="dueDate">2024-01-10</td>
-								<td th:text="${w.status}" data-field="status">진행</td>
+								<td class="t-left" th:text="${w.dueDate}" data-field="dueDate">2024-01-10</td>
+								<td class="t-left" th:text="${w.status}" data-field="status">진행</td>
 							</tr>
 						</tbody>
 					</table>
@@ -289,7 +291,7 @@
 					<span class="text-muted small">구분 × 사이즈별 입력</span>
 				</div>
 				<div class="table-responsive" style="max-height: 420px;">
-					<table class="table table-sm align-middle measure-table" id="measure-table">
+					<table class="table table-sm align-middle measure-table data-table" id="measure-table">
 						<thead>
 							<tr id="measure-head-row"></tr>
 						</thead>
@@ -306,7 +308,9 @@
 							<div class="fw-bold">도식화</div>
 							<div class="text-muted small">등록된 도식화를 확인하세요.</div>
 						</div>
-						<button type="button" class="btn btn-outline-secondary btn-sm">도식화 등록</button>
+						<div class="actions">
+							<button type="button" class="btn btn--outline btn-sm">도식화 등록</button>
+						</div>
 					</div>
 					<div class="attachment-grid" id="illustration-grid"></div>
 				</div>
@@ -317,7 +321,9 @@
 							<div class="fw-bold">봉제방법</div>
 							<div class="text-muted small">등록된 봉제방법을 확인하세요.</div>
 						</div>
-						<button type="button" class="btn btn-outline-secondary btn-sm">봉제방법 등록</button>
+						<div class="actions">
+							<button type="button" class="btn btn--outline btn-sm">봉제방법 등록</button>
+						</div>
 					</div>
 					<div class="attachment-grid" id="sewing-grid"></div>
 				</div>
@@ -329,9 +335,9 @@
 		<div class="modal-body">
 			<img id="wo-preview-image" alt="미리보기">
 			<div class="modal-actions">
-				<button type="button" class="btn btn-outline-light btn-sm">편집(준비중)</button>
-				<button type="button" class="btn btn-outline-light btn-sm">다운로드(준비중)</button>
-				<button type="button" class="btn btn-outline-danger btn-sm">삭제(준비중)</button>
+				<button type="button" class="btn btn--outline btn-sm">편집(준비중)</button>
+				<button type="button" class="btn btn--outline btn-sm">다운로드(준비중)</button>
+				<button type="button" class="btn btn--primary btn-sm">삭제(준비중)</button>
 			</div>
 			<button type="button" class="modal-close" id="wo-modal-close">×</button>
 		</div>
