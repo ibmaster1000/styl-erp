@@ -1,0 +1,227 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
+	<style>
+		.register-card {
+			border-radius: 14px;
+		}
+
+		.register-section-title {
+			font-weight: 800;
+		}
+
+		.register-chip {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 4px 10px;
+			border-radius: 999px;
+			background: #f1f5f9;
+			font-size: 12px;
+			font-weight: 700;
+		}
+
+		.register-chip button {
+			border: none;
+			background: transparent;
+			font-size: 12px;
+			color: #ef4444;
+		}
+	</style>
+
+	<div class="mb-3">
+		<h4 class="register-section-title">품번 등록</h4>
+		<p class="text-muted mb-0">품번 정보와 색상/사이즈 규칙을 등록합니다.</p>
+	</div>
+
+	<div class="alert alert-info" th:if="${message}">
+		<span th:text="${message}">메시지</span>
+	</div>
+
+	<form class="card shadow-sm register-card" method="post" th:action="@{/styles/register}" th:object="${form}">
+		<div class="card-body">
+			<div class="row g-3">
+				<div class="col-lg-4">
+					<label class="form-label fw-semibold">아이템</label>
+					<select class="form-select" th:field="*{itemCode}" id="itemCodeSelect" required>
+						<option value="">선택</option>
+						<option th:each="item : ${items}"
+							th:value="${item.itemCode}"
+							th:text="${item.itemCode + ' - ' + item.itemName}"
+							th:data-name="${item.itemName}">ITEM</option>
+					</select>
+				</div>
+				<div class="col-lg-4">
+					<label class="form-label fw-semibold">아이템명</label>
+					<input type="text" class="form-control" id="itemNameInput" readonly>
+				</div>
+				<div class="col-lg-4">
+					<label class="form-label fw-semibold">시작일</label>
+					<input type="date" class="form-control" th:field="*{startDate}" required>
+				</div>
+
+				<div class="col-md-6">
+					<label class="form-label fw-semibold">디자이너</label>
+					<div class="input-group">
+						<input type="text" class="form-control" id="designerName" readonly>
+						<button type="button" class="btn btn--outline" onclick="openEmployeePopup('designer')">검색</button>
+					</div>
+					<input type="hidden" th:field="*{designerEmpNo}" id="designerEmpNo">
+				</div>
+				<div class="col-md-6">
+					<label class="form-label fw-semibold">제품담당</label>
+					<div class="input-group">
+						<input type="text" class="form-control" id="productName" readonly>
+						<button type="button" class="btn btn--outline" onclick="openEmployeePopup('product')">검색</button>
+					</div>
+					<input type="hidden" th:field="*{productEmpNo}" id="productEmpNo">
+				</div>
+				<div class="col-md-6">
+					<label class="form-label fw-semibold">영업담당</label>
+					<div class="input-group">
+						<input type="text" class="form-control" id="salesName" readonly>
+						<button type="button" class="btn btn--outline" onclick="openEmployeePopup('sales')">검색</button>
+					</div>
+					<input type="hidden" th:field="*{salesEmpNo}" id="salesEmpNo">
+				</div>
+				<div class="col-md-6">
+					<label class="form-label fw-semibold">물류담당</label>
+					<div class="input-group">
+						<input type="text" class="form-control" id="logisticName" readonly>
+						<button type="button" class="btn btn--outline" onclick="openEmployeePopup('logistic')">검색</button>
+					</div>
+					<input type="hidden" th:field="*{logisticEmpNo}" id="logisticEmpNo">
+				</div>
+
+				<div class="col-md-3">
+					<label class="form-label fw-semibold">원가</label>
+					<input type="text" class="form-control" th:field="*{costPrice}" required>
+				</div>
+				<div class="col-md-3">
+					<label class="form-label fw-semibold">공장출고가</label>
+					<input type="text" class="form-control" th:field="*{supplyPrice}" required>
+				</div>
+				<div class="col-md-3">
+					<label class="form-label fw-semibold">판매가</label>
+					<input type="text" class="form-control" th:field="*{salesPrice}" required>
+				</div>
+				<div class="col-md-3">
+					<label class="form-label fw-semibold">생산원가</label>
+					<input type="text" class="form-control" th:field="*{productionCost}" required>
+				</div>
+			</div>
+
+			<hr class="my-4">
+
+			<div class="row g-3">
+				<div class="col-lg-6">
+					<div class="d-flex align-items-center justify-content-between mb-2">
+						<label class="form-label fw-semibold mb-0">색상 코드</label>
+						<button type="button" class="btn btn--outline btn-sm" onclick="openCodePopup('COLOR')">추가</button>
+					</div>
+					<div class="d-flex flex-wrap gap-2" id="colorChipContainer"></div>
+					<div id="colorInputs"></div>
+				</div>
+				<div class="col-lg-6">
+					<div class="d-flex align-items-center justify-content-between mb-2">
+						<label class="form-label fw-semibold mb-0">사이즈 코드</label>
+						<button type="button" class="btn btn--outline btn-sm" onclick="openCodePopup('SIZE')">추가</button>
+					</div>
+					<div class="d-flex flex-wrap gap-2" id="sizeChipContainer"></div>
+					<div id="sizeInputs"></div>
+				</div>
+			</div>
+		</div>
+		<div class="card-footer text-end">
+			<button type="submit" class="btn btn--primary">등록</button>
+		</div>
+	</form>
+
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		let selectedEmployeeTarget = null;
+		let selectedCodeTarget = null;
+		const colorCodes = new Set(/*[[${form.colorCodes}]]*/[] || []);
+		const sizeCodes = new Set(/*[[${form.sizeCodes}]]*/[] || []);
+
+		const itemCodeSelect = document.getElementById('itemCodeSelect');
+		const itemNameInput = document.getElementById('itemNameInput');
+
+		function updateItemName() {
+			const option = itemCodeSelect?.selectedOptions[0];
+			itemNameInput.value = option?.dataset?.name || '';
+		}
+
+		itemCodeSelect?.addEventListener('change', updateItemName);
+		updateItemName();
+
+		function openEmployeePopup(target) {
+			selectedEmployeeTarget = target;
+			window.open('/popup/employees', 'employeeSearch', 'width=900,height=700');
+		}
+
+		function openCodePopup(codeType) {
+			selectedCodeTarget = codeType;
+			const url = `/popup/codes?codeType=${encodeURIComponent(codeType)}`;
+			window.open(url, 'codeSearch', 'width=900,height=700');
+		}
+
+		function renderCodes() {
+			renderCodeGroup('COLOR', colorCodes, 'colorChipContainer', 'colorInputs', 'colorCodes');
+			renderCodeGroup('SIZE', sizeCodes, 'sizeChipContainer', 'sizeInputs', 'sizeCodes');
+		}
+
+		function renderCodeGroup(label, codes, chipContainerId, inputContainerId, inputName) {
+			const chipContainer = document.getElementById(chipContainerId);
+			const inputContainer = document.getElementById(inputContainerId);
+			if (!chipContainer || !inputContainer) {
+				return;
+			}
+			chipContainer.innerHTML = '';
+			inputContainer.innerHTML = '';
+			Array.from(codes).forEach(code => {
+				const chip = document.createElement('span');
+				chip.className = 'register-chip';
+				chip.innerHTML = `${label} ${code} <button type="button" aria-label="remove">✕</button>`;
+				chip.querySelector('button').addEventListener('click', () => {
+					codes.delete(code);
+					renderCodes();
+				});
+				chipContainer.appendChild(chip);
+
+				const hidden = document.createElement('input');
+				hidden.type = 'hidden';
+				hidden.name = inputName;
+				hidden.value = code;
+				inputContainer.appendChild(hidden);
+			});
+		}
+
+		window.onEmployeeSelected = function (payload) {
+			if (!payload || !selectedEmployeeTarget) {
+				return;
+			}
+			document.getElementById(`${selectedEmployeeTarget}Name`).value = payload.name || '';
+			document.getElementById(`${selectedEmployeeTarget}EmpNo`).value = payload.empNo || '';
+			selectedEmployeeTarget = null;
+		};
+
+		window.onCodeSelected = function (payload) {
+			if (!payload || !selectedCodeTarget) {
+				return;
+			}
+			const code = payload.code;
+			if (!code) {
+				return;
+			}
+			if (selectedCodeTarget === 'COLOR') {
+				colorCodes.add(code);
+			} else {
+				sizeCodes.add(code);
+			}
+			selectedCodeTarget = null;
+			renderCodes();
+		};
+
+		renderCodes();
+		/*]]>*/
+	</script>
+</div>
