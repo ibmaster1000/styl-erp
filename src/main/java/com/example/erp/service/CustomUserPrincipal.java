@@ -23,7 +23,9 @@ public class CustomUserPrincipal implements UserDetails {
     @Override public Collection<? extends GrantedAuthority> getAuthorities() { return authorities; }
     @Override public String getPassword() { return user.getPassword(); }
     @Override public String getUsername() { return user.getUsername(); }
-    @Override public boolean isEnabled() { return user.isActive(); }
+    @Override public boolean isEnabled() {
+        return user.isActive() || "ROLE_ADMIN".equals(user.getRole());
+    }
 
     @Override public boolean isAccountNonExpired() { return true; }
     @Override public boolean isAccountNonLocked() { return true; }

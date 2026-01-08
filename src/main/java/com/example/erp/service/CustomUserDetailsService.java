@@ -11,19 +11,26 @@ import java.util.Collections;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+	private final UserRepository userRepository;
 
-    public CustomUserDetailsService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+	public CustomUserDetailsService(UserRepository userRepository) {
+		this.userRepository = userRepository;
+	}
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+		User user = userRepository.findByUsername(username)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        var auth = Collections.singletonList(new SimpleGrantedAuthority(user.getRole()));
-        return new CustomUserPrincipal(user, auth);
-    }
+		String storedPassword = user.getPassword();
+		if (storedPassword != null && !storedPassword.startsWith("{")) {
+			// Treat raw DB passwords as "{noop}" for legacy/dev use; production should
+			// migrate to "{bcrypt}<hash>".
+			user.setPassword("{noop}" + storedPassword);
+		}
+
+		var auth = Collections.singletonList(new SimpleGrantedAuthority(user.getRole()));
+		return new CustomUserPrincipal(user, auth);
+	}
 }
