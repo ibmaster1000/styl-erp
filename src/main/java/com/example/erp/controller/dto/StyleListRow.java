@@ -20,9 +20,9 @@ public class StyleListRow {
 	private final boolean active;
 
 	public StyleListRow(String styleNo, String item, String colors, String sizes, String designer,
-			String productionManager, String salesManager,
-
-			LocalDate startDate, boolean active) {
+			String productionManager, String salesManager, String logisticManager,
+			BigDecimal productionCost, BigDecimal supplyPrice, BigDecimal salesPrice, LocalDate startDate,
+			boolean active) {
 		this.styleNo = styleNo;
 		this.item = item;
 		this.colors = colors;
