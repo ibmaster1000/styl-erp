@@ -49,7 +49,7 @@ public class StyleQueryRepository {
 		String salesColumn = findFirstExistingColumn("styles", List.of("sales_emp_no", "sales_manager"));
 		String logisticColumn = findFirstExistingColumn("styles", List.of("logistic_emp_no", "logistic_manager"));
 		String startDateColumn = findFirstExistingColumn("styles", List.of("start_date"));
-        String productionCostColumn = findFirstExistingColumn("styles", List.of("production_cost"));
+		String productionCostColumn = findFirstExistingColumn("styles", List.of("production_cost", "production_price"));
 		String salesPriceColumn = findFirstExistingColumn("styles", List.of("sales_price"));
 		String supplyPriceColumn = findFirstExistingColumn("styles", List.of("supply_price"));
 		String activeColumn = findFirstExistingColumn("styles", List.of("is_active", "active"));

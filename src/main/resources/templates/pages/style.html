@@ -109,8 +109,8 @@
 							role="button">영업담당 정렬</a>
 						<a class="btn btn--outline" th:href="@{/style(viewMode='flat',sort='transportManager')}"
 							role="button">운송담당 정렬</a>
-						<a class="btn btn--outline" th:href="@{/style(viewMode='flat',sort='amount')}" role="button">금액
-							정렬</a>
+						<a class="btn btn--outline" th:href="@{/style(viewMode='flat',sort='salesPrice')}"
+							role="button">금액 정렬</a>
 				</div>
 			</div>
 			<div class="style-table-wrap table-responsive">
@@ -155,16 +155,13 @@
 										<td class="t-left" th:text="${s.designer}">김디</td>
 										<td class="t-left" th:text="${s.productionManager}">박생산</td>
 										<td class="t-left" th:text="${s.salesManager}">이영업</td>
-										<td class="t-left">-</td>
+										<td class="t-left" th:text="${s.logisticManager}">최운송</td>
 										<td class="t-right"
-											th:text="${s.productionCost != null ? #numbers.formatDecimal(s.productionCost, 0, 'COMMA', 0, 'POINT') : '-'}">
-											-</td>
-										<td class="t-right"
-											th:text="${s.supplyPrice != null ? #numbers.formatDecimal(s.supplyPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
-											-</td>
-										<td class="t-right"
-											th:text="${s.salesPrice != null ? #numbers.formatDecimal(s.salesPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
-											-</td>
+											th:text="${s.productionCost != null ? s.productionCost : '-'}">-</td>
+										<td class="t-right" th:text="${s.supplyPrice != null ? s.supplyPrice : '-'}">-
+										</td>
+										<td class="t-right" th:text="${s.salesPrice != null ? s.salesPrice : '-'}">-
+										</td>
 										<td th:text="${s.startDate}">2024-01-01</td>
 										<td class="t-left" th:text="${s.active ? '사용' : '중지'}">사용</td>
 									</tr>
@@ -193,19 +190,16 @@
 										<td class="t-left" th:if="${szStat.index == 0}"
 											th:rowspan="${#lists.size(sizes)}" th:text="${s.salesManager}">이영업</td>
 										<td class="t-left" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}">-</td>
+											th:rowspan="${#lists.size(sizes)}" th:text="${s.logisticManager}">최운송</td>
 										<td class="t-right" th:if="${szStat.index == 0}"
 											th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.productionCost != null ? #numbers.formatDecimal(s.productionCost, 0, 'COMMA', 0, 'POINT') : '-'}">
-											-</td>
+											th:text="${s.productionCost != null ? s.productionCost : '-'}">-</td>
 										<td class="t-right" th:if="${szStat.index == 0}"
 											th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.supplyPrice != null ? #numbers.formatDecimal(s.supplyPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
-											-</td>
+											th:text="${s.supplyPrice != null ? s.supplyPrice : '-'}">-</td>
 										<td class="t-right" th:if="${szStat.index == 0}"
 											th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.salesPrice != null ? #numbers.formatDecimal(s.salesPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
-											-</td>
+											th:text="${s.salesPrice != null ? s.salesPrice : '-'}">-</td>
 										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
 											th:text="${s.startDate}">2024-01-01</td>
 										<td class="t-left" th:if="${szStat.index == 0}"
@@ -224,16 +218,11 @@
 									<td class="t-left" th:text="${s.designer}">김디</td>
 									<td class="t-left" th:text="${s.productionManager}">박생산</td>
 									<td class="t-left" th:text="${s.salesManager}">이영업</td>
-									<td class="t-left">-</td>
-									<td class="t-right"
-										th:text="${s.productionCost != null ? #numbers.formatDecimal(s.productionCost, 0, 'COMMA', 0, 'POINT') : '-'}">
-										-</td>
-									<td class="t-right"
-										th:text="${s.supplyPrice != null ? #numbers.formatDecimal(s.supplyPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
-										-</td>
-									<td class="t-right"
-										th:text="${s.salesPrice != null ? #numbers.formatDecimal(s.salesPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
-										-</td>
+									<td class="t-left" th:text="${s.logisticManager}">최운송</td>
+									<td class="t-right" th:text="${s.productionCost != null ? s.productionCost : '-'}">-
+									</td>
+									<td class="t-right" th:text="${s.supplyPrice != null ? s.supplyPrice : '-'}">-</td>
+									<td class="t-right" th:text="${s.salesPrice != null ? s.salesPrice : '-'}">-</td>
 									<td th:text="${s.startDate}">2024-01-01</td>
 									<td class="t-left" th:text="${s.active ? '사용' : '중지'}">사용</td>
 								</tr>

@@ -51,9 +51,8 @@ public class StyleQueryService {
 			String production = resolveUserName(style.productEmpNo(), userNames);
 			String sales = resolveUserName(style.salesEmpNo(), userNames);
 			String logistic = resolveUserName(style.logisticEmpNo(), userNames);
-			BigDecimal amount = style.salesPrice() != null ? style.salesPrice() : style.supplyPrice();
 			boolean active = style.active() == null || style.active();
-
+		
 			rows.add(new StyleListRow(styleKey, item, colors, sizes, designer, production, sales, logistic,
 					style.productionCost(), style.supplyPrice(), style.salesPrice(), style.startDate(), active));
 		}
@@ -247,7 +246,7 @@ public class StyleQueryService {
 		} else if ("sales".equals(sort)) {
 			comparator = Comparator.comparing(StyleListRow::getSalesManager, this::compareNullableText);
 		} else if ("transport".equals(sort)) {
-			comparator = Comparator.comparing(StyleListRow::getTransportManager, this::compareNullableText);
+			comparator = Comparator.comparing(StyleListRow::getLogisticManager, this::compareNullableText);
 		} else if ("amount".equals(sort)) {
 			comparator = Comparator.comparing(StyleListRow::getSalesPrice, this::compareNullableAmount);
 			desc = !StringUtils.hasText(condition.getDirection()) || desc;
