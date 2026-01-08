@@ -13,7 +13,9 @@ public class StyleListRow {
     private final String productionManager;
     private final String salesManager;
     private final String transportManager;
-    private final BigDecimal amount;
+    private final BigDecimal productionCost;
+    private final BigDecimal supplyPrice;
+    private final BigDecimal salesPrice;
     private final LocalDate startDate;
     private final boolean active;
 
@@ -25,7 +27,9 @@ public class StyleListRow {
                         String productionManager,
                         String salesManager,
                         String transportManager,
-                        BigDecimal amount,
+                        BigDecimal productionCost,
+                        BigDecimal supplyPrice,
+                        BigDecimal salesPrice,
                         LocalDate startDate,
                         boolean active) {
         this.styleNo = styleNo;
@@ -36,7 +40,9 @@ public class StyleListRow {
         this.productionManager = productionManager;
         this.salesManager = salesManager;
         this.transportManager = transportManager;
-        this.amount = amount;
+        this.productionCost = productionCost;
+        this.supplyPrice = supplyPrice;
+        this.salesPrice = salesPrice;
         this.startDate = startDate;
         this.active = active;
     }
@@ -73,8 +79,16 @@ public class StyleListRow {
         return transportManager;
     }
 
-    public BigDecimal getAmount() {
-        return amount;
+    public BigDecimal getProductionCost() {
+        return productionCost;
+    }
+
+    public BigDecimal getSupplyPrice() {
+        return supplyPrice;
+    }
+
+    public BigDecimal getSalesPrice() {
+        return salesPrice;
     }
 
     public LocalDate getStartDate() {

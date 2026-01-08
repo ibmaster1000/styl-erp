@@ -125,14 +125,16 @@
 							<th class="t-left">생산담당</th>
 							<th class="t-left">영업담당</th>
 							<th class="t-left">운송담당</th>
-							<th class="t-right">금액</th>
+							<th class="t-right">생산원가</th>
+							<th class="t-right">공급가</th>
+							<th class="t-right">판매가</th>
 							<th>시작일</th>
 							<th class="t-left">상태</th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr th:if="${#lists.isEmpty(list)}">
-							<td colspan="11" class="text-center text-muted">조회된 데이터가 없습니다.</td>
+							<td colspan="13" class="text-center text-muted">조회된 데이터가 없습니다.</td>
 						</tr>
 
 						<th:block th:each="s : ${list}"
@@ -154,7 +156,15 @@
 										<td class="t-left" th:text="${s.productionManager}">박생산</td>
 										<td class="t-left" th:text="${s.salesManager}">이영업</td>
 										<td class="t-left">-</td>
-										<td class="t-right">-</td>
+										<td class="t-right"
+											th:text="${s.productionCost != null ? #numbers.formatDecimal(s.productionCost, 0, 'COMMA', 0, 'POINT') : '-'}">
+											-</td>
+										<td class="t-right"
+											th:text="${s.supplyPrice != null ? #numbers.formatDecimal(s.supplyPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
+											-</td>
+										<td class="t-right"
+											th:text="${s.salesPrice != null ? #numbers.formatDecimal(s.salesPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
+											-</td>
 										<td th:text="${s.startDate}">2024-01-01</td>
 										<td class="t-left" th:text="${s.active ? '사용' : '중지'}">사용</td>
 									</tr>
@@ -185,7 +195,17 @@
 										<td class="t-left" th:if="${szStat.index == 0}"
 											th:rowspan="${#lists.size(sizes)}">-</td>
 										<td class="t-right" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}">-</td>
+											th:rowspan="${#lists.size(sizes)}"
+											th:text="${s.productionCost != null ? #numbers.formatDecimal(s.productionCost, 0, 'COMMA', 0, 'POINT') : '-'}">
+											-</td>
+										<td class="t-right" th:if="${szStat.index == 0}"
+											th:rowspan="${#lists.size(sizes)}"
+											th:text="${s.supplyPrice != null ? #numbers.formatDecimal(s.supplyPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
+											-</td>
+										<td class="t-right" th:if="${szStat.index == 0}"
+											th:rowspan="${#lists.size(sizes)}"
+											th:text="${s.salesPrice != null ? #numbers.formatDecimal(s.salesPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
+											-</td>
 										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
 											th:text="${s.startDate}">2024-01-01</td>
 										<td class="t-left" th:if="${szStat.index == 0}"
@@ -205,7 +225,15 @@
 									<td class="t-left" th:text="${s.productionManager}">박생산</td>
 									<td class="t-left" th:text="${s.salesManager}">이영업</td>
 									<td class="t-left">-</td>
-									<td class="t-left">-</td>
+									<td class="t-right"
+										th:text="${s.productionCost != null ? #numbers.formatDecimal(s.productionCost, 0, 'COMMA', 0, 'POINT') : '-'}">
+										-</td>
+									<td class="t-right"
+										th:text="${s.supplyPrice != null ? #numbers.formatDecimal(s.supplyPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
+										-</td>
+									<td class="t-right"
+										th:text="${s.salesPrice != null ? #numbers.formatDecimal(s.salesPrice, 0, 'COMMA', 0, 'POINT') : '-'}">
+										-</td>
 									<td th:text="${s.startDate}">2024-01-01</td>
 									<td class="t-left" th:text="${s.active ? '사용' : '중지'}">사용</td>
 								</tr>

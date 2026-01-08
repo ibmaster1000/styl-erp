@@ -49,6 +49,7 @@ public class StyleQueryRepository {
 		String salesColumn = findFirstExistingColumn("styles", List.of("sales_emp_no", "sales_manager"));
 		String logisticColumn = findFirstExistingColumn("styles", List.of("logistic_emp_no", "logistic_manager"));
 		String startDateColumn = findFirstExistingColumn("styles", List.of("start_date"));
+        String productionCostColumn = findFirstExistingColumn("styles", List.of("production_cost"));
 		String salesPriceColumn = findFirstExistingColumn("styles", List.of("sales_price"));
 		String supplyPriceColumn = findFirstExistingColumn("styles", List.of("supply_price"));
 		String activeColumn = findFirstExistingColumn("styles", List.of("is_active", "active"));
@@ -61,6 +62,7 @@ public class StyleQueryRepository {
 				.append(selectOrNull(salesColumn, "sales_emp_no")).append(", ")
 				.append(selectOrNull(logisticColumn, "logistic_emp_no")).append(", ")
 				.append(selectOrNull(startDateColumn, "start_date")).append(", ")
+                .append(selectOrNull(productionCostColumn, "production_cost")).append(", ")
 				.append(selectOrNull(salesPriceColumn, "sales_price")).append(", ")
 				.append(selectOrNull(supplyPriceColumn, "supply_price")).append(", ")
 				.append(selectOrNull(activeColumn, "is_active")).append(" ").append("from styles ");
@@ -81,7 +83,7 @@ public class StyleQueryRepository {
 				(rs, rowNum) -> new StyleSnapshot(rs.getString("styles_id"), rs.getString("style_code"),
 						rs.getString("item_code"), rs.getString("item_name"), rs.getString("designer_emp_no"),
 						rs.getString("product_emp_no"), rs.getString("sales_emp_no"), rs.getString("logistic_emp_no"),
-						toLocalDate(rs.getDate("start_date")), rs.getBigDecimal("sales_price"),
+						toLocalDate(rs.getDate("start_date")), rs.getBigDecimal("production_cost"), rs.getBigDecimal("sales_price"),
 						rs.getBigDecimal("supply_price"), readBoolean(rs.getObject("is_active"))));
 	}
 
@@ -295,7 +297,7 @@ public class StyleQueryRepository {
 	}
 
 	public record StyleSnapshot(String stylesId, String styleCode, String itemCode, String itemName,
-			String designerEmpNo, String productEmpNo, String salesEmpNo, String logisticEmpNo, LocalDate startDate,
+			String designerEmpNo, String productEmpNo, String salesEmpNo, String logisticEmpNo, LocalDate startDate, BigDecimal productionCost, 
 			BigDecimal salesPrice, BigDecimal supplyPrice, Boolean active) {
 	}
 
