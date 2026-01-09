@@ -24,7 +24,9 @@ const initEmployeePickerModal = (modalElement) => {
 
 	const clearSelection = () => {
 		selectedRow = null;
-		resultsBody.querySelectorAll('tr').forEach((row) => row.classList.remove('selected'));
+		resultsBody.querySelectorAll('tr').forEach((row) => {
+			row.classList.remove('selected', 'table-active');
+		});
 	};
 
 	const setPlaceholder = (message) => {
@@ -50,8 +52,8 @@ const initEmployeePickerModal = (modalElement) => {
 				<td class="text-center">${item.dept || '-'}</td>
 			`;
 			row.addEventListener('click', () => {
-				resultsBody.querySelectorAll('tr').forEach((r) => r.classList.remove('selected'));
-				row.classList.add('selected');
+				resultsBody.querySelectorAll('tr').forEach((r) => r.classList.remove('selected', 'table-active'));
+				row.classList.add('selected', 'table-active');
 				selectedRow = row;
 			});
 			row.addEventListener('dblclick', () => {
