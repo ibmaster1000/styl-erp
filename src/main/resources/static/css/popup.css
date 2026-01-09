@@ -1,0 +1,53 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.popup-card {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+}
+
+.popup-search-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.popup-search-row {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    align-items: center;
+    gap: 10px;
+}
+
+.popup-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #111827;
+    text-align: right;
+}
+
+.table-container {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.clickable-row {
+    cursor: pointer;
+}
+
+.clickable-row.selected {
+    background-color: #dbeafe !important;
+}

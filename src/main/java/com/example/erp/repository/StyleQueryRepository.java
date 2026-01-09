@@ -54,37 +54,109 @@ public class StyleQueryRepository {
 		String supplyPriceColumn = findFirstExistingColumn("styles", List.of("supply_price"));
 		String activeColumn = findFirstExistingColumn("styles", List.of("is_active", "active"));
 
-		StringBuilder sql = new StringBuilder().append("select ").append(styleIdColumn).append(" as styles_id, ")
-				.append(styleCodeColumn).append(" as style_code, ").append(selectOrNull(itemCodeColumn, "item_code"))
-				.append(", ").append(selectOrNull(itemNameColumn, "item_name")).append(", ")
-				.append(selectOrNull(designerColumn, "designer_emp_no")).append(", ")
-				.append(selectOrNull(productColumn, "product_emp_no")).append(", ")
-				.append(selectOrNull(salesColumn, "sales_emp_no")).append(", ")
-				.append(selectOrNull(logisticColumn, "logistic_emp_no")).append(", ")
-				.append(selectOrNull(startDateColumn, "start_date")).append(", ")
-                .append(selectOrNull(productionCostColumn, "production_cost")).append(", ")
-				.append(selectOrNull(salesPriceColumn, "sales_price")).append(", ")
-				.append(selectOrNull(supplyPriceColumn, "supply_price")).append(", ")
-				.append(selectOrNull(activeColumn, "is_active")).append(" ").append("from styles ");
+		boolean hasStyleRule = hasTable("styles_rule");
+		String styleRuleStyleIdColumn = hasStyleRule
+				? findFirstExistingColumn("styles_rule", List.of("styles_id", "style_id", "style_no"))
+				: null;
+		String codeTypeColumn = hasStyleRule ? findFirstExistingColumn("styles_rule", List.of("code_type")) : null;
+		String codeColumn = hasStyleRule ? findFirstExistingColumn("styles_rule", List.of("code")) : null;
+		boolean joinStyleRule = styleRuleStyleIdColumn != null && codeTypeColumn != null && codeColumn != null;
+
+		String styleIdSelect = qualifyColumn("s", styleIdColumn);
+		String styleCodeSelect = qualifyColumn("s", styleCodeColumn);
+		String itemCodeSelect = qualifyColumn("s", itemCodeColumn);
+		String itemNameSelect = qualifyColumn("s", itemNameColumn);
+		String designerSelect = qualifyColumn("s", designerColumn);
+		String productSelect = qualifyColumn("s", productColumn);
+		String salesSelect = qualifyColumn("s", salesColumn);
+		String logisticSelect = qualifyColumn("s", logisticColumn);
+		String startDateSelect = qualifyColumn("s", startDateColumn);
+		String productionCostSelect = qualifyColumn("s", productionCostColumn);
+		String salesPriceSelect = qualifyColumn("s", salesPriceColumn);
+		String supplyPriceSelect = qualifyColumn("s", supplyPriceColumn);
+		String activeSelect = qualifyColumn("s", activeColumn);
+
+		StringBuilder sql = new StringBuilder().append("select ").append(styleIdSelect).append(" as styles_id, ")
+				.append(styleCodeSelect).append(" as style_code, ").append(selectOrNull(itemCodeSelect, "item_code"))
+				.append(", ").append(selectOrNull(itemNameSelect, "item_name")).append(", ")
+				.append(selectOrNull(designerSelect, "designer_emp_no")).append(", ")
+				.append(selectOrNull(productSelect, "product_emp_no")).append(", ")
+				.append(selectOrNull(salesSelect, "sales_emp_no")).append(", ")
+				.append(selectOrNull(logisticSelect, "logistic_emp_no")).append(", ")
+				.append(selectOrNull(startDateSelect, "start_date")).append(", ")
+				.append(selectOrNull(productionCostSelect, "production_cost")).append(", ")
+				.append(selectOrNull(salesPriceSelect, "sales_price")).append(", ")
+				.append(selectOrNull(supplyPriceSelect, "supply_price")).append(", ")
+				.append(selectOrNull(activeSelect, "is_active"));
+
+		if (joinStyleRule) {
+			String codeTypeSelect = qualifyColumn("sr", codeTypeColumn);
+			String codeSelect = qualifyColumn("sr", codeColumn);
+			sql.append(", group_concat(distinct case when ").append(codeTypeSelect)
+					.append(" = 'COLOR' then ").append(codeSelect).append(" end ")
+					.append("order by case when ").append(codeTypeSelect).append(" = 'COLOR' then ").append(codeSelect)
+					.append(" end separator ', ') as colors");
+			sql.append(", group_concat(distinct case when ").append(codeTypeSelect)
+					.append(" = 'SIZE' then ").append(codeSelect).append(" end ")
+					.append("order by case when ").append(codeTypeSelect).append(" = 'SIZE' then cast(")
+					.append(codeSelect).append(" as unsigned) end separator ', ') as sizes");
+			sql.append(" from styles s left join styles_rule sr on ").append(qualifyColumn("sr", styleRuleStyleIdColumn))
+					.append(" = ").append(styleIdSelect).append(" ");
+		} else {
+			sql.append(", null as colors, null as sizes from styles s ");
+		}
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
 		if (StringUtils.hasText(condition.getStyleCodeLike())) {
-			sql.append("where ").append(styleCodeColumn).append(" like concat('%', :styleCode, '%') ");
+			sql.append("where ").append(styleCodeSelect).append(" like concat('%', :styleCode, '%') ");
 			params.addValue("styleCode", condition.getStyleCodeLike().trim());
 		}
+		String itemSearchColumn = itemNameSelect != null ? itemNameSelect : itemCodeSelect;
+		if (StringUtils.hasText(condition.getItemLike()) && itemSearchColumn != null) {
+			sql.append(params.hasValue("styleCode") ? "and " : "where ").append(itemSearchColumn)
+					.append(" like concat('%', :item, '%') ");
+			params.addValue("item", condition.getItemLike().trim());
+		}
+		if (StringUtils.hasText(condition.getDesignerNameLike()) && designerSelect != null) {
+			sql.append(params.hasValue("styleCode") || params.hasValue("item") ? "and " : "where ")
+					.append(designerSelect).append(" like concat('%', :designer, '%') ");
+			params.addValue("designer", condition.getDesignerNameLike().trim());
+		}
 		if (condition.getIsActive() != null && activeColumn != null) {
-			sql.append(params.hasValue("styleCode") ? "and " : "where ").append(activeColumn).append(" = :isActive ");
+			sql.append(params.hasValue("styleCode") || params.hasValue("item") || params.hasValue("designer") ? "and "
+					: "where ").append(activeSelect).append(" = :isActive ");
 			params.addValue("isActive", condition.getIsActive());
 		}
 
-		sql.append("order by ").append(styleCodeColumn).append(" asc");
+		if (joinStyleRule) {
+			List<String> groupByColumns = new ArrayList<>();
+			addGroupByColumn(groupByColumns, styleIdSelect);
+			addGroupByColumn(groupByColumns, styleCodeSelect);
+			addGroupByColumn(groupByColumns, itemCodeSelect);
+			addGroupByColumn(groupByColumns, itemNameSelect);
+			addGroupByColumn(groupByColumns, designerSelect);
+			addGroupByColumn(groupByColumns, productSelect);
+			addGroupByColumn(groupByColumns, salesSelect);
+			addGroupByColumn(groupByColumns, logisticSelect);
+			addGroupByColumn(groupByColumns, startDateSelect);
+			addGroupByColumn(groupByColumns, productionCostSelect);
+			addGroupByColumn(groupByColumns, salesPriceSelect);
+			addGroupByColumn(groupByColumns, supplyPriceSelect);
+			addGroupByColumn(groupByColumns, activeSelect);
+			if (!groupByColumns.isEmpty()) {
+				sql.append("group by ").append(String.join(", ", groupByColumns)).append(" ");
+			}
+		}
+
+		sql.append("order by ").append(styleCodeSelect).append(" asc");
 
 		return jdbcTemplate.query(sql.toString(), params,
 				(rs, rowNum) -> new StyleSnapshot(rs.getString("styles_id"), rs.getString("style_code"),
 						rs.getString("item_code"), rs.getString("item_name"), rs.getString("designer_emp_no"),
 						rs.getString("product_emp_no"), rs.getString("sales_emp_no"), rs.getString("logistic_emp_no"),
-						toLocalDate(rs.getDate("start_date")), rs.getBigDecimal("production_cost"), rs.getBigDecimal("sales_price"),
-						rs.getBigDecimal("supply_price"), readBoolean(rs.getObject("is_active"))));
+						toLocalDate(rs.getDate("start_date")), rs.getBigDecimal("production_cost"),
+						rs.getBigDecimal("sales_price"), rs.getBigDecimal("supply_price"),
+						readBoolean(rs.getObject("is_active")), rs.getString("colors"), rs.getString("sizes")));
 	}
 
 	public List<StyleRuleRow> findStyleRules(Set<String> styleIds) {
@@ -276,6 +348,22 @@ public class StyleQueryRepository {
 		return columnName;
 	}
 
+	private String qualifyColumn(String alias, String columnName) {
+		if (!StringUtils.hasText(columnName)) {
+			return null;
+		}
+		if (!StringUtils.hasText(alias)) {
+			return columnName;
+		}
+		return alias + "." + columnName;
+	}
+
+	private void addGroupByColumn(List<String> groupByColumns, String column) {
+		if (StringUtils.hasText(column)) {
+			groupByColumns.add(column);
+		}
+	}
+
 	private Boolean readBoolean(Object raw) {
 		if (raw == null) {
 			return null;
@@ -298,7 +386,7 @@ public class StyleQueryRepository {
 
 	public record StyleSnapshot(String stylesId, String styleCode, String itemCode, String itemName,
 			String designerEmpNo, String productEmpNo, String salesEmpNo, String logisticEmpNo, LocalDate startDate, BigDecimal productionCost, 
-			BigDecimal salesPrice, BigDecimal supplyPrice, Boolean active) {
+			BigDecimal salesPrice, BigDecimal supplyPrice, Boolean active, String colors, String sizes) {
 	}
 
 	public record StyleRuleRow(String stylesId, String codeType, String code) {

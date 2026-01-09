@@ -4,8 +4,6 @@ import com.example.erp.controller.dto.StyleListRow;
 import com.example.erp.controller.dto.StyleSearchCondition;
 import com.example.erp.controller.dto.StyleSearchResult;
 import com.example.erp.repository.StyleQueryRepository;
-import com.example.erp.repository.StyleQueryRepository.CodeKey;
-import com.example.erp.repository.StyleQueryRepository.StyleRuleRow;
 import com.example.erp.repository.StyleQueryRepository.StyleSnapshot;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -17,7 +15,6 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,14 +36,13 @@ public class StyleQueryService {
 
 		Map<String, String> itemNames = loadItemNames(styles);
 		Map<String, String> userNames = resolveUserNames(styles);
-		Map<String, Map<String, List<String>>> stylesRule = buildStylesRule(styles);
 
 		List<StyleListRow> rows = new ArrayList<>();
 		for (StyleSnapshot style : styles) {
 			String styleKey = resolveStyleKey(style);
 			String item = resolveItem(style, itemNames);
-			String colors = joinRuleValues(stylesRule.get(styleKey));
-			String sizes = joinSizeValues(stylesRule.get(styleKey));
+			String colors = normalizeListValue(style.colors());
+			String sizes = normalizeListValue(style.sizes());
 			String designer = resolveUserName(style.designerEmpNo(), userNames);
 			String production = resolveUserName(style.productEmpNo(), userNames);
 			String sales = resolveUserName(style.salesEmpNo(), userNames);
@@ -57,16 +53,9 @@ public class StyleQueryService {
 					style.productionCost(), style.supplyPrice(), style.salesPrice(), style.startDate(), active));
 		}
 
-		if (StringUtils.hasText(condition.getDesignerNameLike())) {
-			String keyword = condition.getDesignerNameLike().trim().toLowerCase(Locale.KOREAN);
-			rows = rows.stream().filter(
-					row -> row.getDesigner() != null && row.getDesigner().toLowerCase(Locale.KOREAN).contains(keyword))
-					.collect(Collectors.toList());
-		}
-
 		sortRows(rows, condition);
 
-		return new StyleSearchResult(rows, stylesRule);
+		return new StyleSearchResult(rows, Collections.emptyMap());
 	}
 
 	private Map<String, String> loadItemNames(List<StyleSnapshot> styles) {
@@ -125,63 +114,6 @@ public class StyleQueryService {
 		return resolved;
 	}
 
-	private Map<String, Map<String, List<String>>> buildStylesRule(List<StyleSnapshot> styles) {
-		Set<String> styleIds = styles.stream().map(StyleSnapshot::stylesId).filter(StringUtils::hasText)
-				.collect(Collectors.toCollection(LinkedHashSet::new));
-		if (styleIds.isEmpty()) {
-			return Collections.emptyMap();
-		}
-
-		List<StyleRuleRow> rules = repository.findStyleRules(styleIds);
-		if (rules.isEmpty()) {
-			return Collections.emptyMap();
-		}
-
-		Set<CodeKey> codeKeys = new LinkedHashSet<>();
-		for (StyleRuleRow rule : rules) {
-			if (StringUtils.hasText(rule.codeType()) && StringUtils.hasText(rule.code())) {
-				codeKeys.add(new CodeKey(rule.codeType(), rule.code()));
-			}
-		}
-		Map<CodeKey, String> codeNames = repository.findCodeNames(codeKeys);
-
-		Map<String, List<String>> colorsByStyle = new LinkedHashMap<>();
-		Map<String, List<String>> sizesByStyle = new LinkedHashMap<>();
-
-		for (StyleRuleRow rule : rules) {
-			String type = rule.codeType();
-			String styleId = rule.stylesId();
-			String displayName = codeNames.getOrDefault(new CodeKey(type, rule.code()), rule.code());
-
-			if ("COLOR".equalsIgnoreCase(type)) {
-				colorsByStyle.computeIfAbsent(styleId, key -> new ArrayList<>()).add(displayName);
-			} else if ("SIZE".equalsIgnoreCase(type)) {
-				sizesByStyle.computeIfAbsent(styleId, key -> new ArrayList<>()).add(displayName);
-			}
-		}
-
-		Map<String, Map<String, List<String>>> result = new LinkedHashMap<>();
-		for (StyleSnapshot style : styles) {
-			String styleId = style.stylesId();
-			List<String> colors = colorsByStyle.getOrDefault(styleId, Collections.emptyList());
-			List<String> sizes = sizesByStyle.getOrDefault(styleId, Collections.emptyList());
-
-			if (colors.isEmpty() && sizes.isEmpty()) {
-				continue;
-			}
-			List<String> effectiveColors = colors.isEmpty() ? List.of("-") : colors;
-			List<String> effectiveSizes = sizes.isEmpty() ? List.of("-") : sizes;
-
-			Map<String, List<String>> colorMap = new LinkedHashMap<>();
-			for (String color : effectiveColors) {
-				colorMap.put(color, effectiveSizes);
-			}
-			result.put(resolveStyleKey(style), colorMap);
-		}
-
-		return result;
-	}
-
 	private String resolveStyleKey(StyleSnapshot style) {
 		if (StringUtils.hasText(style.styleCode())) {
 			return style.styleCode();
@@ -209,25 +141,11 @@ public class StyleQueryService {
 		return userNames.getOrDefault(raw, raw);
 	}
 
-	private String joinRuleValues(Map<String, List<String>> rule) {
-		if (rule == null || rule.isEmpty()) {
+	private String normalizeListValue(String value) {
+		if (!StringUtils.hasText(value)) {
 			return "-";
 		}
-		return String.join(", ", rule.keySet());
-	}
-
-	private String joinSizeValues(Map<String, List<String>> rule) {
-		if (rule == null || rule.isEmpty()) {
-			return "-";
-		}
-		Set<String> sizes = new LinkedHashSet<>();
-		for (List<String> value : rule.values()) {
-			sizes.addAll(value);
-		}
-		if (sizes.isEmpty()) {
-			return "-";
-		}
-		return String.join(", ", sizes);
+		return value;
 	}
 
 	private void sortRows(List<StyleListRow> rows, StyleSearchCondition condition) {

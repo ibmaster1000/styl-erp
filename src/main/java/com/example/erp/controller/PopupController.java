@@ -47,6 +47,8 @@ public class PopupController {
     public String employeeSearchPopup(@RequestParam(required = false) String empNo,
                                       @RequestParam(required = false) String name,
                                       @RequestParam(required = false) String dept,
+                                      @RequestParam(required = false) String targetInputId,
+                                      @RequestParam(required = false) String targetNameId,
                                       Model model) {
         List<User> users = userService.searchActiveUsers(empNo, name, dept);
         List<String> departments = userService.findActiveDepartments();
@@ -56,7 +58,19 @@ public class PopupController {
         model.addAttribute("searchEmpNo", empNo);
         model.addAttribute("searchName", name);
         model.addAttribute("searchDept", dept);
+        model.addAttribute("targetInputId", targetInputId);
+        model.addAttribute("targetNameId", targetNameId);
 
         return "popup/employee-search";
+    }
+
+    @GetMapping("/users")
+    public String userSearchPopup(@RequestParam(required = false) String empNo,
+                                  @RequestParam(required = false) String name,
+                                  @RequestParam(required = false) String dept,
+                                  @RequestParam(required = false) String targetInputId,
+                                  @RequestParam(required = false) String targetNameId,
+                                  Model model) {
+        return employeeSearchPopup(empNo, name, dept, targetInputId, targetNameId, model);
     }
 }
