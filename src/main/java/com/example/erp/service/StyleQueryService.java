@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 public class StyleQueryService {
 
 	private final StyleQueryRepository repository;
+	private static final int LIST_DISPLAY_LIMIT = 3;
 
 	public StyleQueryService(StyleQueryRepository repository) {
 		this.repository = repository;
@@ -46,8 +47,12 @@ public class StyleQueryService {
 		for (StyleSnapshot style : styles) {
 			String styleKey = resolveStyleKey(style);
 			String item = resolveItem(style, itemNames);
-			String colors = joinRuleValues(stylesRule.get(styleKey));
-			String sizes = joinSizeValues(stylesRule.get(styleKey));
+			List<String> colorList = collectColors(stylesRule.get(styleKey));
+			List<String> sizeList = collectSizes(stylesRule.get(styleKey));
+			String colorsFull = formatFullValues(colorList);
+			String sizesFull = formatFullValues(sizeList);
+			String colorsDisplay = formatDisplayValues(colorList);
+			String sizesDisplay = formatDisplayValues(sizeList);
 			String designer = resolveUserName(style.designerEmpNo(), userNames);
 			String production = resolveUserName(style.productEmpNo(), userNames);
 			String sales = resolveUserName(style.salesEmpNo(), userNames);
@@ -55,7 +60,8 @@ public class StyleQueryService {
 			boolean active = style.active() == null || style.active();
 		
 			designerRawByStyle.put(styleKey, style.designerEmpNo());
-			rows.add(new StyleListRow(styleKey, item, colors, sizes, designer, production, sales, logistic,
+			rows.add(new StyleListRow(styleKey, item, colorsDisplay, colorsFull, colorsDisplay,
+					sizesDisplay, sizesFull, sizesDisplay, designer, production, sales, logistic,
 					style.productionCost(), style.supplyPrice(), style.salesPrice(), style.startDate(), active));
 		}
 
@@ -227,25 +233,42 @@ public class StyleQueryService {
 		return userNames.getOrDefault(raw, raw);
 	}
 
-	private String joinRuleValues(Map<String, List<String>> rule) {
+	private List<String> collectColors(Map<String, List<String>> rule) {
 		if (rule == null || rule.isEmpty()) {
-			return "-";
+			return Collections.emptyList();
 		}
-		return String.join(", ", rule.keySet());
+		return new ArrayList<>(rule.keySet());
 	}
 
-	private String joinSizeValues(Map<String, List<String>> rule) {
+	private List<String> collectSizes(Map<String, List<String>> rule) {
 		if (rule == null || rule.isEmpty()) {
-			return "-";
+			return Collections.emptyList();
 		}
 		Set<String> sizes = new LinkedHashSet<>();
 		for (List<String> value : rule.values()) {
 			sizes.addAll(value);
 		}
 		if (sizes.isEmpty()) {
+			return Collections.emptyList();
+		}
+		return new ArrayList<>(sizes);
+	}
+
+	private String formatFullValues(List<String> values) {
+		if (values == null || values.isEmpty()) {
 			return "-";
 		}
-		return String.join(", ", sizes);
+		return String.join(", ", values);
+	}
+
+	private String formatDisplayValues(List<String> values) {
+		if (values == null || values.isEmpty()) {
+			return "-";
+		}
+		if (values.size() <= LIST_DISPLAY_LIMIT) {
+			return String.join(", ", values);
+		}
+		return String.join(", ", values.subList(0, LIST_DISPLAY_LIMIT)) + " ...";
 	}
 
 	private boolean matchesDesigner(StyleListRow row, String rawDesigner, String keyword) {

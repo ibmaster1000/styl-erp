@@ -8,7 +8,11 @@ public class StyleListRow {
 	private final String styleCode;
 	private final String item;
 	private final String colors;
+	private final String colorsFull;
+	private final String colorsDisplay;
 	private final String sizes;
+	private final String sizesFull;
+	private final String sizesDisplay;
 	private final String designer;
 	private final String productionManager;
 	private final String salesManager;
@@ -19,14 +23,18 @@ public class StyleListRow {
 	private final LocalDate startDate;
 	private final boolean active;
 
-	public StyleListRow(String styleCode, String item, String colors, String sizes, String designer,
-			String productionManager, String salesManager, String logisticManager,
-			BigDecimal productionCost, BigDecimal supplyPrice, BigDecimal salesPrice, LocalDate startDate,
-			boolean active) {
+	public StyleListRow(String styleCode, String item, String colors, String colorsFull, String colorsDisplay,
+			String sizes, String sizesFull, String sizesDisplay, String designer, String productionManager,
+			String salesManager, String logisticManager, BigDecimal productionCost, BigDecimal supplyPrice,
+			BigDecimal salesPrice, LocalDate startDate, boolean active) {
 		this.styleCode = styleCode;
 		this.item = item;
 		this.colors = colors;
+		this.colorsFull = colorsFull;
+		this.colorsDisplay = colorsDisplay;
 		this.sizes = sizes;
+		this.sizesFull = sizesFull;
+		this.sizesDisplay = sizesDisplay;
 		this.designer = designer;
 		this.productionManager = productionManager;
 		this.salesManager = salesManager;
@@ -50,8 +58,24 @@ public class StyleListRow {
 		return colors;
 	}
 
+	public String getColorsFull() {
+		return colorsFull;
+	}
+
+	public String getColorsDisplay() {
+		return colorsDisplay;
+	}
+
 	public String getSizes() {
 		return sizes;
+	}
+
+	public String getSizesFull() {
+		return sizesFull;
+	}
+
+	public String getSizesDisplay() {
+		return sizesDisplay;
 	}
 
 	public String getDesigner() {

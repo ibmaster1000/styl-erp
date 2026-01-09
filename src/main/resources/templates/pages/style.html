@@ -71,6 +71,18 @@
 		.style-search-fields .form-select {
 			max-width: 240px;
 		}
+
+		.ellipsis-cell {
+			max-width: 160px;
+			overflow: hidden;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+			cursor: pointer;
+		}
+
+		.list-detail-prewrap {
+			white-space: pre-wrap;
+		}
 	</style>
 
 	<div class="mb-3">
@@ -148,8 +160,14 @@
 						<tr th:each="s : ${list}">
 							<td class="t-left" th:text="${s.styleCode}">ST-001</td>
 							<td class="t-left" th:text="${s.item}">후드티</td>
-							<td class="t-left" th:text="${s.colors}">BLACK, WHITE</td>
-							<td class="t-left" th:text="${s.sizes}">S, M, L</td>
+							<td class="t-left ellipsis-cell cell-clickable"
+								th:attr="data-full=${s.colorsFull}, data-title='색상'"
+								th:text="${s.colorsDisplay}"
+								th:title="${s.colorsFull}">BLACK, WHITE</td>
+							<td class="t-left ellipsis-cell cell-clickable"
+								th:attr="data-full=${s.sizesFull}, data-title='사이즈'"
+								th:text="${s.sizesDisplay}"
+								th:title="${s.sizesFull}">S, M, L</td>
 							<td class="t-left" th:text="${s.designer}">김디</td>
 							<td class="t-left" th:text="${s.productionManager}">박생산</td>
 							<td class="t-left" th:text="${s.salesManager}">이영업</td>
@@ -227,8 +245,85 @@
 		<h4 class="h6 fw-bold mb-2">준비중</h4>
 		<div class="text-muted small">상세 기능은 추후 추가됩니다.</div>
 	</section>
+	<div class="modal fade" id="listDetailModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="listDetailModalTitle">전체</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div id="listDetailModalBody" class="d-flex flex-wrap gap-2"></div>
+				</div>
+			</div>
+		</div>
+	</div>
 	<div
 		th:replace="~{fragments/employee-picker-modal :: employeePickerModal('style-employee-picker', '사원 검색', 'style-designer-emp-code', '/api/users/picker', '/api/users/depts')}">
 	</div>
 	<script th:src="@{/js/employeePicker.js}"></script>
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const cells = document.querySelectorAll('.ellipsis-cell');
+			cells.forEach((cell) => {
+				const fullValue = (cell.dataset.full || '').trim();
+				const titleValue = fullValue || '내용 없음';
+				if (!cell.getAttribute('title')) {
+					cell.setAttribute('title', titleValue);
+				}
+				new bootstrap.Tooltip(cell, { title: titleValue });
+			});
+
+			const modalElement = document.getElementById('listDetailModal');
+			if (!modalElement) {
+				return;
+			}
+			const modal = new bootstrap.Modal(modalElement);
+			const modalTitle = document.getElementById('listDetailModalTitle');
+			const modalBody = document.getElementById('listDetailModalBody');
+
+			const renderEmptyState = () => {
+				modalBody.className = '';
+				modalBody.innerHTML = '<span class="text-muted">내용 없음</span>';
+			};
+
+			const renderBadges = (items) => {
+				modalBody.className = 'd-flex flex-wrap gap-2';
+				modalBody.innerHTML = '';
+				items.forEach((item) => {
+					const badge = document.createElement('span');
+					badge.className = 'badge bg-secondary-subtle text-secondary-emphasis';
+					badge.textContent = item;
+					modalBody.appendChild(badge);
+				});
+			};
+
+			const renderText = (text) => {
+				modalBody.className = 'list-detail-prewrap text-break';
+				modalBody.textContent = text;
+			};
+
+			cells.forEach((cell) => {
+				cell.addEventListener('click', () => {
+					const fullValue = (cell.dataset.full || '').trim();
+					const title = cell.dataset.title || '전체';
+					modalTitle.textContent = `${title} 전체`;
+
+					if (!fullValue || fullValue === '-') {
+						renderEmptyState();
+					} else if (fullValue.includes(',')) {
+						const items = fullValue.split(',').map((item) => item.trim()).filter(Boolean);
+						if (items.length) {
+							renderBadges(items);
+						} else {
+							renderText(fullValue);
+						}
+					} else {
+						renderText(fullValue);
+					}
+					modal.show();
+				});
+			});
+		});
+	</script>
 </div>
