@@ -73,7 +73,7 @@ public class MaterialOrderService {
 		String effectiveStyleCode = StringUtils.hasText(styleCode) ? styleCode : resolveStyleCode(stylesId);
 		Map<String, List<String>> styleRule = Collections.emptyMap();
 		if (StringUtils.hasText(effectiveStyleCode)) {
-			styleRule = styleRuleService.findRulesByStyleNos(Set.of(effectiveStyleCode))
+			styleRule = styleRuleService.findRulesByStyleCodes(Set.of(effectiveStyleCode))
 					.getOrDefault(effectiveStyleCode, Collections.emptyMap());
 		}
 
@@ -94,7 +94,7 @@ public class MaterialOrderService {
 		String prdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_code", "agreement_code"));
 		String colorColumn = findFirstExistingColumn("material_specs",
 				List.of("color_code", "material_color", "color"));
-		String styleColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id", "style_no"));
+		String styleIdColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id"));
 
 		if (supplierColumn == null || prdColumn == null || colorColumn == null) {
 			return Collections.emptyList();
@@ -106,8 +106,8 @@ public class MaterialOrderService {
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
 				.addValue("colorCode", colorCode);
 
-		if (StringUtils.hasText(stylesId) && styleColumn != null) {
-			sql.append("and ").append(styleColumn).append(" = :stylesId ");
+		if (StringUtils.hasText(stylesId) && styleIdColumn != null) {
+			sql.append("and ").append(styleIdColumn).append(" = :stylesId ");
 			params.addValue("stylesId", stylesId);
 		}
 
@@ -136,7 +136,7 @@ public class MaterialOrderService {
 		String colorColumn = findFirstExistingColumn("material_specs",
 				List.of("color_code", "material_color", "color"));
 		String supplierColumn = findFirstExistingColumn("material_specs", List.of("supplier_code"));
-		String styleColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id", "style_no"));
+		String styleIdColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id"));
 		String bomIdColumn = findFirstExistingColumn("material_specs", List.of("bom_id"));
 
 		if (prdColumn == null || colorColumn == null || supplierColumn == null) {
@@ -170,12 +170,12 @@ public class MaterialOrderService {
 				selectOrNull("qty_per_piece"), selectOrNull(supplierColumn, "supplier_code"), selectOrNull("loss_rate"),
 				selectOrNull("order_uom"), selectOrNull("unit_price"), selectOrNull("remark"), prdColumn, colorColumn,
 				supplierColumn,
-				StringUtils.hasText(stylesId) && styleColumn != null ? "and " + styleColumn + " = :stylesId" : "",
+				StringUtils.hasText(stylesId) && styleIdColumn != null ? "and " + styleIdColumn + " = :stylesId" : "",
 				bomIdColumn != null ? bomIdColumn : prdColumn);
 
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
 				.addValue("colorCode", colorCode).addValue("supplierCode", supplierCode);
-		if (StringUtils.hasText(stylesId) && styleColumn != null) {
+		if (StringUtils.hasText(stylesId) && styleIdColumn != null) {
 			params.addValue("stylesId", stylesId);
 		}
 
@@ -199,7 +199,7 @@ public class MaterialOrderService {
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
 		String bomIdColumn = findFirstExistingColumn("material_orders", List.of("bom_id"));
 		String supplierColumn = findFirstExistingColumn("material_orders", List.of("supplier_code"));
-		String styleColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id", "style_no"));
+		String styleIdColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id"));
 		String orderAmountColumn = findFirstExistingColumn("material_orders", List.of("order_amount"));
 		String orderPriceColumn = findFirstExistingColumn("material_orders", List.of("order_price"));
 		String orderedByColumn = findFirstExistingColumn("material_orders", List.of("ordered_by", "created_by"));
@@ -244,8 +244,8 @@ public class MaterialOrderService {
 			List<String> values = new ArrayList<>();
 			columns.add(orderCodeColumn);
 			values.add(":mOrderCode");
-			if (styleColumn != null) {
-				columns.add(styleColumn);
+			if (styleIdColumn != null) {
+				columns.add(styleIdColumn);
 				values.add(":stylesId");
 			}
 			columns.add(prdColumn);
@@ -297,7 +297,7 @@ public class MaterialOrderService {
 		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_code", "agreement_code"));
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
 		String supplierColumn = findFirstExistingColumn("material_orders", List.of("supplier_code"));
-		String styleColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id", "style_no"));
+		String styleIdColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id"));
 
 		if (prdColumn == null || colorColumn == null || supplierColumn == null) {
 			return false;
@@ -310,8 +310,8 @@ public class MaterialOrderService {
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
 				.addValue("colorCode", colorCode).addValue("supplierCode", supplierCode);
 
-		if (StringUtils.hasText(stylesId) && styleColumn != null) {
-			sql.append("and ").append(styleColumn).append(" = :stylesId ");
+		if (StringUtils.hasText(stylesId) && styleIdColumn != null) {
+			sql.append("and ").append(styleIdColumn).append(" = :stylesId ");
 			params.addValue("stylesId", stylesId);
 		}
 
@@ -328,7 +328,7 @@ public class MaterialOrderService {
 		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_code", "agreement_code"));
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
 		String supplierColumn = findFirstExistingColumn("material_orders", List.of("supplier_code"));
-		String styleColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id", "style_no"));
+		String styleIdColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id"));
 		String bomIdColumn = findFirstExistingColumn("material_orders", List.of("bom_id"));
 
 		if (prdColumn == null || colorColumn == null || supplierColumn == null || bomIdColumn == null) {
@@ -343,8 +343,8 @@ public class MaterialOrderService {
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
 				.addValue("colorCode", colorCode).addValue("supplierCode", supplierCode).addValue("bomId", bomId);
 
-		if (StringUtils.hasText(stylesId) && styleColumn != null) {
-			sql.append("and ").append(styleColumn).append(" = :stylesId ");
+		if (StringUtils.hasText(stylesId) && styleIdColumn != null) {
+			sql.append("and ").append(styleIdColumn).append(" = :stylesId ");
 			params.addValue("stylesId", stylesId);
 		}
 
@@ -358,23 +358,27 @@ public class MaterialOrderService {
 		}
 		String prdColumn = findFirstExistingColumn("production_agreements",
 				List.of("prd_agree_code", "agreement_code"));
-		String styleColumn = findFirstExistingColumn("production_agreements",
-				List.of("styles_id", "style_id", "style_no", "style_code"));
+		String styleIdColumn = findFirstExistingColumn("production_agreements", List.of("styles_id", "style_id"));
+		String styleCodeColumn = findFirstExistingColumn("production_agreements", List.of("style_code"));
 
-		if (prdColumn == null || styleColumn == null) {
+		if (prdColumn == null || (styleIdColumn == null && styleCodeColumn == null)) {
 			return Collections.emptyList();
 		}
 
-		String reference = StringUtils.hasText(stylesId) ? stylesId : styleCode;
-		if (!StringUtils.hasText(reference)) {
+		boolean hasStyleId = StringUtils.hasText(stylesId) && styleIdColumn != null;
+		boolean hasStyleCode = StringUtils.hasText(styleCode) && styleCodeColumn != null;
+		if (!hasStyleId && !hasStyleCode) {
 			return Collections.emptyList();
 		}
+		
+		String referenceColumn = hasStyleId ? styleIdColumn : styleCodeColumn;
+		String referenceValue = hasStyleId ? stylesId : styleCode;
 
 		StringBuilder sql = new StringBuilder().append("select distinct ").append(prdColumn)
-				.append(" as prd_agree_code ").append("from production_agreements where ").append(styleColumn)
+				.append(" as prd_agree_code ").append("from production_agreements where ").append(referenceColumn)
 				.append(" = :styleRef ").append("order by ").append(prdColumn).append(" asc");
 
-		MapSqlParameterSource params = new MapSqlParameterSource().addValue("styleRef", reference);
+		MapSqlParameterSource params = new MapSqlParameterSource().addValue("styleRef", referenceValue);
 
 		return jdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> rs.getString("prd_agree_code"));
 	}
@@ -386,7 +390,8 @@ public class MaterialOrderService {
 
 		String colorColumn = findFirstExistingColumn("material_specs",
 				List.of("color_code", "material_color", "color"));
-		String styleColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id", "style_no"));
+		String styleIdColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id"));
+		String styleCodeColumn = findFirstExistingColumn("material_specs", List.of("style_code"));
 		if (colorColumn == null) {
 			return Collections.emptyList();
 		}
@@ -395,12 +400,12 @@ public class MaterialOrderService {
 				.append("from material_specs ");
 
 		MapSqlParameterSource params = new MapSqlParameterSource();
-		if (StringUtils.hasText(stylesId) && styleColumn != null) {
-			sql.append("where ").append(styleColumn).append(" = :stylesId ");
+		if (StringUtils.hasText(stylesId) && styleIdColumn != null) {
+			sql.append("where ").append(styleIdColumn).append(" = :stylesId ");
 			params.addValue("stylesId", stylesId);
-		} else if (StringUtils.hasText(styleCode) && styleColumn != null) {
-			sql.append("where ").append(styleColumn).append(" = :stylesId ");
-			params.addValue("stylesId", styleCode);
+		} else if (StringUtils.hasText(styleCode) && styleCodeColumn != null) {
+			sql.append("where ").append(styleCodeColumn).append(" = :styleCode ");
+			params.addValue("styleCode", styleCode);
 		}
 		sql.append("order by ").append(colorColumn).append(" asc");
 
@@ -445,11 +450,11 @@ public class MaterialOrderService {
 	}
 
 	private String resolveStyleIdColumn() {
-		return findFirstExistingColumn("styles", List.of("styles_id", "style_id", "id", "style_no"));
+		return findFirstExistingColumn("styles", List.of("styles_id", "style_id", "id"));
 	}
 
 	private String resolveStyleCodeColumn() {
-		return findFirstExistingColumn("styles", List.of("style_code", "style_no", "styles_code"));
+		return findFirstExistingColumn("styles", List.of("style_code", "styles_code"));
 	}
 
 	private String resolveStyleCode(String stylesId) {

@@ -44,11 +44,11 @@ public class ProductionAgreementService {
 
 		Map<String, ProductionAgreementDetailView> result = new LinkedHashMap<>();
 		groupedByAgreement.forEach((agreementCode, items) -> {
-			String styleNo = items.stream().map(ProductionAgreement::getStyleNo).filter(Objects::nonNull).findFirst()
+			String styleCode = items.stream().map(ProductionAgreement::getStyleCode).filter(Objects::nonNull).findFirst()
 					.orElse("-");
 
-			Map<String, List<String>> rule = styleRules.getOrDefault(styleNo, Collections.emptyMap());
-			BigDecimal supplyPrice = supplyPrices.getOrDefault(styleNo, BigDecimal.ZERO);
+			Map<String, List<String>> rule = styleRules.getOrDefault(styleCode, Collections.emptyMap());
+			BigDecimal supplyPrice = supplyPrices.getOrDefault(styleCode, BigDecimal.ZERO);
 
 			List<ProductionAgreementDetailLine> detailLines = new ArrayList<>();
 			if (!rule.isEmpty()) {
@@ -84,15 +84,15 @@ public class ProductionAgreementService {
 			BigDecimal grandAmount = detailLines.stream().map(ProductionAgreementDetailLine::getAmount)
 					.reduce(BigDecimal.ZERO, BigDecimal::add);
 
-			result.put(agreementCode, new ProductionAgreementDetailView(styleNo, agreementCode, detailLines,
+			result.put(agreementCode, new ProductionAgreementDetailView(styleCode, agreementCode, detailLines,
 					new ArrayList<>(colorTotals.values()), grandQuantity, grandAmount));
 		});
 
 		return result;
 	}
 
-	public Set<String> extractStyleNos(List<ProductionAgreement> agreements) {
-		return agreements.stream().map(ProductionAgreement::getStyleNo).filter(Objects::nonNull)
+	public Set<String> extractStyleCodes(List<ProductionAgreement> agreements) {
+		return agreements.stream().map(ProductionAgreement::getStyleCode).filter(Objects::nonNull)
 				.collect(Collectors.toSet());
 	}
 

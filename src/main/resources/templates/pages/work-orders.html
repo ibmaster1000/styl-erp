@@ -207,7 +207,7 @@
 				<div class="row g-3 align-items-end">
 					<div class="col-md-5">
 						<label class="form-label fw-semibold">품번</label>
-						<input type="text" class="form-control" name="styleNo" th:value="${param.styleNo}"
+						<input type="text" class="form-control" name="styleCode" th:value="${param.styleCode}"
 							placeholder="품번 코드">
 					</div>
 					<div class="col-md-5">
@@ -249,7 +249,7 @@
 							<tr th:each="w, iter : ${list}" data-wo-row
 								th:classappend="${iter.index == 0} ? 'wo-row-selected'">
 								<td class="t-left" th:text="${w.workOrderId}" data-field="workOrderId">WO-001</td>
-								<td class="t-left" th:text="${w.styleNo}" data-field="styleNo">ST-001</td>
+								<td class="t-left" th:text="${w.styleCode}" data-field="styleCode">ST-001</td>
 								<td class="t-left" th:text="${w.agreementCode}" data-field="agreementCode">PA-001</td>
 								<td class="t-left" th:text="${w.color}" data-field="color">RED</td>
 								<td class="t-left" th:text="${w.size}" data-field="size">L</td>
@@ -302,7 +302,7 @@
 		</div>
 		<div class="wo-right">
 			<div class="wo-panel wo-attachments-panel h-100">
-							<div class="attachment-section">
+				<div class="attachment-section">
 					<div class="attachment-header">
 						<div>
 							<div class="fw-bold">도식화</div>
@@ -352,9 +352,9 @@
 		const measureItems = ['총기장', '허리폭', '다리폭', '둔폭', '밑길이'];
 		const measureState = {};
 
-		const getSizesByStyle = (styleNo) => {
-			if (!styleNo || !styleRules || !styleRules[styleNo]) return defaultSizes;
-			const rule = styleRules[styleNo];
+		const getSizesByStyle = (styleCode) => {
+			if (!styleCode || !styleRules || !styleRules[styleCode]) return defaultSizes;
+			const rule = styleRules[styleCode];
 			const sizes = new Set();
 			Object.values(rule).forEach((list) => {
 				if (Array.isArray(list)) {
@@ -430,7 +430,7 @@
 
 		const updateSummary = (wo) => {
 			document.getElementById('wo-summary-id').textContent = wo?.workOrderId || '-';
-			document.getElementById('wo-summary-style').textContent = wo?.styleNo || '-';
+			document.getElementById('wo-summary-style').textContent = wo?.styleCode || '-';
 			document.getElementById('wo-summary-agreement').textContent = wo?.agreementCode || '-';
 			document.getElementById('wo-summary-due').textContent = wo?.dueDate || '-';
 		};
@@ -446,7 +446,7 @@
 				wo[cell.dataset.field] = cell.textContent.trim();
 			});
 
-			const sizes = getSizesByStyle(wo.styleNo);
+			const sizes = getSizesByStyle(wo.styleCode);
 			renderMeasureTable(sizes, wo.workOrderId);
 			updateSummary(wo);
 		};

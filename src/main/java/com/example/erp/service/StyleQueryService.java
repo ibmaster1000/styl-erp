@@ -61,7 +61,7 @@ public class StyleQueryService {
 
 		if (StringUtils.hasText(condition.getDesignerNameLike())) {
 			String keyword = condition.getDesignerNameLike().trim().toLowerCase(Locale.KOREAN);
-			rows = rows.stream().filter(row -> matchesDesigner(row, designerRawByStyle.get(row.getStyleNo()), keyword))
+			rows = rows.stream().filter(row -> matchesDesigner(row, designerRawByStyle.get(row.getStyleCode()), keyword))
 					.collect(Collectors.toList());
 		}
 

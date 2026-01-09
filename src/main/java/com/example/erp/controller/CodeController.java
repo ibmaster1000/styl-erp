@@ -47,7 +47,8 @@ public class CodeController {
 	}
 
 	@PostMapping("/{groupCode}/{code}/update")
-	public String update(@PathVariable("groupCode") String codeType, @PathVariable String code,
+	public String update(@PathVariable(name = "groupCode") String codeType,
+			@PathVariable(name = "code") String code,
 			@ModelAttribute("form") CodeForm form, RedirectAttributes redirectAttributes) {
 		try {
 			codeService.update(new CodeId(codeType, code), form.getCodeType(), form.getCode(), form.getName(),
@@ -60,7 +61,8 @@ public class CodeController {
 	}
 
 	@PostMapping("/{groupCode}/{code}/delete")
-	public String delete(@PathVariable("groupCode") String codeType, @PathVariable String code,
+	public String delete(@PathVariable(name = "groupCode") String codeType,
+			@PathVariable(name = "code") String code,
 			RedirectAttributes redirectAttributes) {
 		boolean removed = codeService.softDelete(new CodeId(codeType, code));
 		redirectAttributes.addFlashAttribute("message", removed ? "코드가 삭제되었습니다." : "삭제할 코드를 찾을 수 없습니다.");

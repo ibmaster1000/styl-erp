@@ -10,8 +10,8 @@ public class ProductionAgreement extends BaseAuditEntity {
     @Column(name = "agreement_code", nullable = false, length = 50)
     private String agreementCode;
 
-    @Column(length = 50)
-    private String styleNo;
+    @Column(name = "style_code", length = 50)
+    private String styleCode;
 
     @Column(length = 30)
     private String color;
@@ -32,12 +32,12 @@ public class ProductionAgreement extends BaseAuditEntity {
         this.agreementCode = agreementCode;
     }
 
-    public String getStyleNo() {
-        return styleNo;
+    public String getStyleCode() {
+        return styleCode;
     }
 
-    public void setStyleNo(String styleNo) {
-        this.styleNo = styleNo;
+    public void setStyleCode(String styleCode) {
+        this.styleCode = styleCode;
     }
 
     public String getColor() {

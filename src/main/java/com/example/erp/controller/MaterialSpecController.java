@@ -35,11 +35,11 @@ public class MaterialSpecController extends PageViewSupport {
     @GetMapping
     public String list(Model model) {
         List<Style> styles = styleService.findAll();
-        Set<String> styleNos = styles.stream()
-                .map(Style::getStyleNo)
+        Set<String> styleCodes = styles.stream()
+                .map(Style::getStyleCode)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        Map<String, Map<String, List<String>>> styleRules = styleRuleService.findRulesByStyleNos(styleNos);
+        Map<String, Map<String, List<String>>> styleRules = styleRuleService.findRulesByStyleCodes(styleCodes);
 
         populate(model, "원부자재 사양서 등록", "material-specs", "pages/material-specs",
                 materialSpecService.findAllSorted());

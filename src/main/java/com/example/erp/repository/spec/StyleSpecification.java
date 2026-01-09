@@ -22,8 +22,8 @@ public final class StyleSpecification {
                 return cb.conjunction();
             }
 
-            if (StringUtils.hasText(criteria.getStyleNo())) {
-                predicates.add(cb.like(cb.lower(root.get("styleNo")), "%" + criteria.getStyleNo().toLowerCase() + "%"));
+            if (StringUtils.hasText(criteria.getStyleCode())) {
+                predicates.add(cb.like(cb.lower(root.get("styleCode")), "%" + criteria.getStyleCode().toLowerCase() + "%"));
             }
 
             if (StringUtils.hasText(criteria.getDesigner())) {

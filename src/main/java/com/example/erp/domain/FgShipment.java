@@ -20,8 +20,8 @@ public class FgShipment {
     @Column(length = 100)
     private String customer;
 
-    @Column(length = 50)
-    private String styleNo;
+    @Column(name = "style_code", length = 50)
+    private String styleCode;
 
     @Column(length = 30)
     private String color;
@@ -59,12 +59,12 @@ public class FgShipment {
         this.customer = customer;
     }
 
-    public String getStyleNo() {
-        return styleNo;
+    public String getStyleCode() {
+        return styleCode;
     }
 
-    public void setStyleNo(String styleNo) {
-        this.styleNo = styleNo;
+    public void setStyleCode(String styleCode) {
+        this.styleCode = styleCode;
     }
 
     public String getColor() {

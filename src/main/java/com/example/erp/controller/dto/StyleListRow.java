@@ -5,7 +5,7 @@ import java.time.LocalDate;
 
 public class StyleListRow {
 
-	private final String styleNo;
+	private final String styleCode;
 	private final String item;
 	private final String colors;
 	private final String sizes;
@@ -19,11 +19,11 @@ public class StyleListRow {
 	private final LocalDate startDate;
 	private final boolean active;
 
-	public StyleListRow(String styleNo, String item, String colors, String sizes, String designer,
+	public StyleListRow(String styleCode, String item, String colors, String sizes, String designer,
 			String productionManager, String salesManager, String logisticManager,
 			BigDecimal productionCost, BigDecimal supplyPrice, BigDecimal salesPrice, LocalDate startDate,
 			boolean active) {
-		this.styleNo = styleNo;
+		this.styleCode = styleCode;
 		this.item = item;
 		this.colors = colors;
 		this.sizes = sizes;
@@ -38,8 +38,8 @@ public class StyleListRow {
 		this.active = active;
 	}
 
-	public String getStyleNo() {
-		return styleNo;
+	public String getStyleCode() {
+		return styleCode;
 	}
 
 	public String getItem() {

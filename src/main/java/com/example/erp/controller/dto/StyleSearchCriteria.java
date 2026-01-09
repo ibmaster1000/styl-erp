@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 public class StyleSearchCriteria {
 
-    private String styleNo;
+	private String styleCode;
     private String designer;
     private Boolean active;
 
@@ -24,12 +24,12 @@ public class StyleSearchCriteria {
     @NumberFormat
     private BigDecimal salesPriceMax;
 
-    public String getStyleNo() {
-        return styleNo;
+    public String getStyleCode() {
+        return styleCode;
     }
 
-    public void setStyleNo(String styleNo) {
-        this.styleNo = styleNo;
+    public void setStyleCode(String styleCode) {
+        this.styleCode = styleCode;
     }
 
     public String getDesigner() {
@@ -97,7 +97,7 @@ public class StyleSearchCriteria {
     }
 
     public boolean hasFilters() {
-        return StringUtils.hasText(styleNo) ||
+    	return StringUtils.hasText(styleCode) ||
                 StringUtils.hasText(designer) ||
                 active != null ||
                 productionCostMin != null || productionCostMax != null ||

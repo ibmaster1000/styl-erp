@@ -18,26 +18,27 @@ import java.util.Set;
 @RequestMapping("/production-agreements")
 public class ProductionAgreementController extends PageViewSupport {
 
-    private final ProductionAgreementService productionAgreementService;
-    private final StyleRuleService styleRuleService;
-    public ProductionAgreementController(ProductionAgreementService productionAgreementService,
-            StyleRuleService styleRuleService) {
-this.productionAgreementService = productionAgreementService;
-this.styleRuleService = styleRuleService;
-}
+	private final ProductionAgreementService productionAgreementService;
+	private final StyleRuleService styleRuleService;
 
-@GetMapping
-public String list(Model model) {
-	List<ProductionAgreement> agreements = productionAgreementService.findAll();
-    Set<String> styleNos = productionAgreementService.extractStyleNos(agreements);
-    Map<String, BigDecimal> supplyPrices = styleRuleService.findSupplyPrices(styleNos);
-    Map<String, Map<String, List<String>>> styleRules = styleRuleService.findRulesByStyleNos(styleNos);
+	public ProductionAgreementController(ProductionAgreementService productionAgreementService,
+			StyleRuleService styleRuleService) {
+		this.productionAgreementService = productionAgreementService;
+		this.styleRuleService = styleRuleService;
+	}
 
-    populate(model, "생산 합의", "pa", "pages/production-agreements", agreements);
-    model.addAttribute("agreementDetails",
-            productionAgreementService.buildDetailViews(agreements, styleRules, supplyPrices));
-    model.addAttribute("styleRules", styleRules);
-    model.addAttribute("styleSupplyPrices", supplyPrices);
-    return "layout/layout";
-}
+	@GetMapping
+	public String list(Model model) {
+		List<ProductionAgreement> agreements = productionAgreementService.findAll();
+		Set<String> styleCodes = productionAgreementService.extractStyleCodes(agreements);
+		Map<String, BigDecimal> supplyPrices = styleRuleService.findSupplyPrices(styleCodes);
+		Map<String, Map<String, List<String>>> styleRules = styleRuleService.findRulesByStyleCodes(styleCodes);
+
+		populate(model, "생산 합의", "pa", "pages/production-agreements", agreements);
+		model.addAttribute("agreementDetails",
+				productionAgreementService.buildDetailViews(agreements, styleRules, supplyPrices));
+		model.addAttribute("styleRules", styleRules);
+		model.addAttribute("styleSupplyPrices", supplyPrices);
+		return "layout/layout";
+	}
 }

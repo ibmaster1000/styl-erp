@@ -9,7 +9,7 @@ import java.time.LocalDate;
 
 public class StyleForm {
 
-    private String styleNo;
+    private String styleCode;
     private String item;
     private String designerName;
     private String designerEmpNo;
@@ -28,12 +28,12 @@ public class StyleForm {
 
     private boolean active = true;
 
-    public String getStyleNo() {
-        return styleNo;
+    public String getStyleCode() {
+        return styleCode;
     }
 
-    public void setStyleNo(String styleNo) {
-        this.styleNo = styleNo;
+    public void setStyleCode(String styleCode) {
+        this.styleCode = styleCode;
     }
 
     public String getItem() {

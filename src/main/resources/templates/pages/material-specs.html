@@ -130,11 +130,11 @@
 							<td colspan="3" class="text-center text-muted">등록된 품번이 없습니다.</td>
 						</tr>
 						<tr th:each="style : ${styles}">
-							<td class="t-left" th:text="${style.styleNo}">ST-0001</td>
+							<td class="t-left" th:text="${style.styleCode}">ST-0001</td>
 							<td class="t-left" th:text="${style.item}">상의</td>
 							<td class="text-end">
 								<button type="button" class="btn btn--outline" data-style-pick
-									th:attr="data-style=${style.styleNo}">선택</button>
+									th:attr="data-style-code=${style.styleCode},data-style-id=${style.stylesId}">선택</button>
 							</td>
 						</tr>
 					</tbody>
@@ -160,11 +160,11 @@
 
 		const closeModal = () => modal.classList.remove('active');
 
-		const renderColorSizeTable = (styleNo) => {
+		const renderColorSizeTable = (styleCode) => {
 			ruleHead.innerHTML = '';
 			ruleBody.innerHTML = '';
 
-			const rules = msStyleRules?.[styleNo];
+			const rules = msStyleRules?.[styleCode];
 			if (!rules || Object.keys(rules).length === 0) {
 				const emptyHeadRow = document.createElement('tr');
 				['색상', '-'].forEach((label) => {
@@ -222,14 +222,14 @@
 			});
 		};
 
-		const populateSelectors = (styleNo) => {
-			const rules = msStyleRules?.[styleNo];
+		const populateSelectors = (styleCode) => {
+			const rules = msStyleRules?.[styleCode];
 			colorSelect.innerHTML = '<option value=\"\">색상을 선택하세요</option>';
 			agreementSelect.innerHTML = '<option value=\"\">생산합의 코드를 선택하세요</option>';
 			const hasRules = rules && Object.keys(rules).length > 0;
 			colorSelect.disabled = !hasRules;
 			agreementSelect.disabled = !hasRules;
-			searchButton.disabled = !styleNo;
+			searchButton.disabled = !styleCode;
 			if (hasRules) {
 				Object.keys(rules).forEach((color) => {
 					const option = document.createElement('option');
@@ -240,13 +240,13 @@
 			}
 		};
 
-		const applyStyleSelection = (styleNo) => {
-			if (!styleNo) return;
-			styleInput.value = styleNo;
-			styleIdInput.value = styleNo;
-			styleChip.textContent = styleNo;
-			populateSelectors(styleNo);
-			renderColorSizeTable(styleNo);
+		const applyStyleSelection = (styleCode, stylesId) => {
+			if (!styleCode) return;
+			styleInput.value = styleCode;
+			styleIdInput.value = stylesId || '';
+			styleChip.textContent = styleCode;
+			populateSelectors(styleCode);
+			renderColorSizeTable(styleCode);
 			closeModal();
 		};
 
@@ -261,8 +261,9 @@
 
 		document.querySelectorAll('[data-style-pick]').forEach((button) => {
 			button.addEventListener('click', (e) => {
-				const selected = e.currentTarget.dataset.style;
-				applyStyleSelection(selected);
+				const selectedCode = e.currentTarget.dataset.styleCode;
+				const selectedId = e.currentTarget.dataset.styleId;
+				applyStyleSelection(selectedCode, selectedId);
 			});
 		});
 

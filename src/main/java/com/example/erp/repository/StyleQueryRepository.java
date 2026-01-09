@@ -32,8 +32,8 @@ public class StyleQueryRepository {
 			return Collections.emptyList();
 		}
 
-		String styleIdColumn = findFirstExistingColumn("styles", List.of("styles_id", "style_id", "style_no"));
-		String styleCodeColumn = findFirstExistingColumn("styles", List.of("style_code", "style_no"));
+		String styleIdColumn = findFirstExistingColumn("styles", List.of("styles_id", "style_id"));
+		String styleCodeColumn = findFirstExistingColumn("styles", List.of("style_code", "styles_code"));
 		if (styleCodeColumn == null) {
 			return Collections.emptyList();
 		}
@@ -92,7 +92,7 @@ public class StyleQueryRepository {
 			return Collections.emptyList();
 		}
 
-		String styleIdColumn = findFirstExistingColumn("styles_rule", List.of("styles_id", "style_id", "style_no"));
+		String styleIdColumn = findFirstExistingColumn("styles_rule", List.of("styles_id", "style_id"));
 		String codeTypeColumn = findFirstExistingColumn("styles_rule", List.of("code_type"));
 		String codeColumn = findFirstExistingColumn("styles_rule", List.of("code"));
 		if (styleIdColumn == null) {

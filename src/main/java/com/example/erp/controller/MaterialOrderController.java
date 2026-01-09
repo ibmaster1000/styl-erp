@@ -36,31 +36,31 @@ public class MaterialOrderController {
 
     @GetMapping("/styles")
     @ResponseBody
-    public List<MaterialOrderStyleResult> searchStyles(@RequestParam(required = false) String keyword) {
+    public List<MaterialOrderStyleResult> searchStyles(@RequestParam(name = "keyword", required = false) String keyword) {
         return materialOrderService.searchStyles(keyword);
     }
 
     @GetMapping("/options")
     @ResponseBody
-    public MaterialOrderSelection loadSelection(@RequestParam(required = false) String stylesId,
-            @RequestParam(required = false) String styleCode) {
+    public MaterialOrderSelection loadSelection(@RequestParam(name = "stylesId", required = false) String stylesId,
+            @RequestParam(name = "styleCode", required = false) String styleCode) {
         return materialOrderService.loadSelection(stylesId, styleCode);
     }
 
     @GetMapping("/suppliers")
     @ResponseBody
-    public List<MaterialOrderSupplierView> fetchSuppliers(@RequestParam(required = false) String stylesId,
-            @RequestParam String prdAgreeCode,
-            @RequestParam String colorCode) {
+    public List<MaterialOrderSupplierView> fetchSuppliers(@RequestParam(name = "stylesId", required = false) String stylesId,
+            @RequestParam(name = "prdAgreeCode") String prdAgreeCode,
+            @RequestParam(name = "colorCode") String colorCode) {
         return materialOrderService.findSuppliers(stylesId, prdAgreeCode, colorCode);
     }
 
     @GetMapping("/materials")
     @ResponseBody
-    public List<MaterialOrderItemView> fetchMaterials(@RequestParam(required = false) String stylesId,
-            @RequestParam String prdAgreeCode,
-            @RequestParam String colorCode,
-            @RequestParam String supplierCode) {
+    public List<MaterialOrderItemView> fetchMaterials(@RequestParam(name = "stylesId", required = false) String stylesId,
+            @RequestParam(name = "prdAgreeCode") String prdAgreeCode,
+            @RequestParam(name = "colorCode") String colorCode,
+            @RequestParam(name = "supplierCode") String supplierCode) {
         return materialOrderService.findMaterials(stylesId, prdAgreeCode, colorCode, supplierCode);
     }
 

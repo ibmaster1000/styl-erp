@@ -93,7 +93,7 @@
 				<div class="col-lg-4">
 					<label class="form-label fw-semibold">품번</label>
 					<input type="text" class="form-control form-control-sm" name="styleCode" placeholder="품번"
-						th:value="${param.styleCode ?: param.styleNo}">
+						th:value="${param.styleCode}">
 				</div>
 				<div class="col-lg-2 d-grid">
 					<button type="submit" class="btn btn--primary btn-sm">검색</button>
@@ -146,7 +146,7 @@
 						</tr>
 
 						<tr th:each="s : ${list}">
-							<td class="t-left" th:text="${s.styleNo}">ST-001</td>
+							<td class="t-left" th:text="${s.styleCode}">ST-001</td>
 							<td class="t-left" th:text="${s.item}">후드티</td>
 							<td class="t-left" th:text="${s.colors}">BLACK, WHITE</td>
 							<td class="t-left" th:text="${s.sizes}">S, M, L</td>
@@ -165,7 +165,7 @@
 							<th:block th:each="colorEntry : ${rule}" th:with="sizes=${colorEntry.value}">
 								<tr th:each="sz, szStat : ${sizes}">
 									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
-										th:text="${s.styleNo}">ST-001</td>
+										th:text="${s.styleCode}">ST-001</td>
 									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
 										th:text="${s.item}">후드티</td>
 									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}">
@@ -200,7 +200,7 @@
 
 						<th:block th:if="${rule == null}">
 							<tr>
-								<td class="t-left" th:text="${s.styleNo}">ST-001</td>
+								<td class="t-left" th:text="${s.styleCode}">ST-001</td>	
 								<td class="t-left" th:text="${s.item}">후드티</td>
 								<td class="t-left">-</td>
 								<td class="t-left">-</td>

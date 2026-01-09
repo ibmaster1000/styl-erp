@@ -12,8 +12,8 @@ public class WorkOrder extends BaseAuditEntity {
     @Column(name = "work_order_id", nullable = false, length = 50)
     private String workOrderId;
 
-    @Column(length = 50)
-    private String styleNo;
+    @Column(name = "style_code", length = 50)
+    private String styleCode;
 
     @Column(length = 50)
     private String agreementCode;
@@ -39,12 +39,12 @@ public class WorkOrder extends BaseAuditEntity {
         this.workOrderId = workOrderId;
     }
 
-    public String getStyleNo() {
-        return styleNo;
+    public String getStyleCode() {
+        return styleCode;
     }
 
-    public void setStyleNo(String styleNo) {
-        this.styleNo = styleNo;
+    public void setStyleCode(String styleCode) {
+        this.styleCode = styleCode;
     }
 
     public String getAgreementCode() {

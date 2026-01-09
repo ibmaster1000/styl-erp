@@ -115,7 +115,7 @@
 				<div class="row g-3 align-items-end">
 					<div class="col-md-5">
 						<label class="form-label">품번</label>
-						<input type="text" class="form-control" name="styleNo" th:value="${param.styleNo}"
+						<input type="text" class="form-control" name="styleCode" th:value="${param.styleCode}"
 							placeholder="품번 코드">
 					</div>
 					<div class="col-md-5">
@@ -151,9 +151,9 @@
 								<td colspan="6" class="text-center text-muted">조회된 데이터가 없습니다.</td>
 							</tr>
 							<tr th:each="p, iter : ${list}" data-pa-row
-								th:attr="data-agreement=${p.agreementCode},data-style=${p.styleNo}"
+								th:attr="data-agreement=${p.agreementCode},data-style=${p.styleCode}"
 								th:classappend="${iter.index == 0} ? 'pa-row-selected'">
-								<td class="t-left" th:text="${p.styleNo}">ST-001</td>
+								<td class="t-left" th:text="${p.styleCode}">ST-001</td>
 								<td class="t-left" th:text="${p.agreementCode}">PA-001</td>
 								<td class="t-left" th:text="${p.color}">RED</td>
 								<td class="t-left" th:text="${p.size}">L</td>
@@ -237,7 +237,7 @@
 				return;
 			}
 
-			styleTarget.textContent = `품번 ${detail.styleNo || '-'}`;
+			styleTarget.textContent = `품번 ${detail.styleCode || '-'}`;
 			agreementTarget.textContent = `생산합의코드 ${detail.agreementCode || '-'}`;
 		};
 

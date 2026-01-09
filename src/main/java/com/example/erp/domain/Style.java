@@ -23,9 +23,6 @@ public class Style {
 	@Column(name = "style_code", length = 50)
 	private String styleCode;
 
-	@Column(name = "style_code", length = 50, insertable = false, updatable = false)
-	private String styleNo;
-
 	@Column(name = "item_code", length = 50)
 	private String itemCode;
 
@@ -70,22 +67,12 @@ public class Style {
 		this.stylesId = stylesId;
 	}
 
-	public String getStyleNo() {
-		return styleNo;
-	}
-
-	public void setStyleNo(String styleNo) {
-		this.styleNo = styleNo;
-		this.styleCode = styleNo;
-	}
-
 	public String getStyleCode() {
 		return styleCode;
 	}
 
 	public void setStyleCode(String styleCode) {
 		this.styleCode = styleCode;
-		this.styleNo = styleCode;
 	}
 
 	public String getItemCode() {

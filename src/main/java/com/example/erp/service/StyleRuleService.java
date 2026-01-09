@@ -24,46 +24,50 @@ public class StyleRuleService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public Map<String, Map<String, List<String>>> findRulesByStyleNos(Set<String> styleNos) {
-        if (styleNos == null || styleNos.isEmpty() || !hasColumn("styles", "styles_rule")) {
+    public Map<String, Map<String, List<String>>> findRulesByStyleCodes(Set<String> styleCodes) {
+        if (styleCodes == null || styleCodes.isEmpty() || !hasColumn("styles", "styles_rule")) {
             return Collections.emptyMap();
         }
 
+     // style_code 기준 (품번 조회)
         String sql = """
-                select style_no, styles_rule
+                select style_code, styles_rule
                 from styles
-                where style_no in (:styleNos)
+                where style_code in (:styleCodes)
                 """;
-        MapSqlParameterSource params = new MapSqlParameterSource("styleNos", styleNos);
+        MapSqlParameterSource params = new MapSqlParameterSource("styleCodes", styleCodes);
         Map<String, Map<String, List<String>>> result = new LinkedHashMap<>();
         jdbcTemplate.query(sql, params, rs -> {
-            String styleNo = rs.getString("style_no");
+        	String styleCode = rs.getString("style_code");
             String rawRule = rs.getString("styles_rule");
             Map<String, List<String>> parsed = parseRule(rawRule);
-            if (styleNo != null && parsed != null) {
-                result.put(styleNo, parsed);
+            if (styleCode != null && parsed != null) {
+                result.put(styleCode, parsed);
             }
         });
         return result;
     }
 
-    public Map<String, BigDecimal> findSupplyPrices(Set<String> styleNos) {
-        if (styleNos == null || styleNos.isEmpty() || !hasColumn("styles", "supply_price")) {
+    public Map<String, BigDecimal> findSupplyPrices(Set<String> styleCodes) {
+        if (styleCodes == null || styleCodes.isEmpty() || !hasColumn("styles", "supply_price")) {
             return Collections.emptyMap();
         }
 
+     // before: select style_no, supply_price from styles where style_no in (:styleNos)
+        // after:  select style_code, supply_price from styles where style_code in (:styleCodes)
+        // style_code 기준 (품번 조회)
         String sql = """
-                select style_no, supply_price
+                select style_code, supply_price
                 from styles
-                where style_no in (:styleNos)
+                where style_code in (:styleCodes)
                 """;
-        MapSqlParameterSource params = new MapSqlParameterSource("styleNos", styleNos);
+        MapSqlParameterSource params = new MapSqlParameterSource("styleCodes", styleCodes);
         Map<String, BigDecimal> result = new LinkedHashMap<>();
         jdbcTemplate.query(sql, params, rs -> {
-            String styleNo = rs.getString("style_no");
+        	String styleCode = rs.getString("style_code");
             BigDecimal supplyPrice = rs.getBigDecimal("supply_price");
-            if (styleNo != null && supplyPrice != null) {
-                result.put(styleNo, supplyPrice);
+            if (styleCode != null && supplyPrice != null) {
+                result.put(styleCode, supplyPrice);
             }
         });
         return result;

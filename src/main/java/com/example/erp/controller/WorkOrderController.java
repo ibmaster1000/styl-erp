@@ -20,31 +20,29 @@ import java.util.stream.Collectors;
 @RequestMapping("/work-orders")
 public class WorkOrderController extends PageViewSupport {
 
-    private final WorkOrderService workOrderService;
-    private final StyleRuleService styleRuleService;
-    private final WorkOrderAttachmentService workOrderAttachmentService;
+	private final WorkOrderService workOrderService;
+	private final StyleRuleService styleRuleService;
+	private final WorkOrderAttachmentService workOrderAttachmentService;
 
-    public WorkOrderController(WorkOrderService workOrderService,
-            StyleRuleService styleRuleService,
-            WorkOrderAttachmentService workOrderAttachmentService) {
-this.workOrderService = workOrderService;
-this.styleRuleService = styleRuleService;
-this.workOrderAttachmentService = workOrderAttachmentService;
-}
+	public WorkOrderController(WorkOrderService workOrderService, StyleRuleService styleRuleService,
+			WorkOrderAttachmentService workOrderAttachmentService) {
+		this.workOrderService = workOrderService;
+		this.styleRuleService = styleRuleService;
+		this.workOrderAttachmentService = workOrderAttachmentService;
+	}
 
-@GetMapping
-public String list(Model model) {
-	 List<WorkOrder> workOrders = workOrderService.findAll();
-     Set<String> styleNos = workOrders.stream()
-             .map(WorkOrder::getStyleNo)
-             .filter(v -> v != null && !v.isBlank())
-             .collect(Collectors.toSet());
-     Map<String, Map<String, List<String>>> styleRules = styleRuleService.findRulesByStyleNos(styleNos);
-     Map<AttachmentType, List<com.example.erp.controller.dto.WorkOrderAttachmentView>> attachments = workOrderAttachmentService.fetchGroupedAttachments();
+	@GetMapping
+	public String list(Model model) {
+		List<WorkOrder> workOrders = workOrderService.findAll();
+		Set<String> styleCodes = workOrders.stream().map(WorkOrder::getStyleCode).filter(v -> v != null && !v.isBlank())
+				.collect(Collectors.toSet());
+		Map<String, Map<String, List<String>>> styleRules = styleRuleService.findRulesByStyleCodes(styleCodes);
+		Map<AttachmentType, List<com.example.erp.controller.dto.WorkOrderAttachmentView>> attachments = workOrderAttachmentService
+				.fetchGroupedAttachments();
 
 		populate(model, "작업 지시서", "workorder", "pages/work-orders", workOrders);
-	     model.addAttribute("styleRules", styleRules);
-     model.addAttribute("attachments", attachments);
-     return "layout/layout";
- }
+		model.addAttribute("styleRules", styleRules);
+		model.addAttribute("attachments", attachments);
+		return "layout/layout";
+	}
 }

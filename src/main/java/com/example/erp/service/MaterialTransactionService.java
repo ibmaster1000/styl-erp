@@ -42,8 +42,8 @@ public class MaterialTransactionService {
 		String prdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_code", "agreement_code"));
 		String colorColumn = findFirstExistingColumn("material_specs",
 				List.of("color_code", "material_color", "color"));
-		String styleColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id", "style_no"));
-		String bomIdColumn = findFirstExistingColumn("material_specs", List.of("bom_id", "material_spec_id"));
+		String styleIdColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id"));
+		String styleCodeColumn = findFirstExistingColumn("material_specs", List.of("style_code"));
 		String categoryColumn = findFirstExistingColumn("material_specs", List.of("category"));
 		String materialNameColumn = findFirstExistingColumn("material_specs", List.of("material_name"));
 		String materialUsageColumn = findFirstExistingColumn("material_specs", List.of("material_usage"));
@@ -81,7 +81,8 @@ public class MaterialTransactionService {
 				  and %s = :colorCode
 				%s
 				order by coalesce(%s, 0) asc
-				""".formatted(selectOrNull(bomIdColumn, "bom_id"), selectOrNull(styleColumn, "styles_id"),
+				""".formatted(selectOrNull(bomIdColumn, "bom_id"),
+				selectOrNull(styleIdColumn != null ? styleIdColumn : styleCodeColumn, "styles_id"),
 				selectOrNull(prdColumn, "prd_agree_code"), selectOrNull(colorColumn, "color_code"),
 				selectOrNull(categoryColumn, "category"), selectOrNull(materialNameColumn, "material_name"),
 				selectOrNull(materialUsageColumn, "material_usage"), selectOrNull(specColumn, "spec"),
@@ -89,10 +90,12 @@ public class MaterialTransactionService {
 				selectOrNull(qtyPerPieceColumn, "qty_per_piece"), selectOrNull(supplierColumn, "supplier_code"),
 				selectOrNull(orderUomColumn, "order_uom"), selectOrNull(unitPriceColumn, "unit_price"),
 				selectOrNull(remarkColumn, "remark"), prdColumn, colorColumn,
-				buildStyleCondition(styleColumn, stylesId, styleCode), bomIdColumn != null ? bomIdColumn : prdColumn);
+				buildStyleCondition(styleIdColumn, styleCodeColumn, stylesId, styleCode),
+				bomIdColumn != null ? bomIdColumn : prdColumn);
 
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
-				.addValue("colorCode", colorCode).addValue("stylesId", resolveStyleId(stylesId, styleCode));
+				.addValue("colorCode", colorCode).addValue("stylesId", resolveStyleId(stylesId, styleCode))
+				.addValue("styleCode", styleCode);
 
 		List<MaterialTransactionLineView> rows = new ArrayList<>();
 		List<String> supplierCodes = new ArrayList<>();
@@ -180,8 +183,7 @@ public class MaterialTransactionService {
 		String tranTypeColumn = findFirstExistingColumn("material_transactions", List.of("tran_type", "type"));
 		String tranDatetimeColumn = findFirstExistingColumn("material_transactions",
 				List.of("tran_datetime", "tran_date", "datetime"));
-		String styleColumn = findFirstExistingColumn("material_transactions",
-				List.of("styles_id", "style_id", "style_no"));
+		String styleIdColumn = findFirstExistingColumn("material_transactions", List.of("styles_id", "style_id"));
 		String prdColumn = findFirstExistingColumn("material_transactions",
 				List.of("prd_agree_code", "agreement_code"));
 		String colorColumn = findFirstExistingColumn("material_transactions", List.of("color_code"));
@@ -244,8 +246,8 @@ public class MaterialTransactionService {
 				columns.add(tranDatetimeColumn);
 				values.add(":tranDatetime");
 			}
-			if (styleColumn != null) {
-				columns.add(styleColumn);
+			if (styleIdColumn != null) {
+				columns.add(styleIdColumn);
 				values.add(":stylesId");
 			}
 			if (prdColumn != null) {
@@ -302,7 +304,7 @@ public class MaterialTransactionService {
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
 		String bomIdColumn = findFirstExistingColumn("material_orders", List.of("bom_id"));
 		String styleColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id", "style_no"));
-		String amountColumn = findFirstExistingColumn("material_orders", List.of("order_amount"));
+		String styleIdColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id"));
 		if (prdColumn == null || colorColumn == null || bomIdColumn == null || amountColumn == null) {
 			return BigDecimal.ZERO;
 		}
@@ -312,8 +314,8 @@ public class MaterialTransactionService {
 				.append(colorColumn).append(" = :colorCode ").append("and ").append(bomIdColumn).append(" = :bomId ");
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", view.getPrdAgreeCode())
 				.addValue("colorCode", view.getColorCode()).addValue("bomId", view.getBomId());
-		if (styleColumn != null && StringUtils.hasText(view.getStylesId())) {
-			sql.append("and ").append(styleColumn).append(" = :stylesId ");
+		if (styleIdColumn != null && StringUtils.hasText(view.getStylesId())) {
+			sql.append("and ").append(styleIdColumn).append(" = :stylesId ");
 			params.addValue("stylesId", view.getStylesId());
 		}
 		BigDecimal sum = jdbcTemplate.queryForObject(sql.toString(), params, BigDecimal.class);
@@ -330,7 +332,7 @@ public class MaterialTransactionService {
 				List.of("prd_agree_code", "agreement_code"));
 		String colorColumn = findFirstExistingColumn("material_transactions", List.of("color_code"));
 		String specColumn = findFirstExistingColumn("material_transactions", List.of("material_spec_id", "bom_id"));
-		String styleColumn = findFirstExistingColumn("material_transactions",
+		String styleIdColumn = findFirstExistingColumn("material_transactions", List.of("styles_id", "style_id"));
 				List.of("styles_id", "style_id", "style_no"));
 
 		if (tranTypeColumn == null || quantityColumn == null || specColumn == null) {
@@ -350,8 +352,8 @@ public class MaterialTransactionService {
 			sql.append("and ").append(colorColumn).append(" = :colorCode ");
 			params.addValue("colorCode", view.getColorCode());
 		}
-		if (styleColumn != null && StringUtils.hasText(view.getStylesId())) {
-			sql.append("and ").append(styleColumn).append(" = :stylesId ");
+		if (styleIdColumn != null && StringUtils.hasText(view.getStylesId())) {
+			sql.append("and ").append(styleIdColumn).append(" = :stylesId ");
 			params.addValue("stylesId", view.getStylesId());
 		}
 
@@ -411,22 +413,36 @@ public class MaterialTransactionService {
 		return column != null ? column + " as " + alias : "null as " + alias;
 	}
 
-	private String buildStyleCondition(String styleColumn, String stylesId, String styleCode) {
-		if (styleColumn == null) {
+	private String buildStyleCondition(String styleIdColumn, String styleCodeColumn, String stylesId,
+			String styleCode) {
+		if (styleIdColumn == null && styleCodeColumn == null) {
 			return "";
 		}
-		String value = resolveStyleId(stylesId, styleCode);
-		if (!StringUtils.hasText(value)) {
-			return "";
+		if (StringUtils.hasText(stylesId) && styleIdColumn != null) {
+			return "and " + styleIdColumn + " = :stylesId";
 		}
-		return "and " + styleColumn + " = :stylesId";
+		if (StringUtils.hasText(styleCode) && styleCodeColumn != null) {
+			return "and " + styleCodeColumn + " = :styleCode";
+		}
+		return "";
 	}
 
 	private String resolveStyleId(String stylesId, String styleCode) {
 		if (StringUtils.hasText(stylesId)) {
 			return stylesId;
 		}
-		return styleCode;
+		if (!StringUtils.hasText(styleCode) || !hasTable("styles")) {
+			return null;
+		}
+		String idColumn = findFirstExistingColumn("styles", List.of("styles_id", "style_id", "id"));
+		String codeColumn = findFirstExistingColumn("styles", List.of("style_code", "styles_code"));
+		if (idColumn == null || codeColumn == null) {
+			return null;
+		}
+		String sql = "select " + idColumn + " as styles_id from styles where " + codeColumn + " = :styleCode limit 1";
+		MapSqlParameterSource params = new MapSqlParameterSource("styleCode", styleCode);
+		List<String> ids = jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("styles_id"));
+		return ids.isEmpty() ? null : ids.get(0);
 	}
 
 	private Date toSqlDate(String raw) {

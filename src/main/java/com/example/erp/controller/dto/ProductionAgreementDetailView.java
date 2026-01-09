@@ -4,20 +4,13 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public class ProductionAgreementDetailView {
-    private final String styleNo;
-    private final String agreementCode;
-    private final List<ProductionAgreementDetailLine> lines;
-    private final List<ProductionAgreementColorTotal> colorTotals;
-    private final int grandQuantity;
-    private final BigDecimal grandAmount;
-
-    public ProductionAgreementDetailView(String styleNo,
+	private final String styleCode;CodeNo,
                                          String agreementCode,
                                          List<ProductionAgreementDetailLine> lines,
                                          List<ProductionAgreementColorTotal> colorTotals,
                                          int grandQuantity,
                                          BigDecimal grandAmount) {
-        this.styleNo = styleNo;
+        this.styleCode = styleCode;
         this.agreementCode = agreementCode;
         this.lines = lines;
         this.colorTotals = colorTotals;
@@ -25,8 +18,8 @@ public class ProductionAgreementDetailView {
         this.grandAmount = grandAmount;
     }
 
-    public String getStyleNo() {
-        return styleNo;
+    public String getStyleCode() {
+        return styleCode;
     }
 
     public String getAgreementCode() {

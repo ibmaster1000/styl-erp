@@ -25,10 +25,10 @@ public class PopupController {
     }
 
     @GetMapping("/codes")
-    public String codeSearchPopup(@RequestParam(required = false) String codeType,
-                                  @RequestParam(required = false) String code,
-                                  @RequestParam(required = false) String codeName,
-                                  @RequestParam(required = false) String remark,
+    public String codeSearchPopup(@RequestParam(name = "codeType", required = false) String codeType,
+            @RequestParam(name = "code", required = false) String code,
+            @RequestParam(name = "codeName", required = false) String codeName,
+            @RequestParam(name = "remark", required = false) String remark,
                                   Model model) {
         List<Code> codes = codeService.searchActiveCodes(codeType, code, codeName, remark);
         List<String> codeTypes = codeService.findActiveCodeTypes();
@@ -44,9 +44,9 @@ public class PopupController {
     }
 
     @GetMapping("/employees")
-    public String employeeSearchPopup(@RequestParam(required = false) String empNo,
-                                      @RequestParam(required = false) String name,
-                                      @RequestParam(required = false) String dept,
+    public String employeeSearchPopup(@RequestParam(name = "empNo", required = false) String empNo,
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "dept", required = false) String dept,
                                       Model model) {
         List<User> users = userService.searchActiveUsers(empNo, name, dept);
         List<String> departments = userService.findActiveDepartments();
