@@ -16,14 +16,27 @@ public interface UserRepository extends JpaRepository<User, String> {
             select u
             from User u
             where u.active = true
-              and (:empNo is null or u.empNo like concat('%', :empNo, '%'))
+              and (:empNo is null or u.empNo like concat('%', :empNo, '%') or u.empCode like concat('%', :empNo, '%'))
               and (:name is null or u.name like concat('%', :name, '%'))
               and (:dept is null or u.dept like concat('%', :dept, '%'))
-            order by u.empNo asc
+            order by u.empCode asc, u.empNo asc
             """)
     List<User> searchActiveUsers(@Param("empNo") String empNo,
                                  @Param("name") String name,
                                  @Param("dept") String dept);
+    
+    @Query("""
+            select u
+            from User u
+            where u.active = true
+              and (:empCode is null or u.empCode like concat('%', :empCode, '%') or u.empNo like concat('%', :empCode, '%'))
+              and (:name is null or u.name like concat('%', :name, '%'))
+              and (:dept is null or u.dept like concat('%', :dept, '%'))
+            order by u.empCode asc, u.empNo asc
+            """)
+    List<User> searchActiveUsersForPicker(@Param("empCode") String empCode,
+                                          @Param("name") String name,
+                                          @Param("dept") String dept);
 
     @Query("""
             select distinct u.dept

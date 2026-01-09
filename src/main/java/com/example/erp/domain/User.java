@@ -10,6 +10,9 @@ public class User {
     @Column(name = "emp_no", length = 30)
     private String empNo;
 
+    @Column(name = "emp_code", length = 6)
+    private String empCode;
+    
     @Column(nullable = false, length = 100)
     private String name;
 
@@ -39,6 +42,9 @@ public class User {
     // --- getters/setters ---
     public String getEmpNo() { return empNo; }
     public void setEmpNo(String empNo) { this.empNo = empNo; }
+    
+    public String getEmpCode() { return empCode; }
+    public void setEmpCode(String empCode) { this.empCode = empCode; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

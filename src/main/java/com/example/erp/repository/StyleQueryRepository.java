@@ -95,21 +95,54 @@ public class StyleQueryRepository {
 		String styleIdColumn = findFirstExistingColumn("styles_rule", List.of("styles_id", "style_id", "style_no"));
 		String codeTypeColumn = findFirstExistingColumn("styles_rule", List.of("code_type"));
 		String codeColumn = findFirstExistingColumn("styles_rule", List.of("code"));
-		if (styleIdColumn == null || codeTypeColumn == null || codeColumn == null) {
+		if (styleIdColumn == null) {
+			return Collections.emptyList();
+		}
+
+		MapSqlParameterSource params = new MapSqlParameterSource("styleIds", styleIds);
+		if (codeTypeColumn != null && codeColumn != null) {
+			String sql = """
+					select %s as styles_id,
+					       %s as code_type,
+					       %s as code
+					from styles_rule
+					where %s in (:styleIds)
+					""".formatted(styleIdColumn, codeTypeColumn, codeColumn, styleIdColumn);
+			return jdbcTemplate.query(sql, params, (rs, rowNum) -> new StyleRuleRow(rs.getString("styles_id"),
+					rs.getString("code_type"), rs.getString("code")));
+		}
+
+		String colorColumn = findFirstExistingColumn("styles_rule", List.of("color", "color_code", "color_cd"));
+		String sizeColumn = findFirstExistingColumn("styles_rule", List.of("size", "size_code", "size_cd"));
+		if (colorColumn == null && sizeColumn == null) {
 			return Collections.emptyList();
 		}
 
 		String sql = """
 				select %s as styles_id,
-				       %s as code_type,
-				       %s as code
+				       %s as color_value,
+				       %s as size_value
 				from styles_rule
 				where %s in (:styleIds)
-				""".formatted(styleIdColumn, codeTypeColumn, codeColumn, styleIdColumn);
+				""".formatted(styleIdColumn, selectOrNull(colorColumn, "color_value"),
+				selectOrNull(sizeColumn, "size_value"), styleIdColumn);
 
-		MapSqlParameterSource params = new MapSqlParameterSource("styleIds", styleIds);
-		return jdbcTemplate.query(sql, params, (rs, rowNum) -> new StyleRuleRow(rs.getString("styles_id"),
-				rs.getString("code_type"), rs.getString("code")));
+		List<StyleRuleRow> rows = new ArrayList<>();
+		jdbcTemplate.query(sql, params, (RowCallbackHandler) rs -> {
+			String stylesId = rs.getString("styles_id");
+			if (!StringUtils.hasText(stylesId)) {
+				return;
+			}
+			String colorValue = rs.getString("color_value");
+			String sizeValue = rs.getString("size_value");
+			if (StringUtils.hasText(colorValue)) {
+				rows.add(new StyleRuleRow(stylesId, "COLOR", colorValue));
+			}
+			if (StringUtils.hasText(sizeValue)) {
+				rows.add(new StyleRuleRow(stylesId, "SIZE", sizeValue));
+			}
+		});
+		return rows;
 	}
 
 	public Map<CodeKey, String> findCodeNames(Set<CodeKey> keys) {

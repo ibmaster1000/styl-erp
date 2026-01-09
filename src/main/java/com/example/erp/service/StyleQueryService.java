@@ -40,6 +40,7 @@ public class StyleQueryService {
 		Map<String, String> itemNames = loadItemNames(styles);
 		Map<String, String> userNames = resolveUserNames(styles);
 		Map<String, Map<String, List<String>>> stylesRule = buildStylesRule(styles);
+		Map<String, String> designerRawByStyle = new LinkedHashMap<>();
 
 		List<StyleListRow> rows = new ArrayList<>();
 		for (StyleSnapshot style : styles) {
@@ -53,14 +54,14 @@ public class StyleQueryService {
 			String logistic = resolveUserName(style.logisticEmpNo(), userNames);
 			boolean active = style.active() == null || style.active();
 		
+			designerRawByStyle.put(styleKey, style.designerEmpNo());
 			rows.add(new StyleListRow(styleKey, item, colors, sizes, designer, production, sales, logistic,
 					style.productionCost(), style.supplyPrice(), style.salesPrice(), style.startDate(), active));
 		}
 
 		if (StringUtils.hasText(condition.getDesignerNameLike())) {
 			String keyword = condition.getDesignerNameLike().trim().toLowerCase(Locale.KOREAN);
-			rows = rows.stream().filter(
-					row -> row.getDesigner() != null && row.getDesigner().toLowerCase(Locale.KOREAN).contains(keyword))
+			rows = rows.stream().filter(row -> matchesDesigner(row, designerRawByStyle.get(row.getStyleNo()), keyword))
 					.collect(Collectors.toList());
 		}
 
@@ -126,8 +127,11 @@ public class StyleQueryService {
 	}
 
 	private Map<String, Map<String, List<String>>> buildStylesRule(List<StyleSnapshot> styles) {
-		Set<String> styleIds = styles.stream().map(StyleSnapshot::stylesId).filter(StringUtils::hasText)
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+		Set<String> styleIds = new LinkedHashSet<>();
+		for (StyleSnapshot style : styles) {
+			collect(styleIds, style.stylesId());
+			collect(styleIds, style.styleCode());
+		}
 		if (styleIds.isEmpty()) {
 			return Collections.emptyMap();
 		}
@@ -145,26 +149,40 @@ public class StyleQueryService {
 		}
 		Map<CodeKey, String> codeNames = repository.findCodeNames(codeKeys);
 
-		Map<String, List<String>> colorsByStyle = new LinkedHashMap<>();
-		Map<String, List<String>> sizesByStyle = new LinkedHashMap<>();
+		Map<String, StyleSnapshot> styleIndex = new LinkedHashMap<>();
+		for (StyleSnapshot style : styles) {
+			if (StringUtils.hasText(style.stylesId())) {
+				styleIndex.put(style.stylesId(), style);
+			}
+			if (StringUtils.hasText(style.styleCode())) {
+				styleIndex.put(style.styleCode(), style);
+			}
+		}
+
+		Map<String, Set<String>> colorsByStyle = new LinkedHashMap<>();
+		Map<String, Set<String>> sizesByStyle = new LinkedHashMap<>();
 
 		for (StyleRuleRow rule : rules) {
 			String type = rule.codeType();
-			String styleId = rule.stylesId();
+			StyleSnapshot style = styleIndex.get(rule.stylesId());
+			if (style == null) {
+				continue;
+			}
+			String styleKey = resolveStyleKey(style);
 			String displayName = codeNames.getOrDefault(new CodeKey(type, rule.code()), rule.code());
 
 			if ("COLOR".equalsIgnoreCase(type)) {
-				colorsByStyle.computeIfAbsent(styleId, key -> new ArrayList<>()).add(displayName);
+				colorsByStyle.computeIfAbsent(styleKey, key -> new java.util.TreeSet<>()).add(displayName);
 			} else if ("SIZE".equalsIgnoreCase(type)) {
-				sizesByStyle.computeIfAbsent(styleId, key -> new ArrayList<>()).add(displayName);
+				sizesByStyle.computeIfAbsent(styleKey, key -> new java.util.TreeSet<>()).add(displayName);
 			}
 		}
 
 		Map<String, Map<String, List<String>>> result = new LinkedHashMap<>();
 		for (StyleSnapshot style : styles) {
-			String styleId = style.stylesId();
-			List<String> colors = colorsByStyle.getOrDefault(styleId, Collections.emptyList());
-			List<String> sizes = sizesByStyle.getOrDefault(styleId, Collections.emptyList());
+			String styleKey = resolveStyleKey(style);
+			List<String> colors = toSortedList(colorsByStyle.get(styleKey));
+			List<String> sizes = toSortedList(sizesByStyle.get(styleKey));
 
 			if (colors.isEmpty() && sizes.isEmpty()) {
 				continue;
@@ -176,7 +194,7 @@ public class StyleQueryService {
 			for (String color : effectiveColors) {
 				colorMap.put(color, effectiveSizes);
 			}
-			result.put(resolveStyleKey(style), colorMap);
+			result.put(styleKey, colorMap);
 		}
 
 		return result;
@@ -230,6 +248,20 @@ public class StyleQueryService {
 		return String.join(", ", sizes);
 	}
 
+	private boolean matchesDesigner(StyleListRow row, String rawDesigner, String keyword) {
+		if (row.getDesigner() != null && row.getDesigner().toLowerCase(Locale.KOREAN).contains(keyword)) {
+			return true;
+		}
+		return rawDesigner != null && rawDesigner.toLowerCase(Locale.KOREAN).contains(keyword);
+	}
+
+	private List<String> toSortedList(Set<String> values) {
+		if (values == null || values.isEmpty()) {
+			return Collections.emptyList();
+		}
+		return values.stream().sorted().collect(Collectors.toList());
+	}
+	
 	private void sortRows(List<StyleListRow> rows, StyleSearchCondition condition) {
 		if (rows.isEmpty()) {
 			return;

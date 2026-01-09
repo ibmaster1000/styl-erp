@@ -29,6 +29,11 @@ public class UserService {
 				StringUtils.hasText(name) ? name.trim() : null, StringUtils.hasText(dept) ? dept.trim() : null);
 	}
 
+	public List<User> searchActiveUsersForPicker(String empCode, String name, String dept) {
+		return userRepository.searchActiveUsersForPicker(StringUtils.hasText(empCode) ? empCode.trim() : null,
+				StringUtils.hasText(name) ? name.trim() : null, StringUtils.hasText(dept) ? dept.trim() : null);
+	}
+	
 	public List<String> findActiveDepartments() {
 		return userRepository.findDistinctActiveDepartments();
 	}

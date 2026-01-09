@@ -1,5 +1,4 @@
-<div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid"
-	th:with="flatView=${param.viewMode != null && param.viewMode[0] == 'flat'}, stylesRule=${#ctx.containsVariable('styles_rule') ? styles_rule : null}">
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
 	<style>
 		.style-toolbar {
 			display: flex;
@@ -63,6 +62,15 @@
 			margin-bottom: 0;
 			color: #6b7280;
 		}
+
+		.style-search-card {
+			max-width: 760px;
+		}
+
+		.style-search-fields .form-control,
+		.style-search-fields .form-select {
+			max-width: 240px;
+		}
 	</style>
 
 	<div class="mb-3">
@@ -70,26 +78,26 @@
 		<p class="style-section-desc">품번 등록 및 조회</p>
 	</div>
 
-	<form class="card shadow-sm mb-3">
-		<div class="card-body row g-3 align-items-end">
-			<div class="col-md-4">
-				<label class="form-label fw-semibold">품번</label>
-				<input type="text" class="form-control" placeholder="품번">
-			</div>
-			<div class="col-md-4">
-				<label class="form-label fw-semibold">담당 디자이너</label>
-				<input type="text" class="form-control" placeholder="이름">
-			</div>
-			<div class="col-md-3">
-				<label class="form-label fw-semibold">상태</label>
-				<select class="form-select">
-					<option selected>전체</option>
-					<option>사용</option>
-					<option>중지</option>
-				</select>
-			</div>
-			<div class="col-md-1 d-grid">
-				<button type="button" class="btn btn--primary">검색</button>
+	<form class="card shadow-sm mb-3 style-search-card" method="get" th:action="@{/style}">
+		<div class="card-body">
+			<div class="row g-2 align-items-end style-search-fields">
+				<div class="col-lg-6">
+					<label class="form-label fw-semibold">담당 직원</label>
+					<div class="input-group input-group-sm">
+						<input type="text" class="form-control" name="designerName" id="style-designer-emp-code"
+							placeholder="사번" th:value="${param.designerName ?: param.designer}">
+						<button class="btn btn--outline" type="button"
+							data-employee-picker-open="style-employee-picker">검색</button>
+					</div>
+				</div>
+				<div class="col-lg-4">
+					<label class="form-label fw-semibold">품번</label>
+					<input type="text" class="form-control form-control-sm" name="styleCode" placeholder="품번"
+						th:value="${param.styleCode ?: param.styleNo}">
+				</div>
+				<div class="col-lg-2 d-grid">
+					<button type="submit" class="btn btn--primary btn-sm">검색</button>
+				</div>
 			</div>
 		</div>
 	</form>
@@ -125,11 +133,11 @@
 							<th class="t-left">생산담당</th>
 							<th class="t-left">영업담당</th>
 							<th class="t-left">운송담당</th>
-							<th class="t-right">생산원가</th>
-							<th class="t-right">공급가</th>
-							<th class="t-right">판매가</th>
-							<th>시작일</th>
-							<th class="t-left">상태</th>
+							<th class="text-start">생산원가</th>
+							<th class="text-start">공급가</th>
+							<th class="text-start">판매가</th>
+							<th class="text-start">시작일</th>
+							<th class="text-start">상태</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -137,96 +145,77 @@
 							<td colspan="13" class="text-center text-muted">조회된 데이터가 없습니다.</td>
 						</tr>
 
-						<th:block th:each="s : ${list}"
-							th:with="rule=${stylesRule != null ? stylesRule[s.styleNo] : null}">
+						<tr th:each="s : ${list}">
+							<td class="t-left" th:text="${s.styleNo}">ST-001</td>
+							<td class="t-left" th:text="${s.item}">후드티</td>
+							<td class="t-left" th:text="${s.colors}">BLACK, WHITE</td>
+							<td class="t-left" th:text="${s.sizes}">S, M, L</td>
+							<td class="t-left" th:text="${s.designer}">김디</td>
+							<td class="t-left" th:text="${s.productionManager}">박생산</td>
+							<td class="t-left" th:text="${s.salesManager}">이영업</td>
+							<td class="t-left" th:text="${s.logisticManager}">최운송</td>
+							<td class="text-start" th:text="${s.productionCost != null ? s.productionCost : '-'}">-</td>
+							<td class="text-start" th:text="${s.supplyPrice != null ? s.supplyPrice : '-'}">-</td>
+							<td class="text-start" th:text="${s.salesPrice != null ? s.salesPrice : '-'}">-</td>
+							<td class="text-start" th:text="${s.startDate}">2024-01-01</td>
+							<td class="text-start" th:text="${s.active ? '사용' : '중지'}">사용</td>
+						</tr>
 
-							<th:block th:if="${flatView and rule != null}">
-								<th:block th:each="colorEntry : ${rule}" th:with="sizes=${colorEntry.value}">
-									<tr th:each="sz : ${sizes}">
-										<td class="t-left" th:text="${s.styleNo}">ST-001</td>
-										<td class="t-left" th:text="${s.item}">후드티</td>
-										<td class="t-left">
-											<span class="style-badge">
-												<span class="dot"></span>
-												<span th:text="${colorEntry.key}">블랙</span>
-											</span>
-										</td>
-										<td class="t-left" th:text="${sz}">M</td>
-										<td class="t-left" th:text="${s.designer}">김디</td>
-										<td class="t-left" th:text="${s.productionManager}">박생산</td>
-										<td class="t-left" th:text="${s.salesManager}">이영업</td>
-										<td class="t-left" th:text="${s.logisticManager}">최운송</td>
-										<td class="t-right"
-											th:text="${s.productionCost != null ? s.productionCost : '-'}">-</td>
-										<td class="t-right" th:text="${s.supplyPrice != null ? s.supplyPrice : '-'}">-
-										</td>
-										<td class="t-right" th:text="${s.salesPrice != null ? s.salesPrice : '-'}">-
-										</td>
-										<td th:text="${s.startDate}">2024-01-01</td>
-										<td class="t-left" th:text="${s.active ? '사용' : '중지'}">사용</td>
-									</tr>
-								</th:block>
-							</th:block>
-
-							<th:block th:if="${!flatView and rule != null}">
-								<th:block th:each="colorEntry : ${rule}" th:with="sizes=${colorEntry.value}">
-									<tr th:each="sz, szStat : ${sizes}">
-										<td class="t-left" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}" th:text="${s.styleNo}">ST-001</td>
-										<td class="t-left" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}" th:text="${s.item}">후드티</td>
-										<td class="t-left" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}">
-											<span class="style-badge">
-												<span class="dot"></span>
-												<span th:text="${colorEntry.key}">블랙</span>
-											</span>
-										</td>
-										<td class="t-left" th:text="${sz}">M</td>
-										<td class="t-left" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}" th:text="${s.designer}">김디</td>
-										<td class="t-left" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}" th:text="${s.productionManager}">박생산</td>
-										<td class="t-left" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}" th:text="${s.salesManager}">이영업</td>
-										<td class="t-left" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}" th:text="${s.logisticManager}">최운송</td>
-										<td class="t-right" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.productionCost != null ? s.productionCost : '-'}">-</td>
-										<td class="t-right" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.supplyPrice != null ? s.supplyPrice : '-'}">-</td>
-										<td class="t-right" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.salesPrice != null ? s.salesPrice : '-'}">-</td>
-										<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
-											th:text="${s.startDate}">2024-01-01</td>
-										<td class="t-left" th:if="${szStat.index == 0}"
-											th:rowspan="${#lists.size(sizes)}" th:text="${s.active ? '사용' : '중지'}">사용
-										</td>
-									</tr>
-								</th:block>
-							</th:block>
-
-							<th:block th:if="${rule == null}">
-								<tr>
-									<td class="t-left" th:text="${s.styleNo}">ST-001</td>
-									<td class="t-left" th:text="${s.item}">후드티</td>
-									<td class="t-left">-</td>
-									<td class="t-left">-</td>
-									<td class="t-left" th:text="${s.designer}">김디</td>
-									<td class="t-left" th:text="${s.productionManager}">박생산</td>
-									<td class="t-left" th:text="${s.salesManager}">이영업</td>
-									<td class="t-left" th:text="${s.logisticManager}">최운송</td>
-									<td class="t-right" th:text="${s.productionCost != null ? s.productionCost : '-'}">-
+						<th:block th:if="${!flatView and rule != null}">
+							<th:block th:each="colorEntry : ${rule}" th:with="sizes=${colorEntry.value}">
+								<tr th:each="sz, szStat : ${sizes}">
+									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
+										th:text="${s.styleNo}">ST-001</td>
+									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
+										th:text="${s.item}">후드티</td>
+									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}">
+										<span class="style-badge">
+											<span class="dot"></span>
+											<span th:text="${colorEntry.key}">블랙</span>
+										</span>
 									</td>
-									<td class="t-right" th:text="${s.supplyPrice != null ? s.supplyPrice : '-'}">-</td>
-									<td class="t-right" th:text="${s.salesPrice != null ? s.salesPrice : '-'}">-</td>
-									<td th:text="${s.startDate}">2024-01-01</td>
-									<td class="t-left" th:text="${s.active ? '사용' : '중지'}">사용</td>
+									<td class="t-left" th:text="${sz}">M</td>
+									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
+										th:text="${s.designer}">김디</td>
+									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
+										th:text="${s.productionManager}">박생산</td>
+									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
+										th:text="${s.salesManager}">이영업</td>
+									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
+										th:text="${s.logisticManager}">최운송</td>
+									<td class="t-right" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
+										th:text="${s.productionCost != null ? s.productionCost : '-'}">-</td>
+									<td class="t-right" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
+										th:text="${s.supplyPrice != null ? s.supplyPrice : '-'}">-</td>
+									<td class="t-right" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
+										th:text="${s.salesPrice != null ? s.salesPrice : '-'}">-</td>
+									<td th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
+										th:text="${s.startDate}">2024-01-01</td>
+									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
+										th:text="${s.active ? '사용' : '중지'}">사용
+									</td>
 								</tr>
 							</th:block>
+						</th:block>
+
+						<th:block th:if="${rule == null}">
+							<tr>
+								<td class="t-left" th:text="${s.styleNo}">ST-001</td>
+								<td class="t-left" th:text="${s.item}">후드티</td>
+								<td class="t-left">-</td>
+								<td class="t-left">-</td>
+								<td class="t-left" th:text="${s.designer}">김디</td>
+								<td class="t-left" th:text="${s.productionManager}">박생산</td>
+								<td class="t-left" th:text="${s.salesManager}">이영업</td>
+								<td class="t-left" th:text="${s.logisticManager}">최운송</td>
+								<td class="t-right" th:text="${s.productionCost != null ? s.productionCost : '-'}">-
+								</td>
+								<td class="t-right" th:text="${s.supplyPrice != null ? s.supplyPrice : '-'}">-</td>
+								<td class="t-right" th:text="${s.salesPrice != null ? s.salesPrice : '-'}">-</td>
+								<td th:text="${s.startDate}">2024-01-01</td>
+								<td class="t-left" th:text="${s.active ? '사용' : '중지'}">사용</td>
+							</tr>
+						</th:block>
 						</th:block>
 					</tbody>
 				</table>
@@ -238,4 +227,8 @@
 		<h4 class="h6 fw-bold mb-2">준비중</h4>
 		<div class="text-muted small">상세 기능은 추후 추가됩니다.</div>
 	</section>
+	<div
+		th:replace="~{fragments/employee-picker-modal :: employeePickerModal('style-employee-picker', '사원 검색', 'style-designer-emp-code', '/api/users/picker', '/api/users/depts')}">
+	</div>
+	<script th:src="@{/js/employeePicker.js}"></script>
 </div>

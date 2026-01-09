@@ -124,3 +124,8 @@
 .t-right {
 	text-align: right !important;
 }
+
+.employee-picker-row.selected {
+	background-color: #2f6fed !important;
+	color: #ffffff;
+}

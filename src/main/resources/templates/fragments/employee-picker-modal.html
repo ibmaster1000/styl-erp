@@ -1,0 +1,54 @@
+<div xmlns:th="http://www.thymeleaf.org"
+	th:fragment="employeePickerModal(modalId, title, confirmTargetInputId, apiUrl, deptApiUrl)">
+	<div class="modal fade" th:id="${modalId}" tabindex="-1" aria-hidden="true" data-employee-picker="true"
+		th:data-target-input="${confirmTargetInputId}" th:data-api-url="${apiUrl}" th:data-dept-url="${deptApiUrl}">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title fw-bold" th:text="${title}">사원 검색</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="d-flex justify-content-end gap-2 mb-3">
+						<button type="button" class="btn btn--outline btn-sm" data-action="employee-search">검색</button>
+						<button type="button" class="btn btn--primary btn-sm" data-action="employee-select">선택</button>
+					</div>
+					<div class="border rounded p-3 mb-3">
+						<div class="row g-2 align-items-end">
+							<div class="col-md-4">
+								<label class="form-label fw-semibold small">이름</label>
+								<input type="text" class="form-control form-control-sm" data-field="name">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label fw-semibold small">부서</label>
+								<select class="form-select form-select-sm" data-field="dept">
+									<option value="">전체</option>
+								</select>
+							</div>
+							<div class="col-md-4">
+								<label class="form-label fw-semibold small">사번</label>
+								<input type="text" class="form-control form-control-sm" data-field="empCode">
+							</div>
+						</div>
+					</div>
+					<div class="table-responsive border rounded">
+						<table class="table table-hover mb-0 align-middle data-table employee-picker-table">
+							<thead class="table-light">
+								<tr>
+									<th class="text-center" style="width: 30%">사번</th>
+									<th class="text-center" style="width: 35%">이름</th>
+									<th class="text-center">부서</th>
+								</tr>
+							</thead>
+							<tbody data-role="results">
+								<tr>
+									<td colspan="3" class="text-center text-muted">검색 조건을 입력하세요.</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
