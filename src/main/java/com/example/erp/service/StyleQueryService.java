@@ -296,15 +296,35 @@ public class StyleQueryService {
 
 		Comparator<StyleListRow> comparator;
 		boolean desc = isDesc(condition.getDirection());
-		if ("production".equals(sort)) {
+		if ("styleCode".equals(sort)) {
+			comparator = Comparator.comparing(StyleListRow::getStyleCode, this::compareNullableText);
+		} else if ("item".equals(sort)) {
+			comparator = Comparator.comparing(StyleListRow::getItem, this::compareNullableText);
+		} else if ("colors".equals(sort)) {
+			comparator = Comparator.comparing(StyleListRow::getColors, this::compareNullableText);
+		} else if ("sizes".equals(sort)) {
+			comparator = Comparator.comparing(StyleListRow::getSizes, this::compareNullableText);
+		} else if ("designer".equals(sort)) {
+			comparator = Comparator.comparing(StyleListRow::getDesigner, this::compareNullableText);
+		} else if ("production".equals(sort)) {
 			comparator = Comparator.comparing(StyleListRow::getProductionManager, this::compareNullableText);
 		} else if ("sales".equals(sort)) {
 			comparator = Comparator.comparing(StyleListRow::getSalesManager, this::compareNullableText);
 		} else if ("transport".equals(sort)) {
 			comparator = Comparator.comparing(StyleListRow::getLogisticManager, this::compareNullableText);
+		} else if ("productionCost".equals(sort)) {
+			comparator = Comparator.comparing(StyleListRow::getProductionCost, this::compareNullableAmount);
+		} else if ("supplyPrice".equals(sort)) {
+			comparator = Comparator.comparing(StyleListRow::getSupplyPrice, this::compareNullableAmount);
+		} else if ("salesPrice".equals(sort)) {
+			comparator = Comparator.comparing(StyleListRow::getSalesPrice, this::compareNullableAmount);
 		} else if ("amount".equals(sort)) {
 			comparator = Comparator.comparing(StyleListRow::getSalesPrice, this::compareNullableAmount);
 			desc = !StringUtils.hasText(condition.getDirection()) || desc;
+		} else if ("startDate".equals(sort)) {
+			comparator = Comparator.comparing(StyleListRow::getStartDate, this::compareNullableDate);
+		} else if ("status".equals(sort)) {
+			comparator = Comparator.comparing(StyleListRow::isActive);
 		} else {
 			return;
 		}
@@ -320,10 +340,20 @@ public class StyleQueryService {
 			return null;
 		}
 		return switch (sort.trim()) {
-		case "productionManager", "product", "production" -> "production";
-		case "salesManager", "sales" -> "sales";
-		case "transportManager", "logistic", "transport" -> "transport";
+		case "styleCode" -> "styleCode";
+		case "item", "itemName" -> "item";
+		case "colors", "color" -> "colors";
+		case "sizes", "size" -> "sizes";
+		case "designer", "designerEmpNo" -> "designer";
+		case "productionManager", "product", "production", "productionEmpNo" -> "production";
+		case "salesManager", "sales", "salesEmpNo" -> "sales";
+		case "transportManager", "logistic", "transport", "logisticEmpNo" -> "transport";
+		case "productionCost" -> "productionCost";
+		case "supplyPrice" -> "supplyPrice";
+		case "salesPrice" -> "salesPrice";
 		case "amount" -> "amount";
+		case "startDate" -> "startDate";
+		case "status", "active" -> "status";
 		default -> null;
 		};
 	}
@@ -346,6 +376,19 @@ public class StyleQueryService {
 	}
 
 	private int compareNullableAmount(BigDecimal left, BigDecimal right) {
+		if (left == null && right == null) {
+			return 0;
+		}
+		if (left == null) {
+			return -1;
+		}
+		if (right == null) {
+			return 1;
+		}
+		return left.compareTo(right);
+	}
+
+	private int compareNullableDate(java.time.LocalDate left, java.time.LocalDate right) {
 		if (left == null && right == null) {
 			return 0;
 		}

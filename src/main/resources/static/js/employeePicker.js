@@ -120,13 +120,23 @@ const initEmployeePickerModal = (modalElement) => {
 
 	openButtons.forEach((button) => {
 		button.addEventListener('click', (event) => {
-					event.preventDefault();
+			event.preventDefault();
 			bootstrapModal.show();
 		});
 	});
 
 	modalElement.addEventListener('shown.bs.modal', () => {
 		fetchDepartments();
+		if (nameInput) {
+			nameInput.value = '';
+		}
+		if (empCodeInput) {
+			empCodeInput.value = '';
+		}
+		if (deptSelect) {
+			deptSelect.value = '';
+		}
+		fetchEmployees();
 		nameInput?.focus();
 	});
 
