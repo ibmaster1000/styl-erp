@@ -30,7 +30,6 @@ public class StyleListRow {
 		this.designer = designer;
 		this.productionManager = productionManager;
 		this.salesManager = salesManager;
-
 		this.logisticManager = logisticManager;
 		this.productionCost = productionCost;
 		this.supplyPrice = supplyPrice;
