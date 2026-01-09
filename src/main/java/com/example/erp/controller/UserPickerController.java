@@ -31,6 +31,13 @@ public class UserPickerController {
 				.toList();
 	}
 
+	@GetMapping("/search")
+	public List<EmployeePickerItem> searchEmployees(@RequestParam(name = "name", required = false) String name,
+			@RequestParam(name = "dept", required = false) String dept,
+			@RequestParam(name = "empCode", required = false) String empCode) {
+		return findEmployees(name, dept, empCode);
+	}
+	
 	@GetMapping("/depts")
 	public List<String> findDepartments() {
 		return userService.findActiveDepartments();

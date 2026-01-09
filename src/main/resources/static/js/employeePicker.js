@@ -117,7 +117,8 @@ const initEmployeePickerModal = (modalElement) => {
 	};
 
 	openButtons.forEach((button) => {
-		button.addEventListener('click', () => {
+		button.addEventListener('click', (event) => {
+					event.preventDefault();
 			bootstrapModal.show();
 		});
 	});

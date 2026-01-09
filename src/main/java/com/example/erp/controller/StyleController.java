@@ -2,6 +2,7 @@ package com.example.erp.controller;
 
 import com.example.erp.controller.dto.StyleSearchCondition;
 import com.example.erp.controller.dto.StyleSearchResult;
+import com.example.erp.controller.dto.StyleListRow;
 import com.example.erp.controller.support.PageViewSupport;
 import com.example.erp.service.StyleQueryService;
 import org.springframework.stereotype.Controller;
@@ -9,6 +10,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
+import java.util.Objects;
 
 @Controller
 @RequestMapping("/style")
@@ -37,9 +41,16 @@ public class StyleController extends PageViewSupport {
                 sort, direction);
 		StyleSearchResult result = styleQueryService.search(condition);
 
-		populate(model, "품번/스타일 관리", "style", "pages/style", result.getList());
+		List<StyleListRow> safeList = result.getList() == null ? List.of()
+				: result.getList().stream().filter(Objects::nonNull).toList();
+
+		populate(model, "품번/스타일 관리", "style", "pages/style", safeList);
 		model.addAttribute("styles_rule", result.getStylesRule());
-		model.addAttribute("flatView", "flat".equalsIgnoreCase(viewMode));
+		Boolean flatView = Boolean.FALSE;
+		if ("flat".equalsIgnoreCase(viewMode)) {
+			flatView = Boolean.TRUE;
+		}
+		model.addAttribute("flatView", flatView);
 		return "layout/layout";
 	}
 }
