@@ -26,6 +26,7 @@ public class StyleController extends PageViewSupport {
             @RequestParam(name = "designer", required = false) String designer,
             @RequestParam(name = "isActive", required = false) Integer isActive,
             @RequestParam(name = "status", required = false) Integer status,
+            @RequestParam(name = "viewMode", required = false) String viewMode,
             @RequestParam(name = "sort", required = false) String sort,
             @RequestParam(name = "direction", required = false) String direction,
             Model model) {
@@ -38,6 +39,7 @@ public class StyleController extends PageViewSupport {
 
 		populate(model, "품번/스타일 관리", "style", "pages/style", result.getList());
 		model.addAttribute("styles_rule", result.getStylesRule());
+		model.addAttribute("flatView", "flat".equalsIgnoreCase(viewMode));
 		return "layout/layout";
 	}
 }

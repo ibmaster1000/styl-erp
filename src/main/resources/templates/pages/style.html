@@ -64,12 +64,12 @@
 		}
 
 		.style-search-card {
-			max-width: 760px;
+			max-width: 820px;
 		}
 
 		.style-search-fields .form-control,
 		.style-search-fields .form-select {
-			max-width: 240px;
+			max-width: 260px;
 		}
 
 		.ellipsis-cell {
@@ -93,13 +93,15 @@
 	<form class="card shadow-sm mb-3 style-search-card" method="get" th:action="@{/style}">
 		<div class="card-body">
 			<div class="row g-2 align-items-end style-search-fields">
-				<div class="col-lg-6">
+				<div class="col-lg-5">
 					<label class="form-label fw-semibold">담당 직원</label>
 					<div class="input-group input-group-sm">
 						<input type="text" class="form-control" name="designerName" id="style-designer-emp-code"
-							placeholder="사번" th:value="${param.designerName ?: param.designer}">
-						<button class="btn btn--outline" type="button"
-							data-employee-picker-open="style-employee-picker">검색</button>
+							placeholder="사번" th:value="${param.designerName ?: param.designer}" readonly>
+						<button class="btn btn--outline" type="button" aria-label="담당 직원 검색"
+							data-employee-picker-open="style-employee-picker">
+							<i class="bi bi-search"></i>
+						</button>
 					</div>
 				</div>
 				<div class="col-lg-4">
@@ -107,7 +109,7 @@
 					<input type="text" class="form-control form-control-sm" name="styleCode" placeholder="품번"
 						th:value="${param.styleCode}">
 				</div>
-				<div class="col-lg-2 d-grid">
+				<div class="col-lg-3 d-grid">
 					<button type="submit" class="btn btn--primary btn-sm">검색</button>
 				</div>
 			</div>
@@ -161,12 +163,10 @@
 							<td class="t-left" th:text="${s.styleCode}">ST-001</td>
 							<td class="t-left" th:text="${s.item}">후드티</td>
 							<td class="t-left ellipsis-cell cell-clickable"
-								th:attr="data-full=${s.colorsFull}, data-title='색상'"
-								th:text="${s.colorsDisplay}"
+								th:attr="data-full=${s.colorsFull}, data-title='색상'" th:text="${s.colorsDisplay}"
 								th:title="${s.colorsFull}">BLACK, WHITE</td>
 							<td class="t-left ellipsis-cell cell-clickable"
-								th:attr="data-full=${s.sizesFull}, data-title='사이즈'"
-								th:text="${s.sizesDisplay}"
+								th:attr="data-full=${s.sizesFull}, data-title='사이즈'" th:text="${s.sizesDisplay}"
 								th:title="${s.sizesFull}">S, M, L</td>
 							<td class="t-left" th:text="${s.designer}">김디</td>
 							<td class="t-left" th:text="${s.productionManager}">박생산</td>
@@ -179,7 +179,7 @@
 							<td class="text-start" th:text="${s.active ? '사용' : '중지'}">사용</td>
 						</tr>
 
-						<th:block th:if="${!flatView and rule != null}">
+						<th:block th:if="${(flatView != true) and (rule != null)}">
 							<th:block th:each="colorEntry : ${rule}" th:with="sizes=${colorEntry.value}">
 								<tr th:each="sz, szStat : ${sizes}">
 									<td class="t-left" th:if="${szStat.index == 0}" th:rowspan="${#lists.size(sizes)}"
@@ -218,7 +218,7 @@
 
 						<th:block th:if="${rule == null}">
 							<tr>
-								<td class="t-left" th:text="${s.styleCode}">ST-001</td>	
+								<td class="t-left" th:text="${s.styleCode}">ST-001</td>
 								<td class="t-left" th:text="${s.item}">후드티</td>
 								<td class="t-left">-</td>
 								<td class="t-left">-</td>
@@ -271,7 +271,7 @@
 				if (!cell.getAttribute('title')) {
 					cell.setAttribute('title', titleValue);
 				}
-				new bootstrap.Tooltip(cell, { title: titleValue });
+				new bootstrap.Tooltip(cell, {title: titleValue});
 			});
 
 			const modalElement = document.getElementById('listDetailModal');
