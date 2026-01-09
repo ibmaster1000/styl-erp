@@ -4,41 +4,45 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public class ProductionAgreementDetailView {
-	private final String styleCode;CodeNo,
-                                         String agreementCode,
-                                         List<ProductionAgreementDetailLine> lines,
-                                         List<ProductionAgreementColorTotal> colorTotals,
-                                         int grandQuantity,
-                                         BigDecimal grandAmount) {
-        this.styleCode = styleCode;
-        this.agreementCode = agreementCode;
-        this.lines = lines;
-        this.colorTotals = colorTotals;
-        this.grandQuantity = grandQuantity;
-        this.grandAmount = grandAmount;
-    }
+	private final String styleCode;
+	private final String agreementCode;
+	private final List<ProductionAgreementDetailLine> lines;
+	private final List<ProductionAgreementColorTotal> colorTotals;
+	private final int grandQuantity;
+	private final BigDecimal grandAmount;
 
-    public String getStyleCode() {
-        return styleCode;
-    }
+	public ProductionAgreementDetailView(String styleCode, String agreementCode,
+			List<ProductionAgreementDetailLine> lines, List<ProductionAgreementColorTotal> colorTotals,
+			int grandQuantity, BigDecimal grandAmount) {
+		this.styleCode = styleCode;
+		this.agreementCode = agreementCode;
+		this.lines = lines;
+		this.colorTotals = colorTotals;
+		this.grandQuantity = grandQuantity;
+		this.grandAmount = grandAmount;
+	}
 
-    public String getAgreementCode() {
-        return agreementCode;
-    }
+	public String getStyleCode() {
+		return styleCode;
+	}
 
-    public List<ProductionAgreementDetailLine> getLines() {
-        return lines;
-    }
+	public String getAgreementCode() {
+		return agreementCode;
+	}
 
-    public List<ProductionAgreementColorTotal> getColorTotals() {
-        return colorTotals;
-    }
+	public List<ProductionAgreementDetailLine> getLines() {
+		return lines;
+	}
 
-    public int getGrandQuantity() {
-        return grandQuantity;
-    }
+	public List<ProductionAgreementColorTotal> getColorTotals() {
+		return colorTotals;
+	}
 
-    public BigDecimal getGrandAmount() {
-        return grandAmount;
-    }
+	public int getGrandQuantity() {
+		return grandQuantity;
+	}
+
+	public BigDecimal getGrandAmount() {
+		return grandAmount;
+	}
 }

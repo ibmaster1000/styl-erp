@@ -48,6 +48,7 @@ public class MaterialTransactionService {
 		String materialNameColumn = findFirstExistingColumn("material_specs", List.of("material_name"));
 		String materialUsageColumn = findFirstExistingColumn("material_specs", List.of("material_usage"));
 		String specColumn = findFirstExistingColumn("material_specs", List.of("spec"));
+		String bomIdColumn = findFirstExistingColumn("material_specs", List.of("bom_id", "material_spec_id"));
 		String materialColorColumn = findFirstExistingColumn("material_specs", List.of("material_color"));
 		String uomColumn = findFirstExistingColumn("material_specs", List.of("uom"));
 		String qtyPerPieceColumn = findFirstExistingColumn("material_specs", List.of("qty_per_piece"));
@@ -303,8 +304,9 @@ public class MaterialTransactionService {
 		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_code", "agreement_code"));
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
 		String bomIdColumn = findFirstExistingColumn("material_orders", List.of("bom_id"));
-		String styleColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id", "style_no"));
 		String styleIdColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id"));
+		String amountColumn = findFirstExistingColumn("material_orders",
+				List.of("order_amount", "amount", "qty", "quantity"));
 		if (prdColumn == null || colorColumn == null || bomIdColumn == null || amountColumn == null) {
 			return BigDecimal.ZERO;
 		}
@@ -333,7 +335,6 @@ public class MaterialTransactionService {
 		String colorColumn = findFirstExistingColumn("material_transactions", List.of("color_code"));
 		String specColumn = findFirstExistingColumn("material_transactions", List.of("material_spec_id", "bom_id"));
 		String styleIdColumn = findFirstExistingColumn("material_transactions", List.of("styles_id", "style_id"));
-				List.of("styles_id", "style_id", "style_no"));
 
 		if (tranTypeColumn == null || quantityColumn == null || specColumn == null) {
 			return BigDecimal.ZERO;
