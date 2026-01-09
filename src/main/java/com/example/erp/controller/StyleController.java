@@ -21,11 +21,14 @@ public class StyleController extends PageViewSupport {
 	}
 
 	@GetMapping
-	public String list(@RequestParam(required = false) String styleCode, @RequestParam(required = false) String styleNo,
-			@RequestParam(required = false) String designerName, @RequestParam(required = false) String designer,
-			@RequestParam(required = false) Integer isActive, @RequestParam(required = false) Integer status,
-			@RequestParam(required = false) String sort, @RequestParam(required = false) String direction,
-			Model model) {
+	public String list(@RequestParam(name = "styleCode", required = false) String styleCode,
+			@RequestParam(name = "styleNo", required = false) String styleNo,
+			@RequestParam(name = "designerName", required = false) String designerName,
+			@RequestParam(name = "designer", required = false) String designer,
+			@RequestParam(name = "isActive", required = false) Integer isActive,
+			@RequestParam(name = "status", required = false) Integer status,
+			@RequestParam(name = "sort", required = false) String sort,
+			@RequestParam(name = "direction", required = false) String direction, Model model) {
 		String resolvedStyleCode = styleCode != null ? styleCode : styleNo;
 		String resolvedDesigner = designerName != null ? designerName : designer;
 		Integer resolvedActive = isActive != null ? isActive : status;
