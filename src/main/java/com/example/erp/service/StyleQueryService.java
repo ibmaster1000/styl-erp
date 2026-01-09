@@ -60,8 +60,8 @@ public class StyleQueryService {
 			boolean active = style.active() == null || style.active();
 		
 			designerRawByStyle.put(styleKey, style.designerEmpNo());
-			rows.add(new StyleListRow(styleKey, item, colorsDisplay, colorsFull, colorsDisplay,
-					sizesDisplay, sizesFull, sizesDisplay, designer, production, sales, logistic,
+			rows.add(new StyleListRow(style.stylesId(), styleKey, style.itemCode(), item, colorsDisplay, colorsFull,
+					colorsDisplay, sizesDisplay, sizesFull, sizesDisplay, designer, production, sales, logistic,
 					style.productionCost(), style.supplyPrice(), style.salesPrice(), style.startDate(), active));
 		}
 

@@ -6,7 +6,11 @@ import java.util.List;
 
 public class StyleRegisterRequest {
 
+    private Long stylesId;
+    private String styleCode;
     private String itemCode;
+    private Integer year;
+    private Integer month;
     private LocalDate startDate;
     private BigDecimal costPrice;
     private BigDecimal productionCost;
@@ -16,8 +20,25 @@ public class StyleRegisterRequest {
     private String productEmpNo;
     private String salesEmpNo;
     private String logisticEmpNo;
+    private Integer isActive;
     private List<String> colorCodes;
     private List<String> sizeCodes;
+
+    public Long getStylesId() {
+        return stylesId;
+    }
+
+    public void setStylesId(Long stylesId) {
+        this.stylesId = stylesId;
+    }
+
+    public String getStyleCode() {
+        return styleCode;
+    }
+
+    public void setStyleCode(String styleCode) {
+        this.styleCode = styleCode;
+    }
 
     public String getItemCode() {
         return itemCode;
@@ -25,6 +46,22 @@ public class StyleRegisterRequest {
 
     public void setItemCode(String itemCode) {
         this.itemCode = itemCode;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
+    }
+
+    public Integer getMonth() {
+        return month;
+    }
+
+    public void setMonth(Integer month) {
+        this.month = month;
     }
 
     public LocalDate getStartDate() {
@@ -97,6 +134,14 @@ public class StyleRegisterRequest {
 
     public void setLogisticEmpNo(String logisticEmpNo) {
         this.logisticEmpNo = logisticEmpNo;
+    }
+
+    public Integer getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Integer isActive) {
+        this.isActive = isActive;
     }
 
     public List<String> getColorCodes() {

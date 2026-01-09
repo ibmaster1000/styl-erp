@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 @Controller
 @RequestMapping("/style")
@@ -46,6 +47,11 @@ public class StyleController extends PageViewSupport {
 
 		populate(model, "품번/스타일 관리", "style", "pages/style", safeList);
 		model.addAttribute("styles_rule", result.getStylesRule());
+		int currentYear = java.time.LocalDate.now().getYear();
+		List<Integer> years = IntStream.rangeClosed(currentYear - 2, currentYear + 1).boxed().toList();
+		List<Integer> months = IntStream.rangeClosed(1, 12).boxed().toList();
+		model.addAttribute("styleYears", years);
+		model.addAttribute("styleMonths", months);
 		Boolean flatView = Boolean.FALSE;
 		if ("flat".equalsIgnoreCase(viewMode)) {
 			flatView = Boolean.TRUE;

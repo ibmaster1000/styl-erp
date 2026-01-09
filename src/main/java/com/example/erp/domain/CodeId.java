@@ -8,6 +8,8 @@ import java.util.Objects;
 
 @Embeddable
 public class CodeId implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 	
 	@Column(name = "code_type", nullable = false, length = 20)
     private String codeType;

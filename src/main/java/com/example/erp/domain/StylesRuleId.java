@@ -9,6 +9,8 @@ import java.util.Objects;
 @Embeddable
 public class StylesRuleId implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     @Column(name = "styles_id")
     private Long stylesId;
 

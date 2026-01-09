@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface StyleRepository extends JpaRepository<Style, Long> {
     Optional<Style> findTopByStyleCodeStartingWithOrderByStyleCodeDesc(String prefix);
+
+    Optional<Style> findByStyleCode(String styleCode);
 }

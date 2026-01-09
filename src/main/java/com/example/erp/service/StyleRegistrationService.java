@@ -1,5 +1,6 @@
 package com.example.erp.service;
 
+import com.example.erp.controller.dto.StyleDetailResponse;
 import com.example.erp.controller.dto.StyleRegisterRequest;
 import com.example.erp.domain.Item;
 import com.example.erp.domain.Style;
@@ -36,13 +37,10 @@ public class StyleRegistrationService {
     }
 
     public Style create(StyleRegisterRequest req) {
-        validateRequest(req);
+        validateCreateRequest(req);
 
-        Item item = itemRepository.findById(req.getItemCode())
-                .filter(found -> Integer.valueOf(1).equals(found.getIsActive()))
-                .orElseThrow(() -> new IllegalArgumentException("active item not found"));
-
-        String styleCode = generateStyleCode(req.getItemCode(), req.getStartDate());
+        Item item = loadActiveItem(req.getItemCode());
+        String styleCode = generateStyleCode(item.getItemCode(), req.getYear(), req.getMonth());
 
         Style style = new Style();
         style.setStyleCode(styleCode);
@@ -57,15 +55,103 @@ public class StyleRegistrationService {
         style.setProductEmpNo(req.getProductEmpNo());
         style.setSalesEmpNo(req.getSalesEmpNo());
         style.setLogisticEmpNo(req.getLogisticEmpNo());
-        style.setIsActive(1);
+        style.setIsActive(req.getIsActive() != null ? req.getIsActive() : 1);
 
         Style savedStyle = styleRepository.save(style);
-        saveRules(savedStyle.getStylesId(), req.getColorCodes(), req.getSizeCodes());
+        replaceRules(savedStyle.getStylesId(), req.getColorCodes(), req.getSizeCodes());
 
         return savedStyle;
     }
 
-    private void validateRequest(StyleRegisterRequest req) {
+    public Style update(StyleRegisterRequest req) {
+        validateUpdateRequest(req);
+
+        Style style = resolveStyle(req);
+        Item item = loadActiveItem(req.getItemCode());
+
+        style.setStyleCode(req.getStyleCode());
+        style.setItemCode(item.getItemCode());
+        style.setItemName(item.getItemName());
+        style.setStartDate(req.getStartDate());
+        style.setCostPrice(req.getCostPrice());
+        style.setProductionCost(req.getProductionCost());
+        style.setSupplyPrice(req.getSupplyPrice());
+        style.setSalesPrice(req.getSalesPrice());
+        style.setDesignerEmpNo(req.getDesignerEmpNo());
+        style.setProductEmpNo(req.getProductEmpNo());
+        style.setSalesEmpNo(req.getSalesEmpNo());
+        style.setLogisticEmpNo(req.getLogisticEmpNo());
+        if (req.getIsActive() != null) {
+            style.setIsActive(req.getIsActive());
+        }
+
+        Style savedStyle = styleRepository.save(style);
+        replaceRules(savedStyle.getStylesId(), req.getColorCodes(), req.getSizeCodes());
+
+        return savedStyle;
+    }
+
+    public void delete(Long stylesId) {
+        if (stylesId == null) {
+            throw new IllegalArgumentException("stylesId is required");
+        }
+        stylesRuleRepository.deleteByIdStylesId(stylesId);
+        styleRepository.deleteById(stylesId);
+    }
+
+    @Transactional(readOnly = true)
+    public StyleDetailResponse findDetail(Long stylesId, String styleCode) {
+        Style style = resolveStyle(stylesId, styleCode);
+        List<StylesRule> rules = stylesRuleRepository.findByIdStylesId(style.getStylesId());
+        List<String> colors = new ArrayList<>();
+        List<String> sizes = new ArrayList<>();
+        for (StylesRule rule : rules) {
+            StylesRuleId id = rule.getId();
+            if (id == null) {
+                continue;
+            }
+            if ("COLOR".equalsIgnoreCase(id.getCodeType())) {
+                colors.add(id.getCode());
+            } else if ("SIZE".equalsIgnoreCase(id.getCodeType())) {
+                sizes.add(id.getCode());
+            }
+        }
+
+        return new StyleDetailResponse(
+                style.getStylesId(),
+                style.getStyleCode(),
+                style.getItemCode(),
+                style.getItemName(),
+                style.getDesignerEmpNo(),
+                style.getProductEmpNo(),
+                style.getSalesEmpNo(),
+                style.getLogisticEmpNo(),
+                style.getStartDate(),
+                style.getCostPrice(),
+                style.getProductionCost(),
+                style.getSupplyPrice(),
+                style.getSalesPrice(),
+                style.getIsActive(),
+                colors,
+                sizes
+        );
+    }
+
+    private void validateCreateRequest(StyleRegisterRequest req) {
+        validateCommon(req);
+        if (req.getYear() == null || req.getMonth() == null) {
+            throw new IllegalArgumentException("year/month is required");
+        }
+    }
+
+    private void validateUpdateRequest(StyleRegisterRequest req) {
+        validateCommon(req);
+        if (!StringUtils.hasText(req.getStyleCode())) {
+            throw new IllegalArgumentException("styleCode is required");
+        }
+    }
+
+    private void validateCommon(StyleRegisterRequest req) {
         if (req == null) {
             throw new IllegalArgumentException("request is required");
         }
@@ -107,14 +193,41 @@ public class StyleRegistrationService {
         }
     }
 
-    private String generateStyleCode(String itemCode, java.time.LocalDate startDate) {
-        String yymm = String.format("%02d%02d", startDate.getYear() % 100, startDate.getMonthValue());
-        String prefix = itemCode + yymm;
+    private Item loadActiveItem(String itemCode) {
+        return itemRepository.findById(itemCode)
+                .filter(found -> Integer.valueOf(1).equals(found.getIsActive()))
+                .orElseThrow(() -> new IllegalArgumentException("active item not found"));
+    }
 
+    private Style resolveStyle(StyleRegisterRequest req) {
+        return resolveStyle(req.getStylesId(), req.getStyleCode());
+    }
+
+    private Style resolveStyle(Long stylesId, String styleCode) {
+        if (stylesId != null) {
+            return styleRepository.findById(stylesId)
+                    .orElseThrow(() -> new IllegalArgumentException("style not found"));
+        }
+        if (StringUtils.hasText(styleCode)) {
+            return styleRepository.findByStyleCode(styleCode)
+                    .orElseThrow(() -> new IllegalArgumentException("style not found"));
+        }
+        throw new IllegalArgumentException("style identifier is required");
+    }
+
+    private String generateStyleCode(String itemCode, Integer year, Integer month) {
+        String prefix = buildPrefix(itemCode, year, month);
         Optional<Style> last = styleRepository.findTopByStyleCodeStartingWithOrderByStyleCodeDesc(prefix);
         int nextSeq = last.map(found -> parseSequence(found.getStyleCode()) + 1).orElse(1);
-
         return prefix + String.format("%03d", nextSeq);
+    }
+
+    private String buildPrefix(String itemCode, Integer year, Integer month) {
+        String trimmed = itemCode != null ? itemCode.trim() : "";
+        String itemPrefix = trimmed.length() >= 2 ? trimmed.substring(0, 2) : trimmed;
+        int yy = year != null ? year % 100 : 0;
+        int mm = month != null ? month : 0;
+        return String.format("%s%02d%02d", itemPrefix, yy, mm);
     }
 
     private int parseSequence(String styleCode) {
@@ -127,6 +240,11 @@ public class StyleRegistrationService {
         } catch (NumberFormatException ex) {
             throw new IllegalArgumentException("invalid styleCode sequence", ex);
         }
+    }
+
+    private void replaceRules(Long stylesId, List<String> colorCodes, List<String> sizeCodes) {
+        stylesRuleRepository.deleteByIdStylesId(stylesId);
+        saveRules(stylesId, colorCodes, sizeCodes);
     }
 
     private void saveRules(Long stylesId, List<String> colorCodes, List<String> sizeCodes) {
