@@ -1,6 +1,7 @@
 package com.example.erp.controller.dto;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ProductionAgreementDetailView {
@@ -16,10 +17,10 @@ public class ProductionAgreementDetailView {
 			int grandQuantity, BigDecimal grandAmount) {
 		this.styleCode = styleCode;
 		this.agreementCode = agreementCode;
-		this.lines = lines;
-		this.colorTotals = colorTotals;
+		this.lines = (lines != null) ? new ArrayList<>(lines) : new ArrayList<>();
+		this.colorTotals = (colorTotals != null) ? new ArrayList<>(colorTotals) : new ArrayList<>();
 		this.grandQuantity = grandQuantity;
-		this.grandAmount = grandAmount;
+		this.grandAmount = (grandAmount != null) ? grandAmount : BigDecimal.ZERO;
 	}
 
 	public String getStyleCode() {
