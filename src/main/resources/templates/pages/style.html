@@ -132,7 +132,7 @@
 			background: #fafafa;
 		}
 
-		.style-form-block+.style-form-block {
+		.style-form-block + .style-form-block {
 			margin-top: 16px;
 		}
 
@@ -150,7 +150,7 @@
 			background: #fff;
 		}
 
-		.style-form-row-block+.style-form-row-block {
+		.style-form-row-block + .style-form-row-block {
 			margin-top: 12px;
 		}
 
@@ -211,7 +211,6 @@
 			border-radius: 999px;
 			border: none;
 			background: #e5e7eb;
-			overflow: hidden;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -225,19 +224,22 @@
 		.style-active-toggle::before {
 			content: '';
 			position: absolute;
-			inset: 0;
+			top: 4px;
+			bottom: 4px;
 			border-radius: 999px;
-			background: #f59e0b;
-			opacity: 0;
-			transition: opacity 0.2s ease;
+			transition: all 0.2s ease;
 		}
 
 		.style-active-toggle.is-active::before {
-			opacity: 1;
+			left: 50%;
+			right: 4px;
+			background: #f59e0b;
 		}
 
 		.style-active-toggle:not(.is-active)::before {
-			opacity: 0;
+			left: 4px;
+			right: 50%;
+			background: #d1d5db;
 		}
 
 		.style-active-toggle-thumb {
@@ -315,12 +317,6 @@
 		.style-picker-table tbody tr.selected {
 			background-color: var(--bs-primary-bg-subtle) !important;
 		}
-
-		.style-section-divider {
-			border-left: 1px solid #e5e7eb;
-			padding-left: 18px;
-			margin-left: 18px;
-		}
 	</style>
 
 	<div class="mb-3">
@@ -371,14 +367,14 @@
 				<table class="table table-hover align-middle mb-0 style-table data-table">
 					<thead class="table-light">
 						<tr>
-							<th class="t-left sortable" data-sort-key="styleCode">품번<span class="sort-indicator"></span>
-							</th>
-							<th class="t-left sortable" data-sort-key="item">아이템<span class="sort-indicator"></span>
-							</th>
-							<th class="t-left sortable" data-sort-key="colors">색상<span class="sort-indicator"></span>
-							</th>
-							<th class="t-left sortable" data-sort-key="sizes">사이즈<span class="sort-indicator"></span>
-							</th>
+							<th class="t-left sortable" data-sort-key="styleCode">품번<span
+									class="sort-indicator"></span></th>
+							<th class="t-left sortable" data-sort-key="item">아이템<span
+									class="sort-indicator"></span></th>
+							<th class="t-left sortable" data-sort-key="colors">색상<span
+									class="sort-indicator"></span></th>
+							<th class="t-left sortable" data-sort-key="sizes">사이즈<span
+									class="sort-indicator"></span></th>
 							<th class="t-left sortable" data-sort-key="designer">디자이너<span
 									class="sort-indicator"></span></th>
 							<th class="t-left sortable" data-sort-key="productionManager">생산담당<span
@@ -409,30 +405,25 @@
 							<td class="t-left" data-sort-field="styleCode" th:text="${s.styleCode}">ST-001</td>
 							<td class="t-left" data-sort-field="item" th:text="${s.item}">후드티</td>
 							<td class="t-left ellipsis-cell cell-clickable" data-sort-field="colors"
-								th:attr="data-full=${s.colorsFull}, data-title='색상'" th:text="${s.colorsDisplay}"
-								th:title="${s.colorsFull}">BLACK, WHITE</td>
+								th:attr="data-full=${s.colorsFull}, data-title='색상'"
+								th:text="${s.colorsDisplay}" th:title="${s.colorsFull}">BLACK, WHITE</td>
 							<td class="t-left ellipsis-cell cell-clickable" data-sort-field="sizes"
 								th:attr="data-full=${s.sizesFull}, data-title='사이즈'" th:text="${s.sizesDisplay}"
 								th:title="${s.sizesFull}">S, M, L</td>
 							<td class="t-left" data-sort-field="designer" th:text="${s.designer}">김디</td>
-							<td class="t-left" data-sort-field="productionManager" th:text="${s.productionManager}">박생산
-							</td>
+							<td class="t-left" data-sort-field="productionManager" th:text="${s.productionManager}">박생산</td>
 							<td class="t-left" data-sort-field="salesManager" th:text="${s.salesManager}">이영업</td>
 							<td class="t-left" data-sort-field="logisticManager" th:text="${s.logisticManager}">최운송</td>
 							<td class="text-start" data-sort-field="productionCost"
-								th:attr="data-sort-value=${s.productionCost}"
-								th:text="${s.productionCost != null ? s.productionCost : '-'}">-</td>
-							<td class="text-start" data-sort-field="supplyPrice"
-								th:attr="data-sort-value=${s.supplyPrice}"
+								th:attr="data-sort-value=${s.productionCost}" th:text="${s.productionCost != null ? s.productionCost : '-'}">-</td>
+							<td class="text-start" data-sort-field="supplyPrice" th:attr="data-sort-value=${s.supplyPrice}"
 								th:text="${s.supplyPrice != null ? s.supplyPrice : '-'}">-</td>
-							<td class="text-start" data-sort-field="salesPrice"
-								th:attr="data-sort-value=${s.salesPrice}"
+							<td class="text-start" data-sort-field="salesPrice" th:attr="data-sort-value=${s.salesPrice}"
 								th:text="${s.salesPrice != null ? s.salesPrice : '-'}">-</td>
 							<td class="text-start" data-sort-field="startDate" th:attr="data-sort-value=${s.startDate}"
 								th:text="${s.startDate}">2024-01-01</td>
-							<td class="text-start" data-sort-field="status"
-								th:attr="data-sort-value=${s.active ? 1 : 0}" th:text="${s.active ? '사용' : '중지'}">사용
-							</td>
+							<td class="text-start" data-sort-field="status" th:attr="data-sort-value=${s.active ? 1 : 0}"
+								th:text="${s.active ? '사용' : '중지'}">사용</td>
 						</tr>
 					</tbody>
 				</table>
@@ -460,15 +451,13 @@
 								<div class="style-release-field">
 									<select class="form-select form-select-sm" name="year">
 										<option value="">선택</option>
-										<option th:each="year : ${styleYears}" th:value="${year}" th:text="${year}">2024
-										</option>
+										<option th:each="year : ${styleYears}" th:value="${year}" th:text="${year}">2024</option>
 									</select>
 								</div>
 								<div class="style-release-field">
 									<select class="form-select form-select-sm" name="month">
 										<option value="">선택</option>
-										<option th:each="month : ${styleMonths}" th:value="${month}" th:text="${month}">
-											1</option>
+										<option th:each="month : ${styleMonths}" th:value="${month}" th:text="${month}">1</option>
 									</select>
 								</div>
 							</div>
@@ -480,8 +469,7 @@
 						<div class="col-lg-3 style-status-field">
 							<label class="form-label fw-semibold">상태</label>
 							<input type="hidden" name="isActive" value="1">
-							<button type="button" class="style-active-toggle is-active" data-active-toggle
-								aria-pressed="true">
+							<button type="button" class="style-active-toggle is-active" data-active-toggle aria-pressed="true">
 								<span class="style-active-toggle-text" data-active-label>사용</span>
 								<span class="style-active-toggle-thumb" aria-hidden="true"></span>
 							</button>
@@ -490,33 +478,31 @@
 				</div>
 				<div class="style-form-row-block">
 					<div class="row g-3 style-form-grid">
-						<div class="col-12">
+						<div class="col-lg-4">
 							<label class="form-label fw-semibold">아이템</label>
 							<div class="input-group input-group-sm">
-								<input type="text" class="form-control" name="itemCode" placeholder="아이템 코드">
-								<input type="text" class="form-control style-readonly" name="itemName"
-									placeholder="아이템명" readonly>
+								<input type="text" class="form-control" name="itemCode" placeholder="아이템 코드" readonly>
+								<input type="text" class="form-control style-readonly" name="itemName" placeholder="아이템명"
+									readonly>
 								<button class="btn btn--outline" type="button" data-item-picker-open>검색</button>
 							</div>
 						</div>
-					</div>
-				</div>
-				<div class="style-form-row-block">
-					<div class="row g-3 style-form-grid">
-						<div class="col-lg-6 style-section-divider">
-							<label class="form-label fw-semibold">색상</label>
-							<div class="d-flex align-items-center gap-2">
-								<div class="style-tags flex-grow-1" data-tag-list="color"></div>
-								<button class="btn btn--outline btn-sm" type="button"
-									data-code-picker-open="color">추가</button>
-							</div>
-						</div>
-						<div class="col-lg-6 style-section-divider">
-							<label class="form-label fw-semibold">사이즈</label>
-							<div class="d-flex align-items-center gap-2">
-								<div class="style-tags flex-grow-1" data-tag-list="size"></div>
-								<button class="btn btn--outline btn-sm" type="button"
-									data-code-picker-open="size">추가</button>
+						<div class="col-lg-8">
+							<div class="row g-3">
+								<div class="col-lg-6">
+									<label class="form-label fw-semibold">색상</label>
+									<div class="d-flex align-items-center gap-2">
+										<div class="style-tags" data-tag-list="color"></div>
+										<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="color">추가</button>
+									</div>
+								</div>
+								<div class="col-lg-6">
+									<label class="form-label fw-semibold">사이즈</label>
+									<div class="d-flex align-items-center gap-2">
+										<div class="style-tags" data-tag-list="size"></div>
+										<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="size">추가</button>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -530,10 +516,10 @@
 						<div class="col-lg-3">
 							<label class="form-label fw-semibold">디자이너</label>
 							<div class="input-group input-group-sm">
-								<input type="text" class="form-control" name="designerEmpNo"
-									id="style-register-designer-emp" placeholder="사번">
+								<input type="text" class="form-control" name="designerEmpNo" id="style-register-designer-emp"
+									placeholder="사번">
 								<button class="btn btn--outline" type="button"
-									data-employee-picker-open="style-register-designer-picker" data-default-dept="디자인">
+									data-employee-picker-open="style-register-designer-picker">
 									<i class="bi bi-search"></i>
 								</button>
 							</div>
@@ -541,10 +527,10 @@
 						<div class="col-lg-3">
 							<label class="form-label fw-semibold">생산담당</label>
 							<div class="input-group input-group-sm">
-								<input type="text" class="form-control" name="productEmpNo"
-									id="style-register-product-emp" placeholder="사번">
+								<input type="text" class="form-control" name="productEmpNo" id="style-register-product-emp"
+									placeholder="사번">
 								<button class="btn btn--outline" type="button"
-									data-employee-picker-open="style-register-product-picker" data-default-dept="생산">
+									data-employee-picker-open="style-register-product-picker">
 									<i class="bi bi-search"></i>
 								</button>
 							</div>
@@ -555,7 +541,7 @@
 								<input type="text" class="form-control" name="salesEmpNo" id="style-register-sales-emp"
 									placeholder="사번">
 								<button class="btn btn--outline" type="button"
-									data-employee-picker-open="style-register-sales-picker" data-default-dept="영업">
+									data-employee-picker-open="style-register-sales-picker">
 									<i class="bi bi-search"></i>
 								</button>
 							</div>
@@ -563,10 +549,10 @@
 						<div class="col-lg-3">
 							<label class="form-label fw-semibold">운송담당</label>
 							<div class="input-group input-group-sm">
-								<input type="text" class="form-control" name="logisticEmpNo"
-									id="style-register-logistic-emp" placeholder="사번">
+								<input type="text" class="form-control" name="logisticEmpNo" id="style-register-logistic-emp"
+									placeholder="사번">
 								<button class="btn btn--outline" type="button"
-									data-employee-picker-open="style-register-logistic-picker" data-default-dept="물류">
+									data-employee-picker-open="style-register-logistic-picker">
 									<i class="bi bi-search"></i>
 								</button>
 							</div>
@@ -613,8 +599,7 @@
 								<div class="row g-3 align-items-end style-form-grid style-basic-row">
 									<div class="col-lg-2">
 										<label class="form-label fw-semibold">품번</label>
-										<input type="text" class="form-control form-control-sm style-code-input"
-											name="styleCode">
+										<input type="text" class="form-control form-control-sm style-code-input" name="styleCode">
 									</div>
 									<div class="col-lg-4">
 										<div class="style-release-title">출시연도</div>
@@ -622,29 +607,25 @@
 											<div class="style-release-field">
 												<select class="form-select form-select-sm" name="year">
 													<option value="">선택</option>
-													<option th:each="year : ${styleYears}" th:value="${year}"
-														th:text="${year}">2024</option>
+													<option th:each="year : ${styleYears}" th:value="${year}" th:text="${year}">2024</option>
 												</select>
 											</div>
 											<div class="style-release-field">
 												<select class="form-select form-select-sm" name="month">
 													<option value="">선택</option>
-													<option th:each="month : ${styleMonths}" th:value="${month}"
-														th:text="${month}">1</option>
+													<option th:each="month : ${styleMonths}" th:value="${month}" th:text="${month}">1</option>
 												</select>
 											</div>
 										</div>
 									</div>
 									<div class="col-lg-3">
 										<label class="form-label fw-semibold">운영시작일</label>
-										<input type="date" class="form-control form-control-sm style-date-input"
-											name="startDate">
+										<input type="date" class="form-control form-control-sm style-date-input" name="startDate">
 									</div>
 									<div class="col-lg-3 style-status-field">
 										<label class="form-label fw-semibold">상태</label>
 										<input type="hidden" name="isActive" value="1">
-										<button type="button" class="style-active-toggle is-active" data-active-toggle
-											aria-pressed="true">
+										<button type="button" class="style-active-toggle is-active" data-active-toggle aria-pressed="true">
 											<span class="style-active-toggle-text" data-active-label>사용</span>
 											<span class="style-active-toggle-thumb" aria-hidden="true"></span>
 										</button>
@@ -653,35 +634,30 @@
 							</div>
 							<div class="style-form-row-block">
 								<div class="row g-3 style-form-grid">
-									<div class="col-12">
+									<div class="col-lg-4">
 										<label class="form-label fw-semibold">아이템</label>
 										<div class="input-group input-group-sm">
-											<input type="text" class="form-control" name="itemCode"
-												placeholder="아이템 코드">
-											<input type="text" class="form-control style-readonly" name="itemName"
-												placeholder="아이템명" readonly>
-											<button class="btn btn--outline" type="button"
-												data-item-picker-open>검색</button>
+											<input type="text" class="form-control" name="itemCode" placeholder="아이템 코드" readonly>
+											<input type="text" class="form-control style-readonly" name="itemName" placeholder="아이템명" readonly>
+											<button class="btn btn--outline" type="button" data-item-picker-open>검색</button>
 										</div>
 									</div>
-								</div>
-							</div>
-							<div class="style-form-row-block">
-								<div class="row g-3 style-form-grid">
-									<div class="col-lg-6 style-section-divider">
-										<label class="form-label fw-semibold">색상</label>
-										<div class="d-flex align-items-center gap-2">
-											<div class="style-tags flex-grow-1" data-tag-list="color"></div>
-											<button class="btn btn--outline btn-sm" type="button"
-												data-code-picker-open="color">추가</button>
-										</div>
-									</div>
-									<div class="col-lg-6 style-section-divider">
-										<label class="form-label fw-semibold">사이즈</label>
-										<div class="d-flex align-items-center gap-2">
-											<div class="style-tags flex-grow-1" data-tag-list="size"></div>
-											<button class="btn btn--outline btn-sm" type="button"
-												data-code-picker-open="size">추가</button>
+									<div class="col-lg-8">
+										<div class="row g-3">
+											<div class="col-lg-6">
+												<label class="form-label fw-semibold">색상</label>
+												<div class="d-flex align-items-center gap-2">
+													<div class="style-tags" data-tag-list="color"></div>
+													<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="color">추가</button>
+												</div>
+											</div>
+											<div class="col-lg-6">
+												<label class="form-label fw-semibold">사이즈</label>
+												<div class="d-flex align-items-center gap-2">
+													<div class="style-tags" data-tag-list="size"></div>
+													<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="size">추가</button>
+												</div>
+											</div>
 										</div>
 									</div>
 								</div>
@@ -694,10 +670,9 @@
 									<div class="col-lg-3">
 										<label class="form-label fw-semibold">디자이너</label>
 										<div class="input-group input-group-sm">
-											<input type="text" class="form-control" name="designerEmpNo"
-												id="style-edit-designer-emp" placeholder="사번">
-											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-designer-picker" data-default-dept="디자인">
+											<input type="text" class="form-control" name="designerEmpNo" id="style-edit-designer-emp"
+												placeholder="사번">
+											<button class="btn btn--outline" type="button" data-employee-picker-open="style-edit-designer-picker">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>
@@ -705,10 +680,9 @@
 									<div class="col-lg-3">
 										<label class="form-label fw-semibold">생산담당</label>
 										<div class="input-group input-group-sm">
-											<input type="text" class="form-control" name="productEmpNo"
-												id="style-edit-product-emp" placeholder="사번">
-											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-product-picker" data-default-dept="생산">
+											<input type="text" class="form-control" name="productEmpNo" id="style-edit-product-emp"
+												placeholder="사번">
+											<button class="btn btn--outline" type="button" data-employee-picker-open="style-edit-product-picker">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>
@@ -716,10 +690,9 @@
 									<div class="col-lg-3">
 										<label class="form-label fw-semibold">영업담당</label>
 										<div class="input-group input-group-sm">
-											<input type="text" class="form-control" name="salesEmpNo"
-												id="style-edit-sales-emp" placeholder="사번">
-											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-sales-picker" data-default-dept="영업">
+											<input type="text" class="form-control" name="salesEmpNo" id="style-edit-sales-emp"
+												placeholder="사번">
+											<button class="btn btn--outline" type="button" data-employee-picker-open="style-edit-sales-picker">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>
@@ -727,10 +700,9 @@
 									<div class="col-lg-3">
 										<label class="form-label fw-semibold">운송담당</label>
 										<div class="input-group input-group-sm">
-											<input type="text" class="form-control" name="logisticEmpNo"
-												id="style-edit-logistic-emp" placeholder="사번">
-											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-logistic-picker" data-default-dept="물류">
+											<input type="text" class="form-control" name="logisticEmpNo" id="style-edit-logistic-emp"
+												placeholder="사번">
+											<button class="btn btn--outline" type="button" data-employee-picker-open="style-edit-logistic-picker">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>
@@ -741,18 +713,15 @@
 								<div class="row g-3 style-form-grid">
 									<div class="col-lg-3">
 										<label class="form-label fw-semibold">생산원가</label>
-										<input type="number" class="form-control form-control-sm" name="productionCost"
-											step="0.01">
+										<input type="number" class="form-control form-control-sm" name="productionCost" step="0.01">
 									</div>
 									<div class="col-lg-3">
 										<label class="form-label fw-semibold">공급가</label>
-										<input type="number" class="form-control form-control-sm" name="supplyPrice"
-											step="0.01">
+										<input type="number" class="form-control form-control-sm" name="supplyPrice" step="0.01">
 									</div>
 									<div class="col-lg-3">
 										<label class="form-label fw-semibold">판매가</label>
-										<input type="number" class="form-control form-control-sm" name="salesPrice"
-											step="0.01">
+										<input type="number" class="form-control form-control-sm" name="salesPrice" step="0.01">
 									</div>
 								</div>
 							</div>
@@ -1049,16 +1018,10 @@
 				});
 			});
 
-			const createTag = (entry, onRemove) => {
-				const codeValue = entry?.code || '';
-				const nameValue = entry?.name || '';
-				const label = nameValue ? `${codeValue} (${nameValue})` : codeValue;
+			const createTag = (value, onRemove) => {
 				const tag = document.createElement('span');
 				tag.className = 'style-tag';
-				tag.textContent = label || '-';
-				if (nameValue) {
-					tag.title = nameValue;
-				}
+				tag.textContent = value;
 				const remove = document.createElement('span');
 				remove.className = 'remove';
 				remove.textContent = '×';
@@ -1079,19 +1042,6 @@
 				}
 			};
 
-			const normalizeTagEntry = (entry) => {
-				if (!entry) {
-					return {code: '', name: ''};
-				}
-				if (typeof entry === 'string') {
-					return {code: entry, name: ''};
-				}
-				return {
-					code: entry.code || entry.value || '',
-					name: entry.codeName || entry.name || ''
-				};
-			};
-
 			const renderTags = (form, type) => {
 				initTagState(form);
 				const container = form.querySelector(`[data-tag-list="${type}"]`);
@@ -1099,16 +1049,9 @@
 					return;
 				}
 				container.innerHTML = '';
-				form._tagState[type].forEach((entry) => {
-					const normalized = normalizeTagEntry(entry);
-					if (!normalized.code) {
-						return;
-					}
-					const tag = createTag(normalized, () => {
-						form._tagState[type] = form._tagState[type].filter((item) => {
-							const itemCode = normalizeTagEntry(item).code;
-							return itemCode !== normalized.code;
-						});
+				form._tagState[type].forEach((value) => {
+					const tag = createTag(value, () => {
+						form._tagState[type] = form._tagState[type].filter((item) => item !== value);
 						renderTags(form, type);
 					});
 					container.appendChild(tag);
@@ -1117,23 +1060,16 @@
 
 			const setTags = (form, type, values) => {
 				initTagState(form);
-				form._tagState[type] = (values || []).map((entry) => normalizeTagEntry(entry));
+				form._tagState[type] = values || [];
 				renderTags(form, type);
 			};
 
 			const addTag = (form, type, value) => {
 				initTagState(form);
-				const normalized = normalizeTagEntry(value);
-				if (!normalized.code) {
+				if (!value || form._tagState[type].includes(value)) {
 					return;
 				}
-				const exists = form._tagState[type].some((entry) => {
-					return normalizeTagEntry(entry).code === normalized.code;
-				});
-				if (exists) {
-					return;
-				}
-				form._tagState[type].push(normalized);
+				form._tagState[type].push(value);
 				renderTags(form, type);
 			};
 
@@ -1256,9 +1192,9 @@
 				}
 				tbody.innerHTML = codes
 					.map((item) => `
-						<tr data-value="${item.code || ''}" data-name="${item.codeName || ''}">
+						<tr data-value="${item.code || ''}" data-name="${item.name || ''}">
 							<td class="text-center">${item.code || '-'}</td>
-							<td class="text-center">${item.codeName || '-'}</td>
+							<td class="text-center">${item.name || '-'}</td>
 						</tr>
 					`)
 					.join('');
@@ -1317,10 +1253,7 @@
 					alert('선택된 항목이 없습니다.');
 					return;
 				}
-				addTag(activeFormForPicker, currentCodeType, {
-					code: selectedPickerRow.dataset.value || '',
-					name: selectedPickerRow.dataset.name || ''
-				});
+				addTag(activeFormForPicker, currentCodeType, selectedPickerRow.dataset.value || '');
 				codeModal.hide();
 			};
 
@@ -1374,8 +1307,8 @@
 					salesEmpNo: getValue('salesEmpNo') || null,
 					logisticEmpNo: getValue('logisticEmpNo') || null,
 					isActive: getValue('isActive') ? Number(getValue('isActive')) : null,
-					colorCodes: form._tagState.color.map((entry) => normalizeTagEntry(entry).code).filter(Boolean),
-					sizeCodes: form._tagState.size.map((entry) => normalizeTagEntry(entry).code).filter(Boolean)
+					colorCodes: form._tagState.color,
+					sizeCodes: form._tagState.size
 				};
 			};
 
@@ -1464,8 +1397,8 @@
 					setField('salesPrice', detail.salesPrice);
 					editForm.querySelector('[name="isActive"]').value = detail.isActive != null ? detail.isActive : '1';
 					updateActiveToggle(editForm, detail.isActive != null ? detail.isActive === 1 : true);
-					setTags(editForm, 'color', detail.colorRules || detail.colorCodes || []);
-					setTags(editForm, 'size', detail.sizeRules || detail.sizeCodes || []);
+					setTags(editForm, 'color', detail.colorCodes || []);
+					setTags(editForm, 'size', detail.sizeCodes || []);
 					const parsed = parseStyleCode(detail.styleCode || '');
 					editForm.querySelector('[name="year"]').value = parsed.year ? `20${parsed.year}` : '';
 					editForm.querySelector('[name="month"]').value = parsed.month ? Number(parsed.month) : '';
@@ -1516,12 +1449,7 @@
 					if (!response.ok) {
 						throw new Error('delete failed');
 					}
-					const result = await response.json();
-					if (result?.deactivated) {
-						alert('참조 중인 품번은 비활성화 처리되었습니다.');
-					} else {
-						alert('삭제되었습니다.');
-					}
+					alert('삭제되었습니다.');
 					window.location.reload();
 				} catch (error) {
 					alert('삭제에 실패했습니다.');
