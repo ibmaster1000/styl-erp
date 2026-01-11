@@ -41,13 +41,14 @@ const initEmployeePickerModal = (modalElement) => {
 		}
 		resultsBody.innerHTML = '';
 		items.forEach((item) => {
+			const empNo = item.empNo || item.empCode || '';
 			const row = document.createElement('tr');
 			row.classList.add('employee-picker-row');
-			row.dataset.empCode = item.empCode || '';
+			row.dataset.empNo = empNo;
 			row.dataset.name = item.name || '';
 			row.dataset.dept = item.dept || '';
 			row.innerHTML = `
-				<td class="text-center">${item.empCode || '-'}</td>
+				<td class="text-center">${empNo || '-'}</td>
 				<td class="text-center">${item.name || '-'}</td>
 				<td class="text-center">${item.dept || '-'}</td>
 			`;
@@ -113,7 +114,7 @@ const initEmployeePickerModal = (modalElement) => {
 		}
 		const targetInput = document.getElementById(targetInputId);
 		if (targetInput) {
-			targetInput.value = selectedRow.dataset.empCode || '';
+			targetInput.value = selectedRow.dataset.empNo || '';
 		}
 		bootstrap.Modal.getInstance(modalElement)?.hide();
 	};

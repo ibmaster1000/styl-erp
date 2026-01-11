@@ -1,4 +1,4 @@
 package com.example.erp.controller.dto;
 
-public record EmployeePickerItem(String empCode, String name, String dept) {
+public record EmployeePickerItem(String empNo, String empCode, String name, String dept) {
 }

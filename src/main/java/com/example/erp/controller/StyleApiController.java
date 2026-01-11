@@ -2,6 +2,7 @@ package com.example.erp.controller;
 
 import com.example.erp.controller.dto.CodeSearchResult;
 import com.example.erp.controller.dto.ItemSearchResult;
+import com.example.erp.controller.dto.StyleDeleteResponse;
 import com.example.erp.controller.dto.StyleDetailResponse;
 import com.example.erp.controller.dto.StyleRegisterRequest;
 import com.example.erp.controller.dto.StyleSaveResponse;
@@ -94,7 +95,8 @@ public class StyleApiController {
     }
 
     @DeleteMapping("/{stylesId}")
-    public void delete(@PathVariable("stylesId") Long stylesId) {
-        styleRegistrationService.delete(stylesId);
+    public StyleDeleteResponse delete(@PathVariable("stylesId") Long stylesId) {
+        StyleRegistrationService.StyleDeleteResult result = styleRegistrationService.delete(stylesId);
+        return new StyleDeleteResponse(result.stylesId(), result.deleted(), result.deactivated(), result.reason());
     }
 }

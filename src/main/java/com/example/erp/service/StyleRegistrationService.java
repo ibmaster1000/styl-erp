@@ -8,9 +8,11 @@ import com.example.erp.domain.StylesRule;
 import com.example.erp.domain.StylesRuleId;
 import com.example.erp.controller.dto.StyleRuleCodeView;
 import com.example.erp.repository.ItemRepository;
+import com.example.erp.repository.ProductionAgreementRepository;
 import com.example.erp.repository.StyleQueryRepository;
 import com.example.erp.repository.StyleRepository;
 import com.example.erp.repository.StylesRuleRepository;
+import com.example.erp.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -30,16 +32,22 @@ public class StyleRegistrationService {
     private final ItemRepository itemRepository;
     private final StylesRuleRepository stylesRuleRepository;
     private final StyleQueryRepository styleQueryRepository;
+    private final UserRepository userRepository;
+    private final ProductionAgreementRepository productionAgreementRepository;
 
     public StyleRegistrationService(
             StyleRepository styleRepository,
             ItemRepository itemRepository,
             StylesRuleRepository stylesRuleRepository,
-            StyleQueryRepository styleQueryRepository) {
+            StyleQueryRepository styleQueryRepository,
+            UserRepository userRepository,
+            ProductionAgreementRepository productionAgreementRepository) {
         this.styleRepository = styleRepository;
         this.itemRepository = itemRepository;
         this.stylesRuleRepository = stylesRuleRepository;
         this.styleQueryRepository = styleQueryRepository;
+        this.userRepository = userRepository;
+        this.productionAgreementRepository = productionAgreementRepository;
     }
 
     public Style create(StyleRegisterRequest req) {
@@ -95,20 +103,22 @@ public class StyleRegistrationService {
         return savedStyle;
     }
 
-    public void delete(Long stylesId) {
+    public StyleDeleteResult delete(Long stylesId) {
         if (stylesId == null) {
             throw new IllegalArgumentException("stylesId is required");
         }
         Style style = styleRepository.findById(stylesId)
                 .orElseThrow(() -> new IllegalArgumentException("style not found"));
-        stylesRuleRepository.deleteByIdStylesId(stylesId);
-        try {
-            styleRepository.delete(style);
-            styleRepository.flush();
-        } catch (RuntimeException ex) {
+        stylesRuleRepository.deleteAllByStylesId(stylesId);
+        boolean hasAgreement = productionAgreementRepository.existsByStylesId(stylesId);
+        if (hasAgreement) {
             style.setIsActive(0);
             styleRepository.save(style);
+            return StyleDeleteResult.deactivated(stylesId, "Referenced by production_agreements");
         }
+        styleRepository.delete(style);
+        styleRepository.flush();
+        return StyleDeleteResult.deleted(stylesId);
     }
 
     @Transactional(readOnly = true)
@@ -235,6 +245,10 @@ public class StyleRegistrationService {
         if (!StringUtils.hasText(req.getLogisticEmpNo())) {
             throw new IllegalArgumentException("logisticEmpNo is required");
         }
+        validateEmployee("designerEmpNo", req.getDesignerEmpNo(), true);
+        validateEmployee("productEmpNo", req.getProductEmpNo(), false);
+        validateEmployee("salesEmpNo", req.getSalesEmpNo(), false);
+        validateEmployee("logisticEmpNo", req.getLogisticEmpNo(), false);
         if (req.getColorCodes() == null || req.getColorCodes().isEmpty()) {
             throw new IllegalArgumentException("colorCodes is required");
         }
@@ -247,6 +261,18 @@ public class StyleRegistrationService {
         return itemRepository.findById(itemCode)
                 .filter(found -> Integer.valueOf(1).equals(found.getIsActive()))
                 .orElseThrow(() -> new IllegalArgumentException("active item not found"));
+    }
+
+    private void validateEmployee(String fieldName, String empNo, boolean required) {
+        if (!StringUtils.hasText(empNo)) {
+            if (required) {
+                throw new IllegalArgumentException(fieldName + " is required");
+            }
+            return;
+        }
+        if (!userRepository.existsById(empNo)) {
+            throw new IllegalArgumentException("Invalid " + fieldName + ": not found");
+        }
     }
 
     private Style resolveStyle(StyleRegisterRequest req) {
@@ -295,6 +321,17 @@ public class StyleRegistrationService {
     private void replaceRules(Long stylesId, List<String> colorCodes, List<String> sizeCodes) {
         stylesRuleRepository.deleteByIdStylesId(stylesId);
         saveRules(stylesId, colorCodes, sizeCodes);
+    }
+
+    public record StyleDeleteResult(Long stylesId, boolean deleted, boolean deactivated, String reason) {
+
+        public static StyleDeleteResult deleted(Long stylesId) {
+            return new StyleDeleteResult(stylesId, true, false, null);
+        }
+
+        public static StyleDeleteResult deactivated(Long stylesId, String reason) {
+            return new StyleDeleteResult(stylesId, false, true, reason);
+        }
     }
 
     private void saveRules(Long stylesId, List<String> colorCodes, List<String> sizeCodes) {

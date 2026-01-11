@@ -27,7 +27,7 @@ public class UserPickerController {
 			@RequestParam(name = "empCode", required = false) String empCode) {
 		List<User> users = userService.searchActiveUsersForPicker(empCode, name, dept);
 		return users.stream()
-				.map(user -> new EmployeePickerItem(resolveEmpCode(user), user.getName(), user.getDept()))
+				.map(user -> new EmployeePickerItem(user.getEmpNo(), resolveEmpCode(user), user.getName(), user.getDept()))
 				.toList();
 	}
 
