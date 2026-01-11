@@ -6,7 +6,9 @@ import com.example.erp.domain.Item;
 import com.example.erp.domain.Style;
 import com.example.erp.domain.StylesRule;
 import com.example.erp.domain.StylesRuleId;
+import com.example.erp.controller.dto.StyleRuleCodeView;
 import com.example.erp.repository.ItemRepository;
+import com.example.erp.repository.StyleQueryRepository;
 import com.example.erp.repository.StyleRepository;
 import com.example.erp.repository.StylesRuleRepository;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ import org.springframework.util.StringUtils;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -26,14 +29,17 @@ public class StyleRegistrationService {
     private final StyleRepository styleRepository;
     private final ItemRepository itemRepository;
     private final StylesRuleRepository stylesRuleRepository;
+    private final StyleQueryRepository styleQueryRepository;
 
     public StyleRegistrationService(
             StyleRepository styleRepository,
             ItemRepository itemRepository,
-            StylesRuleRepository stylesRuleRepository) {
+            StylesRuleRepository stylesRuleRepository,
+            StyleQueryRepository styleQueryRepository) {
         this.styleRepository = styleRepository;
         this.itemRepository = itemRepository;
         this.stylesRuleRepository = stylesRuleRepository;
+        this.styleQueryRepository = styleQueryRepository;
     }
 
     public Style create(StyleRegisterRequest req) {
@@ -117,6 +123,14 @@ public class StyleRegistrationService {
             }
         }
 
+        Map<StyleQueryRepository.CodeKey, String> codeNameMap = resolveCodeNames(colors, sizes);
+        List<StyleRuleCodeView> colorRules = colors.stream()
+                .map(code -> new StyleRuleCodeView(code, resolveCodeName(codeNameMap, "COLOR", code)))
+                .toList();
+        List<StyleRuleCodeView> sizeRules = sizes.stream()
+                .map(code -> new StyleRuleCodeView(code, resolveCodeName(codeNameMap, "SIZE", code)))
+                .toList();
+
         return new StyleDetailResponse(
                 style.getStylesId(),
                 style.getStyleCode(),
@@ -133,8 +147,42 @@ public class StyleRegistrationService {
                 style.getSalesPrice(),
                 style.getIsActive(),
                 colors,
-                sizes
+                sizes,
+                colorRules,
+                sizeRules
         );
+    }
+
+    private Map<StyleQueryRepository.CodeKey, String> resolveCodeNames(List<String> colors, List<String> sizes) {
+        Set<StyleQueryRepository.CodeKey> keys = new LinkedHashSet<>();
+        for (String code : colors) {
+            if (StringUtils.hasText(code)) {
+                keys.add(new StyleQueryRepository.CodeKey("COLOR", code));
+                keys.add(new StyleQueryRepository.CodeKey("color", code));
+            }
+        }
+        for (String code : sizes) {
+            if (StringUtils.hasText(code)) {
+                keys.add(new StyleQueryRepository.CodeKey("SIZE", code));
+                keys.add(new StyleQueryRepository.CodeKey("size", code));
+            }
+        }
+        return styleQueryRepository.findCodeNames(keys);
+    }
+
+    private String resolveCodeName(Map<StyleQueryRepository.CodeKey, String> codeNameMap, String codeType, String code) {
+        if (!StringUtils.hasText(code)) {
+            return null;
+        }
+        String exact = codeNameMap.get(new StyleQueryRepository.CodeKey(codeType, code));
+        if (StringUtils.hasText(exact)) {
+            return exact;
+        }
+        String lower = codeNameMap.get(new StyleQueryRepository.CodeKey(codeType.toLowerCase(), code));
+        if (StringUtils.hasText(lower)) {
+            return lower;
+        }
+        return codeNameMap.get(new StyleQueryRepository.CodeKey(codeType.toUpperCase(), code));
     }
 
     private void validateCreateRequest(StyleRegisterRequest req) {

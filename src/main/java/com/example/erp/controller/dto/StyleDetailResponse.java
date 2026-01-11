@@ -22,11 +22,14 @@ public class StyleDetailResponse {
     private final Integer isActive;
     private final List<String> colorCodes;
     private final List<String> sizeCodes;
+    private final List<StyleRuleCodeView> colorRules;
+    private final List<StyleRuleCodeView> sizeRules;
 
     public StyleDetailResponse(Long stylesId, String styleCode, String itemCode, String itemName,
             String designerEmpNo, String productEmpNo, String salesEmpNo, String logisticEmpNo,
             LocalDate startDate, BigDecimal costPrice, BigDecimal productionCost, BigDecimal supplyPrice,
-            BigDecimal salesPrice, Integer isActive, List<String> colorCodes, List<String> sizeCodes) {
+            BigDecimal salesPrice, Integer isActive, List<String> colorCodes, List<String> sizeCodes,
+            List<StyleRuleCodeView> colorRules, List<StyleRuleCodeView> sizeRules) {
         this.stylesId = stylesId;
         this.styleCode = styleCode;
         this.itemCode = itemCode;
@@ -43,6 +46,8 @@ public class StyleDetailResponse {
         this.isActive = isActive;
         this.colorCodes = colorCodes;
         this.sizeCodes = sizeCodes;
+        this.colorRules = colorRules;
+        this.sizeRules = sizeRules;
     }
 
     public Long getStylesId() {
@@ -107,5 +112,13 @@ public class StyleDetailResponse {
 
     public List<String> getSizeCodes() {
         return sizeCodes;
+    }
+
+    public List<StyleRuleCodeView> getColorRules() {
+        return colorRules;
+    }
+
+    public List<StyleRuleCodeView> getSizeRules() {
+        return sizeRules;
     }
 }

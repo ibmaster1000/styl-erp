@@ -211,6 +211,7 @@
 			border-radius: 999px;
 			border: none;
 			background: #e5e7eb;
+			overflow: hidden;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -224,22 +225,19 @@
 		.style-active-toggle::before {
 			content: '';
 			position: absolute;
-			top: 4px;
-			bottom: 4px;
+			inset: 0;
 			border-radius: 999px;
-			transition: all 0.2s ease;
+			background: #f59e0b;
+			opacity: 0;
+			transition: opacity 0.2s ease;
 		}
 
 		.style-active-toggle.is-active::before {
-			left: 50%;
-			right: 4px;
-			background: #f59e0b;
+			opacity: 1;
 		}
 
 		.style-active-toggle:not(.is-active)::before {
-			left: 4px;
-			right: 50%;
-			background: #d1d5db;
+			opacity: 0;
 		}
 
 		.style-active-toggle-thumb {
@@ -316,6 +314,12 @@
 
 		.style-picker-table tbody tr.selected {
 			background-color: var(--bs-primary-bg-subtle) !important;
+		}
+
+		.style-section-divider {
+			border-left: 1px solid #e5e7eb;
+			padding-left: 18px;
+			margin-left: 18px;
 		}
 	</style>
 
@@ -481,28 +485,24 @@
 						<div class="col-lg-4">
 							<label class="form-label fw-semibold">아이템</label>
 							<div class="input-group input-group-sm">
-								<input type="text" class="form-control" name="itemCode" placeholder="아이템 코드" readonly>
+								<input type="text" class="form-control" name="itemCode" placeholder="아이템 코드">
 								<input type="text" class="form-control style-readonly" name="itemName" placeholder="아이템명"
 									readonly>
 								<button class="btn btn--outline" type="button" data-item-picker-open>검색</button>
 							</div>
 						</div>
-						<div class="col-lg-8">
-							<div class="row g-3">
-								<div class="col-lg-6">
-									<label class="form-label fw-semibold">색상</label>
-									<div class="d-flex align-items-center gap-2">
-										<div class="style-tags" data-tag-list="color"></div>
-										<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="color">추가</button>
-									</div>
-								</div>
-								<div class="col-lg-6">
-									<label class="form-label fw-semibold">사이즈</label>
-									<div class="d-flex align-items-center gap-2">
-										<div class="style-tags" data-tag-list="size"></div>
-										<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="size">추가</button>
-									</div>
-								</div>
+						<div class="col-lg-4 style-section-divider">
+							<label class="form-label fw-semibold">색상</label>
+							<div class="d-flex align-items-center gap-2">
+								<div class="style-tags" data-tag-list="color"></div>
+								<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="color">추가</button>
+							</div>
+						</div>
+						<div class="col-lg-4 style-section-divider">
+							<label class="form-label fw-semibold">사이즈</label>
+							<div class="d-flex align-items-center gap-2">
+								<div class="style-tags" data-tag-list="size"></div>
+								<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="size">추가</button>
 							</div>
 						</div>
 					</div>
@@ -637,27 +637,23 @@
 									<div class="col-lg-4">
 										<label class="form-label fw-semibold">아이템</label>
 										<div class="input-group input-group-sm">
-											<input type="text" class="form-control" name="itemCode" placeholder="아이템 코드" readonly>
+											<input type="text" class="form-control" name="itemCode" placeholder="아이템 코드">
 											<input type="text" class="form-control style-readonly" name="itemName" placeholder="아이템명" readonly>
 											<button class="btn btn--outline" type="button" data-item-picker-open>검색</button>
 										</div>
 									</div>
-									<div class="col-lg-8">
-										<div class="row g-3">
-											<div class="col-lg-6">
-												<label class="form-label fw-semibold">색상</label>
-												<div class="d-flex align-items-center gap-2">
-													<div class="style-tags" data-tag-list="color"></div>
-													<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="color">추가</button>
-												</div>
-											</div>
-											<div class="col-lg-6">
-												<label class="form-label fw-semibold">사이즈</label>
-												<div class="d-flex align-items-center gap-2">
-													<div class="style-tags" data-tag-list="size"></div>
-													<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="size">추가</button>
-												</div>
-											</div>
+									<div class="col-lg-4 style-section-divider">
+										<label class="form-label fw-semibold">색상</label>
+										<div class="d-flex align-items-center gap-2">
+											<div class="style-tags" data-tag-list="color"></div>
+											<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="color">추가</button>
+										</div>
+									</div>
+									<div class="col-lg-4 style-section-divider">
+										<label class="form-label fw-semibold">사이즈</label>
+										<div class="d-flex align-items-center gap-2">
+											<div class="style-tags" data-tag-list="size"></div>
+											<button class="btn btn--outline btn-sm" type="button" data-code-picker-open="size">추가</button>
 										</div>
 									</div>
 								</div>
@@ -1018,10 +1014,16 @@
 				});
 			});
 
-			const createTag = (value, onRemove) => {
+			const createTag = (entry, onRemove) => {
+				const codeValue = entry?.code || '';
+				const nameValue = entry?.name || '';
+				const label = nameValue ? `${codeValue} (${nameValue})` : codeValue;
 				const tag = document.createElement('span');
 				tag.className = 'style-tag';
-				tag.textContent = value;
+				tag.textContent = label || '-';
+				if (nameValue) {
+					tag.title = nameValue;
+				}
 				const remove = document.createElement('span');
 				remove.className = 'remove';
 				remove.textContent = '×';
@@ -1042,6 +1044,19 @@
 				}
 			};
 
+			const normalizeTagEntry = (entry) => {
+				if (!entry) {
+					return {code: '', name: ''};
+				}
+				if (typeof entry === 'string') {
+					return {code: entry, name: ''};
+				}
+				return {
+					code: entry.code || entry.value || '',
+					name: entry.codeName || entry.name || ''
+				};
+			};
+
 			const renderTags = (form, type) => {
 				initTagState(form);
 				const container = form.querySelector(`[data-tag-list="${type}"]`);
@@ -1049,9 +1064,16 @@
 					return;
 				}
 				container.innerHTML = '';
-				form._tagState[type].forEach((value) => {
-					const tag = createTag(value, () => {
-						form._tagState[type] = form._tagState[type].filter((item) => item !== value);
+				form._tagState[type].forEach((entry) => {
+					const normalized = normalizeTagEntry(entry);
+					if (!normalized.code) {
+						return;
+					}
+					const tag = createTag(normalized, () => {
+						form._tagState[type] = form._tagState[type].filter((item) => {
+							const itemCode = normalizeTagEntry(item).code;
+							return itemCode !== normalized.code;
+						});
 						renderTags(form, type);
 					});
 					container.appendChild(tag);
@@ -1060,16 +1082,23 @@
 
 			const setTags = (form, type, values) => {
 				initTagState(form);
-				form._tagState[type] = values || [];
+				form._tagState[type] = (values || []).map((entry) => normalizeTagEntry(entry));
 				renderTags(form, type);
 			};
 
 			const addTag = (form, type, value) => {
 				initTagState(form);
-				if (!value || form._tagState[type].includes(value)) {
+				const normalized = normalizeTagEntry(value);
+				if (!normalized.code) {
 					return;
 				}
-				form._tagState[type].push(value);
+				const exists = form._tagState[type].some((entry) => {
+					return normalizeTagEntry(entry).code === normalized.code;
+				});
+				if (exists) {
+					return;
+				}
+				form._tagState[type].push(normalized);
 				renderTags(form, type);
 			};
 
@@ -1192,9 +1221,9 @@
 				}
 				tbody.innerHTML = codes
 					.map((item) => `
-						<tr data-value="${item.code || ''}" data-name="${item.name || ''}">
+						<tr data-value="${item.code || ''}" data-name="${item.codeName || ''}">
 							<td class="text-center">${item.code || '-'}</td>
-							<td class="text-center">${item.name || '-'}</td>
+							<td class="text-center">${item.codeName || '-'}</td>
 						</tr>
 					`)
 					.join('');
@@ -1253,7 +1282,10 @@
 					alert('선택된 항목이 없습니다.');
 					return;
 				}
-				addTag(activeFormForPicker, currentCodeType, selectedPickerRow.dataset.value || '');
+				addTag(activeFormForPicker, currentCodeType, {
+					code: selectedPickerRow.dataset.value || '',
+					name: selectedPickerRow.dataset.name || ''
+				});
 				codeModal.hide();
 			};
 
@@ -1307,8 +1339,8 @@
 					salesEmpNo: getValue('salesEmpNo') || null,
 					logisticEmpNo: getValue('logisticEmpNo') || null,
 					isActive: getValue('isActive') ? Number(getValue('isActive')) : null,
-					colorCodes: form._tagState.color,
-					sizeCodes: form._tagState.size
+					colorCodes: form._tagState.color.map((entry) => normalizeTagEntry(entry).code).filter(Boolean),
+					sizeCodes: form._tagState.size.map((entry) => normalizeTagEntry(entry).code).filter(Boolean)
 				};
 			};
 
@@ -1397,8 +1429,8 @@
 					setField('salesPrice', detail.salesPrice);
 					editForm.querySelector('[name="isActive"]').value = detail.isActive != null ? detail.isActive : '1';
 					updateActiveToggle(editForm, detail.isActive != null ? detail.isActive === 1 : true);
-					setTags(editForm, 'color', detail.colorCodes || []);
-					setTags(editForm, 'size', detail.sizeCodes || []);
+					setTags(editForm, 'color', detail.colorRules || detail.colorCodes || []);
+					setTags(editForm, 'size', detail.sizeRules || detail.sizeCodes || []);
 					const parsed = parseStyleCode(detail.styleCode || '');
 					editForm.querySelector('[name="year"]').value = parsed.year ? `20${parsed.year}` : '';
 					editForm.querySelector('[name="month"]').value = parsed.month ? Number(parsed.month) : '';
