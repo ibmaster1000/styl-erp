@@ -7,6 +7,7 @@ import com.example.erp.controller.dto.ProductionAgreementDetailView;
 import com.example.erp.repository.ProductionAgreementRepository;
 import com.example.erp.repository.ProductionAgreementView;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -37,6 +38,18 @@ public class ProductionAgreementService {
 		return productionAgreementRepository.findAllWithCodeNamesFiltered(styleFilter, agreementFilter);
 	}
 
+	@Transactional
+	public boolean updateCompletionStatus(String agreementCode, String colorCode, boolean completed) {
+		if (!StringUtils.hasText(agreementCode)) {
+			return false;
+		}
+		String status = completed ? "COMPLETED" : "CONFIRMED";
+		String normalizedColor = StringUtils.hasText(colorCode) ? colorCode : null;
+		int updated = productionAgreementRepository.updateStatusByAgreementCodeAndColorCode(agreementCode,
+				normalizedColor, status);
+		return updated > 0;
+	}
+
 	public List<AgreementLeftRow> buildLeftRows(List<ProductionAgreementView> agreements) {
 		if (agreements == null || agreements.isEmpty()) {
 			return Collections.emptyList();
@@ -56,6 +69,7 @@ public class ProductionAgreementService {
 					ignored -> new AgreementGroup(styleCode, agreementCode, colorLabel, colorCode,
 							resolveManagerName(item.getProductEmpNo(), item.getProductEmpName())));
 			group.addQuantity(Optional.ofNullable(item.getQuantity()).orElse(0));
+			group.updateCompletion(item.getStatus());
 		}
 
 		List<AgreementLeftRow> result = new ArrayList<>();
@@ -77,7 +91,7 @@ public class ProductionAgreementService {
 			}
 			result.add(new AgreementLeftRow(group.styleCode(), group.agreementCode(), group.colorLabel(),
 					group.colorCode(), group.totalQuantity(), group.managerName(), displayStyleCode,
-					displayAgreementCode));
+					displayAgreementCode, group.isCompleted()));
 		}
 
 		return result;
@@ -267,6 +281,7 @@ public class ProductionAgreementService {
 		private final String colorCode;
 		private final String managerName;
 		private int totalQuantity;
+		private boolean completed;
 
 		private AgreementGroup(String styleCode, String agreementCode, String colorLabel, String colorCode,
 				String managerName) {
@@ -276,10 +291,17 @@ public class ProductionAgreementService {
 			this.colorCode = colorCode;
 			this.managerName = managerName;
 			this.totalQuantity = 0;
+			this.completed = true;
 		}
 
 		private void addQuantity(int quantity) {
 			this.totalQuantity += quantity;
+		}
+
+		private void updateCompletion(String status) {
+			if (!"COMPLETED".equalsIgnoreCase(status)) {
+				this.completed = false;
+			}
 		}
 
 		private String styleCode() {
@@ -304,6 +326,10 @@ public class ProductionAgreementService {
 
 		private String managerName() {
 			return managerName;
+		}
+
+		private boolean isCompleted() {
+			return completed;
 		}
 	}
 }

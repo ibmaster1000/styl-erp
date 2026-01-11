@@ -29,8 +29,8 @@
 				class="bi bi-info-circle me-2"></i> <span th:text="${message}">message</span> </div>
 	</div>
 	<div th:fragment="codeForm(form)">
-		<div class="card shadow-sm">
-			<div class="card-body">
+		<div class="card ui-card">
+			<div class="card-body ui-card-body">
 				<h5 class="card-title fw-bold mb-3">코드 입력</h5>
 				<form th:action="@{/codes}" method="post" id="codeForm" th:attr="data-create-action=@{/codes}">
 					<div class="mb-3"> <label class="form-label fw-semibold">분류 코드</label> <input type="text"
@@ -49,8 +49,8 @@
 							type="button" class="btn btn--outline" id="resetBtn"> <i
 								class="bi bi-arrow-counterclockwise me-1"></i>새 입력
 							<div th:fragment="codeTable(codes)">
-								<div class="card shadow-sm">
-									<div class="card-body">
+								<div class="card ui-card">
+									<div class="card-body ui-card-body">
 										<div class="d-flex align-items-center justify-content-between mb-3">
 											<h5 class="card-title fw-bold mb-0">코드 목록</h5> <span
 												class="badge text-bg-light"

@@ -4,8 +4,8 @@
 		<p class="text-muted mb-0">시스템 접속 이력 조회</p>
 	</div>
 
-	<form class="card shadow-sm mb-3">
-		<div class="card-body row g-3 align-items-end">
+	<form class="card ui-card mb-3">
+		<div class="card-body ui-card-body row g-3 align-items-end">
 			<div class="col-md-4">
 				<label class="form-label fw-semibold">사용자</label>
 				<input type="text" class="form-control" placeholder="이름 또는 아이디">
@@ -28,8 +28,8 @@
 		</div>
 	</form>
 
-	<div class="card shadow-sm">
-		<div class="card-body">
+	<div class="card ui-card">
+		<div class="card-body ui-card-body">
 			<div class="d-flex justify-content-between align-items-center mb-2">
 				<h6 class="mb-0 fw-bold">접속 로그 목록</h6>
 				<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>

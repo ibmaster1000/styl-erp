@@ -9,9 +9,11 @@ public class AgreementLeftRow {
 	private final String managerName;
 	private final String displayStyleCode;
 	private final String displayAgreementCode;
+	private final boolean completed;
 
 	public AgreementLeftRow(String styleCode, String agreementCode, String color, String colorCode,
-			int colorTotalQuantity, String managerName, String displayStyleCode, String displayAgreementCode) {
+			int colorTotalQuantity, String managerName, String displayStyleCode, String displayAgreementCode,
+			boolean completed) {
 		this.styleCode = styleCode;
 		this.agreementCode = agreementCode;
 		this.color = color;
@@ -20,6 +22,7 @@ public class AgreementLeftRow {
 		this.managerName = managerName;
 		this.displayStyleCode = displayStyleCode;
 		this.displayAgreementCode = displayAgreementCode;
+		this.completed = completed;
 	}
 
 	public String getStyleCode() {
@@ -52,5 +55,9 @@ public class AgreementLeftRow {
 
 	public String getDisplayAgreementCode() {
 		return displayAgreementCode;
+	}
+
+	public boolean isCompleted() {
+		return completed;
 	}
 }

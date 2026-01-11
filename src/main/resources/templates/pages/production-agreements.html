@@ -16,14 +16,6 @@
 			gap: 12px;
 		}
 
-		.pa-panel {
-			background: #ffffff;
-			border: 1px solid #e5e7eb;
-			border-radius: 12px;
-			padding: 16px;
-			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-		}
-
 		.pa-search-form .form-label {
 			font-weight: 800;
 		}
@@ -41,9 +33,9 @@
 			white-space: nowrap;
 		}
 
-		.pa-row-selected {
-			background: rgba(124, 58, 237, 0.06);
-			box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.35);
+		.pa-row-selected td,
+		.pa-row-selected th {
+			background-color: #e5e7eb !important;
 		}
 
 		.pa-detail-head {
@@ -61,7 +53,7 @@
 			color: #6b7280;
 			background: #f8fafc;
 			border: 1px dashed #e5e7eb;
-			border-radius: 10px;
+			border-radius: 8px;
 		}
 
 		.pa-detail-table input {
@@ -111,7 +103,7 @@
 	</div>
 	<div class="pa-layout">
 		<div class="pa-left">
-			<form class="pa-panel pa-search-form" method="get" th:action="@{/production-agreements}">
+			<form class="ui-card ui-card-body pa-search-form" method="get" th:action="@{/production-agreements}">
 				<div class="row g-3 align-items-end">
 					<div class="col-md-5">
 						<label class="form-label">품번</label>
@@ -129,7 +121,7 @@
 				</div>
 			</form>
 
-			<div class="pa-panel">
+			<div class="ui-card ui-card-body">
 				<div class="d-flex justify-content-between align-items-center mb-2 gap-3 flex-wrap">
 					<div>
 						<h6 class="mb-0 fw-bold">생산합의 목록</h6>
@@ -150,7 +142,7 @@
 								<th class="t-left">색상</th>
 								<th>합의량</th>
 								<th class="t-left">생산담당자</th>
-								<th class="text-center">선택</th>
+							<th class="text-center">완료 여부</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -168,7 +160,7 @@
 								<td class="text-center">
 									<div class="form-check d-inline-flex justify-content-center">
 										<input class="form-check-input pa-row-check" type="checkbox"
-											th:checked="${iter.index == 0}">
+											th:checked="${p.completed}">
 									</div>
 								</td>
 							</tr>
@@ -179,7 +171,7 @@
 			</div>
 		</div>
 		<div class="pa-right">
-			<div class="pa-panel h-100 d-flex flex-column">
+			<div class="ui-card ui-card-body h-100 d-flex flex-column">
 				<div class="pa-detail-head">
 					<div>
 						<div class="fw-bold">세부정보</div>
@@ -388,12 +380,6 @@
 			table.querySelectorAll('tr[data-pa-row]').forEach((r) => r.classList.remove('pa-row-selected'));
 			row.classList.add('pa-row-selected');
 
-			const checkbox = row.querySelector('.pa-row-check');
-			if (checkbox) {
-				table.querySelectorAll('.pa-row-check').forEach((c) => c.checked = false);
-				checkbox.checked = true;
-			}
-
 			const agreementCode = row.dataset.agreement || '-';
 			const colorCode = row.dataset.color || '-';
 			const detailKey = `${agreementCode}::${colorCode}`;
@@ -402,11 +388,33 @@
 			renderDetailLines(detail);
 		};
 
+		const toggleCompletion = async (row, completed) => {
+			if (!row) return;
+			const agreementCode = row.dataset.agreement || '';
+			const colorCode = row.dataset.color || '';
+			if (!agreementCode) return;
+
+			const url = `/production-agreements/${encodeURIComponent(agreementCode)}/complete?colorCode=${encodeURIComponent(colorCode)}&value=${completed}`;
+
+			try {
+				const response = await fetch(url, {method: 'PATCH'});
+				if (!response.ok) {
+					throw new Error('완료 상태 변경 실패');
+				}
+			} catch (error) {
+				alert('완료 상태 변경에 실패했습니다. 다시 시도해주세요.');
+				const checkbox = row.querySelector('.pa-row-check');
+				if (checkbox) {
+					checkbox.checked = !completed;
+				}
+			}
+		};
+
 		const bindRowEvents = () => {
 			const rows = document.querySelectorAll('[data-pa-row]');
 			rows.forEach((row) => {
 				row.addEventListener('click', (event) => {
-					if (event.target.classList.contains('pa-row-check')) {
+					if (event.target.closest('.pa-row-check')) {
 						return;
 					}
 					selectRow(row);
@@ -416,7 +424,10 @@
 				if (checkbox) {
 					checkbox.addEventListener('click', (event) => {
 						event.stopPropagation();
-						selectRow(row);
+					});
+					checkbox.addEventListener('change', (event) => {
+						event.stopPropagation();
+						toggleCompletion(row, event.target.checked);
 					});
 				}
 			});

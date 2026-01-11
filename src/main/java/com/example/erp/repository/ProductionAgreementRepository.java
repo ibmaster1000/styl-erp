@@ -2,6 +2,7 @@ package com.example.erp.repository;
 
 import com.example.erp.domain.ProductionAgreement;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +16,16 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 	boolean existsByStylesId(Long stylesId);
 	
 	Optional<ProductionAgreement> findByAgreementCode(String agreementCode);
+
+	@Modifying
+	@Query("""
+			update ProductionAgreement pa
+			   set pa.status = :status
+			 where pa.agreementCode = :agreementCode
+			   and (:colorCode is null or pa.colorCode = :colorCode)
+			""")
+	int updateStatusByAgreementCodeAndColorCode(@Param("agreementCode") String agreementCode,
+			@Param("colorCode") String colorCode, @Param("status") String status);
 
 	@Query(value = """
 			select pa.prd_agree_id as prdAgreeId,
