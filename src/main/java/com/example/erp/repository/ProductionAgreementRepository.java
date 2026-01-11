@@ -22,20 +22,26 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 	@Query(value = """
 			select pa.agreement_code as agreementCode,
 			       s.style_code as styleCode,
-			       coalesce(min(color_codes.code_name), min(pa.color_code)) as colorName,
+			       coalesce(color_codes.code_name, pa.color_code) as colorName,
 			       sum(pa.quantity) as totalQuantity,
-			       coalesce(min(nullif(pa.production_manager, '')), s.product_emp_no) as productionManager
+			       coalesce(manager_user.name,
+			                coalesce(nullif(pa.production_manager, ''), s.product_emp_no)) as productionManagerName
 			from production_agreements pa
 			join styles s on s.styles_id = pa.styles_id
 			left join codes color_codes
 			  on color_codes.code_type = pa.color_type
 			 and color_codes.code = pa.color_code
+			left join users manager_user
+			  on manager_user.emp_no = coalesce(nullif(pa.production_manager, ''), s.product_emp_no)
 			where (:styleCode is null or s.style_code like concat('%', :styleCode, '%'))
 			  and (:agreementCode is null or pa.agreement_code like concat('%', :agreementCode, '%'))
-			group by pa.agreement_code, s.style_code, s.product_emp_no
-			order by pa.agreement_code desc
+			group by pa.agreement_code, s.style_code, pa.color_code, color_codes.code_name,
+			         manager_user.name, s.product_emp_no, pa.production_manager
+			order by s.style_code asc, pa.agreement_code asc,
+			         coalesce(color_codes.code_name, pa.color_code) asc
 			""", countQuery = """
-			select count(distinct pa.agreement_code)
+			select count(distinct concat(ifnull(s.style_code, ''), '|', ifnull(pa.agreement_code, ''), '|',
+			       ifnull(pa.color_code, '')))
 			from production_agreements pa
 			join styles s on s.styles_id = pa.styles_id
 			where (:styleCode is null or s.style_code like concat('%', :styleCode, '%'))

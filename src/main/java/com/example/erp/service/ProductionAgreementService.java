@@ -1,6 +1,7 @@
 package com.example.erp.service;
 
 import com.example.erp.controller.dto.AgreementCodeRow;
+import com.example.erp.controller.dto.AgreementDetailColorGroup;
 import com.example.erp.controller.dto.AgreementDetailRow;
 import com.example.erp.controller.dto.AgreementDetailView;
 import com.example.erp.controller.dto.PageInfo;
@@ -63,13 +64,7 @@ public class ProductionAgreementService {
 		}
 		long totalCount = pageResult.getTotalElements();
 		List<AgreementCodeRowView> pageRows = pageResult.getContent();
-		List<AgreementCodeRow> leftRows = pageRows.stream()
-				.map(row -> new AgreementCodeRow(valueOrDefault(row.getStyleCode()),
-						valueOrDefault(row.getAgreementCode()),
-						valueOrDefault(row.getColorName()),
-						row.getTotalQuantity() != null ? row.getTotalQuantity() : 0,
-						resolveManagerLabel(row.getProductionManager())))
-				.collect(Collectors.toList());
+		List<AgreementCodeRow> leftRows = buildLeftRows(pageRows);
 
 		String resolvedSelected = StringUtils.hasText(selectedFilter) ? selectedFilter
 				: leftRows.stream().map(AgreementCodeRow::getAgreementCode).findFirst().orElse(null);
@@ -105,6 +100,7 @@ public class ProductionAgreementService {
 				.collect(Collectors.toList());
 
 		Map<String, ProductionAgreementColorTotal> colorTotals = new TreeMap<>();
+		Map<String, AgreementDetailColorGroup> colorGroups = new LinkedHashMap<>();
 		rows.forEach(row -> {
 			ProductionAgreementColorTotal current = colorTotals.get(row.getColor());
 			int nextQuantity = row.getQuantity() + (current != null ? current.getTotalQuantity() : 0);
@@ -112,16 +108,29 @@ public class ProductionAgreementService {
 					.add(current != null ? current.getTotalAmount() : BigDecimal.ZERO);
 			colorTotals.put(row.getColor(),
 					new ProductionAgreementColorTotal(row.getColor(), nextQuantity, nextAmount));
+			colorGroups.computeIfAbsent(row.getColor(),
+					color -> new AgreementDetailColorGroup(color, new ArrayList<>(), 0, BigDecimal.ZERO))
+					.getRows().add(row);
 		});
 
-		int grandQuantity = rows.stream().mapToInt(AgreementDetailRow::getQuantity).sum();
-		BigDecimal grandAmount = rows.stream().map(AgreementDetailRow::getAmount)
+		List<AgreementDetailColorGroup> groupedRows = colorGroups.values().stream()
+				.map(group -> {
+					int totalQuantity = group.getRows().stream().mapToInt(AgreementDetailRow::getQuantity).sum();
+					BigDecimal totalAmount = group.getRows().stream().map(AgreementDetailRow::getAmount)
+							.reduce(BigDecimal.ZERO, BigDecimal::add);
+					return new AgreementDetailColorGroup(group.getColor(), group.getRows(), totalQuantity, totalAmount);
+				})
+				.collect(Collectors.toList());
+
+		int grandQuantity = groupedRows.stream().mapToInt(AgreementDetailColorGroup::getTotalQuantity).sum();
+		BigDecimal grandAmount = groupedRows.stream().map(AgreementDetailColorGroup::getTotalAmount)
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
 
 		AgreementDetailRowView first = detailRows.get(0);
 		String styleCode = valueOrDefault(first.getStyleCode());
 		String agreementCode = valueOrDefault(first.getAgreementCode());
-		return new AgreementDetailView(styleCode, agreementCode, rows, new ArrayList<>(colorTotals.values()),
+		return new AgreementDetailView(styleCode, agreementCode, rows, groupedRows,
+				new ArrayList<>(colorTotals.values()),
 				new LinkedHashMap<>(colorTotals), grandQuantity, grandAmount);
 	}
 
@@ -151,6 +160,25 @@ public class ProductionAgreementService {
 			return "-";
 		}
 		return manager;
+	}
+
+	private List<AgreementCodeRow> buildLeftRows(List<AgreementCodeRowView> pageRows) {
+		List<AgreementCodeRow> leftRows = new ArrayList<>();
+		String lastStyleCode = null;
+		String lastAgreementCode = null;
+		for (AgreementCodeRowView row : pageRows) {
+			String styleCode = valueOrDefault(row.getStyleCode());
+			String agreementCode = valueOrDefault(row.getAgreementCode());
+			String displayStyleCode = Objects.equals(styleCode, lastStyleCode) ? "" : styleCode;
+			String displayAgreementCode = Objects.equals(agreementCode, lastAgreementCode) ? "" : agreementCode;
+			leftRows.add(new AgreementCodeRow(styleCode, agreementCode, displayStyleCode, displayAgreementCode,
+					valueOrDefault(row.getColorName()),
+					row.getTotalQuantity() != null ? row.getTotalQuantity() : 0,
+					resolveManagerLabel(row.getProductionManagerName())));
+			lastStyleCode = styleCode;
+			lastAgreementCode = agreementCode;
+		}
+		return leftRows;
 	}
 
 	private int resolvePage(Integer requestedPage, int totalPages) {

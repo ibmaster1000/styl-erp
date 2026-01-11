@@ -156,8 +156,8 @@
 							<tr th:each="p, iter : ${list}" data-pa-row
 								th:classappend="${selectedAgreementCode == p.agreementCode} ? 'pa-row-selected'"
 								th:onclick="|window.location='@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageInfo.page},selectedAgreementCode=${p.agreementCode})}'|">
-								<td class="t-left" th:text="${p.styleCode}">ST-001</td>
-								<td class="t-left" th:text="${p.agreementCode}">PA-001</td>
+								<td class="t-left" th:text="${p.displayStyleCode}">ST-001</td>
+								<td class="t-left" th:text="${p.displayAgreementCode}">PA-001</td>
 								<td class="t-left" th:text="${p.color}">RED</td>
 								<td th:text="${p.totalQuantity}">1000</td>
 								<td class="t-left" th:text="${p.managerName}">홍길동</td>
@@ -222,8 +222,8 @@
 								</tr>
 							</thead>
 							<tbody>
-								<th:block th:each="line, iter : ${detailView.rows}">
-									<tr>
+								<th:block th:each="group : ${detailView.colorGroups}">
+									<tr th:each="line : ${group.rows}">
 										<td class="t-left"><span class="pa-chip" th:text="${line.color}">RED</span></td>
 										<td class="t-left" th:text="${line.size}">M</td>
 										<td>
@@ -236,17 +236,14 @@
 										<td th:text="${#numbers.formatDecimal(line.amount, 1, 'COMMA', 0, 'POINT')}">0
 										</td>
 									</tr>
-									<tr class="table-light fw-semibold pa-color-total"
-										th:with="nextLine=${iter.last} ? null : detailView.rows[iter.index + 1],
-											colorTotal=${detailView.colorTotalsByColor[line.color]}"
-										th:if="${iter.last or nextLine == null or nextLine.color != line.color}">
+									<tr class="table-light fw-semibold pa-color-total">
 										<td colspan="2" class="text-end"
-											th:text="${line.color} + ' 합계'">색상 합계</td>
-										<td th:text="${#numbers.formatDecimal(colorTotal.totalQuantity, 1, 'COMMA', 0, 'POINT')}">
+											th:text="${group.color} + ' 합계'">색상 합계</td>
+										<td th:text="${#numbers.formatDecimal(group.totalQuantity, 1, 'COMMA', 0, 'POINT')}">
 											0
 										</td>
 										<td></td>
-										<td th:text="${#numbers.formatDecimal(colorTotal.totalAmount, 1, 'COMMA', 0, 'POINT')}">
+										<td th:text="${#numbers.formatDecimal(group.totalAmount, 1, 'COMMA', 0, 'POINT')}">
 											0
 										</td>
 									</tr>

@@ -8,18 +8,21 @@ public class AgreementDetailView {
 	private final String styleCode;
 	private final String agreementCode;
 	private final List<AgreementDetailRow> rows;
+	private final List<AgreementDetailColorGroup> colorGroups;
 	private final List<ProductionAgreementColorTotal> colorTotals;
 	private final Map<String, ProductionAgreementColorTotal> colorTotalsByColor;
 	private final int grandQuantity;
 	private final BigDecimal grandAmount;
 
 	public AgreementDetailView(String styleCode, String agreementCode, List<AgreementDetailRow> rows,
+			List<AgreementDetailColorGroup> colorGroups,
 			List<ProductionAgreementColorTotal> colorTotals,
 			Map<String, ProductionAgreementColorTotal> colorTotalsByColor,
 			int grandQuantity, BigDecimal grandAmount) {
 		this.styleCode = styleCode;
 		this.agreementCode = agreementCode;
 		this.rows = rows;
+		this.colorGroups = colorGroups;
 		this.colorTotals = colorTotals;
 		this.colorTotalsByColor = colorTotalsByColor;
 		this.grandQuantity = grandQuantity;
@@ -36,6 +39,10 @@ public class AgreementDetailView {
 
 	public List<AgreementDetailRow> getRows() {
 		return rows;
+	}
+
+	public List<AgreementDetailColorGroup> getColorGroups() {
+		return colorGroups;
 	}
 
 	public List<ProductionAgreementColorTotal> getColorTotals() {

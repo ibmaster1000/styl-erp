@@ -9,5 +9,5 @@ public interface AgreementCodeRowView {
 
 	Integer getTotalQuantity();
 
-	String getProductionManager();
+	String getProductionManagerName();
 }
