@@ -33,6 +33,10 @@
 			white-space: nowrap;
 		}
 
+		.pa-table tbody tr[data-pa-row] {
+			cursor: pointer;
+		}
+
 		.pa-row-selected td,
 		.pa-row-selected th {
 			background-color: #e5e7eb !important;
@@ -107,12 +111,12 @@
 				<div class="row g-3 align-items-end">
 					<div class="col-md-5">
 						<label class="form-label">품번</label>
-						<input type="text" class="form-control" name="styleCode" th:value="${param.styleCode}"
+						<input type="text" class="form-control" name="styleCode" th:value="${styleCode}"
 							placeholder="품번 코드">
 					</div>
 					<div class="col-md-5">
 						<label class="form-label">생산합의 코드</label>
-						<input type="text" class="form-control" name="agreementCode" th:value="${param.agreementCode}"
+						<input type="text" class="form-control" name="agreementCode" th:value="${agreementCode}"
 							placeholder="생산합의 코드">
 					</div>
 					<div class="col-md-2 d-grid">
@@ -125,7 +129,8 @@
 				<div class="d-flex justify-content-between align-items-center mb-2 gap-3 flex-wrap">
 					<div>
 						<h6 class="mb-0 fw-bold">생산합의 목록</h6>
-						<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
+						<span class="text-muted small"
+							th:text="'총 ' + ${pageInfo != null ? pageInfo.totalCount : 0} + '건'">총 0건</span>
 					</div>
 					<div class="d-flex gap-2">
 						<button type="button" class="btn btn-sm btn--primary">등록</button>
@@ -142,32 +147,46 @@
 								<th class="t-left">색상</th>
 								<th>합의량</th>
 								<th class="t-left">생산담당자</th>
-							<th class="text-center">완료 여부</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr th:if="${#lists.isEmpty(list)}">
-								<td colspan="6" class="text-center text-muted">조회된 데이터가 없습니다.</td>
+								<td colspan="5" class="text-center text-muted">조회된 데이터가 없습니다.</td>
 							</tr>
 							<tr th:each="p, iter : ${list}" data-pa-row
-								th:attr="data-agreement=${p.agreementCode},data-style=${p.styleCode},data-color=${p.colorCode}"
-								th:classappend="${iter.index == 0} ? 'pa-row-selected'">
-								<td class="t-left" th:text="${p.displayStyleCode}">ST-001</td>
-								<td class="t-left" th:text="${p.displayAgreementCode}">PA-001</td>
+								th:classappend="${selectedAgreementCode == p.agreementCode} ? 'pa-row-selected'"
+								th:onclick="|window.location='@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageInfo.page},selectedAgreementCode=${p.agreementCode})}'|">
+								<td class="t-left" th:text="${p.styleCode}">ST-001</td>
+								<td class="t-left" th:text="${p.agreementCode}">PA-001</td>
 								<td class="t-left" th:text="${p.color}">RED</td>
-								<td th:text="${p.colorTotalQuantity}">1000</td>
+								<td th:text="${p.totalQuantity}">1000</td>
 								<td class="t-left" th:text="${p.managerName}">홍길동</td>
-								<td class="text-center">
-									<div class="form-check d-inline-flex justify-content-center">
-										<input class="form-check-input pa-row-check" type="checkbox"
-											th:checked="${p.completed}">
-									</div>
-								</td>
 							</tr>
 						</tbody>
 					</table>
 				</div>
-				<div class="pt-3 text-center text-muted small">페이징 영역</div>
+				<nav class="pt-3" th:if="${pageInfo != null and pageInfo.totalPages > 1}">
+					<ul class="pagination justify-content-center mb-0">
+						<li class="page-item" th:classappend="${pageInfo.page <= 1} ? 'disabled'">
+							<a class="page-link"
+								th:href="@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageInfo.page - 1},selectedAgreementCode=${selectedAgreementCode})}">
+								이전
+							</a>
+						</li>
+						<li class="page-item" th:each="pageNumber : ${#numbers.sequence(1, pageInfo.totalPages)}"
+							th:classappend="${pageInfo.page == pageNumber} ? 'active'">
+							<a class="page-link"
+								th:href="@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageNumber},selectedAgreementCode=${selectedAgreementCode})}"
+								th:text="${pageNumber}">1</a>
+						</li>
+						<li class="page-item" th:classappend="${pageInfo.page >= pageInfo.totalPages} ? 'disabled'">
+							<a class="page-link"
+								th:href="@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageInfo.page + 1},selectedAgreementCode=${selectedAgreementCode})}">
+								다음
+							</a>
+						</li>
+					</ul>
+				</nav>
 			</div>
 		</div>
 		<div class="pa-right">
@@ -178,19 +197,19 @@
 						<div class="text-muted small">좌측에서 생산합의를 선택해 상세를 확인하세요.</div>
 					</div>
 					<div class="pa-summary">
-						<span class="badge bg-secondary-subtle text-secondary-emphasis" id="pa-summary-style">품번 -
-							-</span>
-						<span class="badge bg-dark-subtle text-dark-emphasis" id="pa-summary-agreement">생산합의코드 -
-							-</span>
+						<span class="badge bg-secondary-subtle text-secondary-emphasis"
+							th:text="'품번 ' + ${detailView != null ? detailView.styleCode : '-'}">품번 -</span>
+						<span class="badge bg-dark-subtle text-dark-emphasis"
+							th:text="'생산합의코드 ' + ${detailView != null ? detailView.agreementCode : '-'}">생산합의코드 -</span>
 					</div>
 				</div>
 
-				<div id="pa-detail-placeholder"
+				<div th:if="${detailView == null}"
 					class="pa-detail-placeholder flex-grow-1 d-flex align-items-center justify-content-center">
 					좌측 목록에서 항목을 선택하세요.
 				</div>
 
-				<div id="pa-detail-panel" class="d-none flex-grow-1 d-flex flex-column">
+				<div th:if="${detailView != null}" class="flex-grow-1 d-flex flex-column">
 					<div class="table-responsive flex-grow-1">
 						<table class="table table-sm align-middle pa-detail-table data-table">
 							<thead class="table-light">
@@ -202,13 +221,43 @@
 									<th>합의금액</th>
 								</tr>
 							</thead>
-							<tbody id="pa-detail-body"></tbody>
+							<tbody>
+								<th:block th:each="line, iter : ${detailView.rows}">
+									<tr>
+										<td class="t-left"><span class="pa-chip" th:text="${line.color}">RED</span></td>
+										<td class="t-left" th:text="${line.size}">M</td>
+										<td>
+											<input type="number" class="form-control form-control-sm" min="0"
+												th:value="${line.quantity}">
+										</td>
+										<td th:text="${#numbers.formatDecimal(line.supplyPrice, 1, 'COMMA', 0, 'POINT')}">
+											0
+										</td>
+										<td th:text="${#numbers.formatDecimal(line.amount, 1, 'COMMA', 0, 'POINT')}">0
+										</td>
+									</tr>
+									<tr class="table-light fw-semibold pa-color-total"
+										th:with="nextLine=${iter.last} ? null : detailView.rows[iter.index + 1],
+											colorTotal=${detailView.colorTotalsByColor[line.color]}"
+										th:if="${iter.last or nextLine == null or nextLine.color != line.color}">
+										<td colspan="2" class="text-end"
+											th:text="${line.color} + ' 합계'">색상 합계</td>
+										<td th:text="${#numbers.formatDecimal(colorTotal.totalQuantity, 1, 'COMMA', 0, 'POINT')}">
+											0
+										</td>
+										<td></td>
+										<td th:text="${#numbers.formatDecimal(colorTotal.totalAmount, 1, 'COMMA', 0, 'POINT')}">
+											0
+										</td>
+									</tr>
+								</th:block>
+							</tbody>
 							<tfoot>
 								<tr class="fw-bold table-light">
 									<td colspan="2" class="text-end">총합계</td>
-									<td id="pa-grand-qty">0</td>
+									<td th:text="${#numbers.formatDecimal(detailView.grandQuantity, 1, 'COMMA', 0, 'POINT')}">0</td>
 									<td></td>
-									<td id="pa-grand-amount">0</td>
+									<td th:text="${#numbers.formatDecimal(detailView.grandAmount, 1, 'COMMA', 0, 'POINT')}">0</td>
 								</tr>
 							</tfoot>
 						</table>
@@ -217,227 +266,4 @@
 			</div>
 		</div>
 	</div>
-	<script th:inline="javascript">
-		/*<![CDATA[*/
-		const paAgreementDetails = /*[[${agreementDetails}]]*/ {};
-
-		const formatNumber = (value) => {
-			const numberValue = Number(value) || 0;
-			return numberValue.toLocaleString('ko-KR');
-		};
-
-		const updateSummaries = (detail) => {
-			const styleTarget = document.getElementById('pa-summary-style');
-			const agreementTarget = document.getElementById('pa-summary-agreement');
-
-			if (!detail) {
-				styleTarget.textContent = '품번 - -';
-				agreementTarget.textContent = '생산합의코드 - -';
-				return;
-			}
-
-			styleTarget.textContent = `품번 ${detail.styleCode || '-'}`;
-			agreementTarget.textContent = `생산합의코드 ${detail.agreementCode || '-'}`;
-		};
-
-		const renderDetailLines = (detail) => {
-			const placeholder = document.getElementById('pa-detail-placeholder');
-			const panel = document.getElementById('pa-detail-panel');
-			const body = document.getElementById('pa-detail-body');
-			const grandQty = document.getElementById('pa-grand-qty');
-			const grandAmount = document.getElementById('pa-grand-amount');
-
-			if (!detail || !detail.lines || detail.lines.length === 0) {
-				placeholder.classList.remove('d-none');
-				panel.classList.add('d-none');
-				body.innerHTML = '';
-				grandQty.textContent = '0';
-				grandAmount.textContent = '0';
-				return;
-			}
-
-			placeholder.classList.add('d-none');
-			panel.classList.remove('d-none');
-
-			const detailCopy = JSON.parse(JSON.stringify(detail));
-			const totals = {
-				colors: {},
-				grandQty: 0,
-				grandAmount: 0
-			};
-			const colorTotalCells = {};
-
-			body.innerHTML = '';
-
-			detailCopy.lines.forEach((line, index) => {
-				const row = document.createElement('tr');
-
-				const colorCell = document.createElement('td');
-				colorCell.classList.add('t-left');
-				colorCell.innerHTML = `<span class="pa-chip">${line.color}</span>`;
-				row.appendChild(colorCell);
-
-				const sizeCell = document.createElement('td');
-				sizeCell.classList.add('t-left');
-				sizeCell.textContent = line.size || '-';
-				row.appendChild(sizeCell);
-
-				const qtyCell = document.createElement('td');
-				const qtyInput = document.createElement('input');
-				qtyInput.type = 'number';
-				qtyInput.className = 'form-control form-control-sm';
-				qtyInput.value = line.quantity || 0;
-				qtyInput.min = '0';
-				qtyInput.dataset.index = index;
-				qtyInput.dataset.color = line.color;
-				qtyInput.dataset.supply = line.supplyPrice || 0;
-				qtyCell.appendChild(qtyInput);
-				row.appendChild(qtyCell);
-
-				const supplyCell = document.createElement('td');
-				supplyCell.textContent = formatNumber(line.supplyPrice);
-				row.appendChild(supplyCell);
-
-				const amountCell = document.createElement('td');
-				amountCell.textContent = formatNumber(line.amount);
-				row.appendChild(amountCell);
-
-				body.appendChild(row);
-
-				const applyTotals = (qtyValue) => {
-					const amountValue = (Number(qtyValue) || 0) * (Number(line.supplyPrice) || 0);
-					line.quantity = Number(qtyValue) || 0;
-					line.amount = amountValue;
-					amountCell.textContent = formatNumber(amountValue);
-					recalculateTotals(detailCopy, totals, grandQty, grandAmount, colorTotalCells);
-				};
-
-				qtyInput.addEventListener('input', (event) => applyTotals(event.target.value));
-				qtyInput.addEventListener('change', (event) => applyTotals(event.target.value));
-				const nextLine = detailCopy.lines[index + 1];
-				const isLastOfColor = !nextLine || nextLine.color !== line.color;
-				if (isLastOfColor) {
-					const totalRow = document.createElement('tr');
-					totalRow.classList.add('table-light', 'fw-semibold', 'pa-color-total');
-
-					const colorSummary = document.createElement('td');
-					colorSummary.colSpan = 2;
-					colorSummary.className = 'text-end';
-					colorSummary.textContent = `${line.color} 합계`;
-					totalRow.appendChild(colorSummary);
-
-					const qtyTotal = document.createElement('td');
-					qtyTotal.textContent = '0';
-					totalRow.appendChild(qtyTotal);
-
-					const emptyCell = document.createElement('td');
-					emptyCell.textContent = '';
-					totalRow.appendChild(emptyCell);
-
-					const amountTotal = document.createElement('td');
-					amountTotal.textContent = '0';
-					totalRow.appendChild(amountTotal);
-
-					body.appendChild(totalRow);
-					colorTotalCells[line.color] = {qty: qtyTotal, amount: amountTotal};
-				}
-			});
-
-			recalculateTotals(detailCopy, totals, grandQty, grandAmount, colorTotalCells);
-		};
-
-		const recalculateTotals = (detail, totals, grandQty, grandAmount, colorTotalCells) => {
-			totals.colors = {};
-			totals.grandQty = 0;
-			totals.grandAmount = 0;
-
-			detail.lines.forEach((line) => {
-				const qty = Number(line.quantity) || 0;
-				const amount = Number(line.amount) || 0;
-				totals.grandQty += qty;
-				totals.grandAmount += amount;
-
-				if (!totals.colors[line.color]) {
-					totals.colors[line.color] = {qty: 0, amount: 0};
-				}
-				totals.colors[line.color].qty += qty;
-				totals.colors[line.color].amount += amount;
-			});
-
-			Object.entries(colorTotalCells).forEach(([color, cells]) => {
-				const values = totals.colors[color] || {qty: 0, amount: 0};
-				cells.qty.textContent = formatNumber(values.qty);
-				cells.amount.textContent = formatNumber(values.amount);
-			});
-
-			grandQty.textContent = formatNumber(totals.grandQty);
-			grandAmount.textContent = formatNumber(totals.grandAmount);
-		};
-
-		const selectRow = (row) => {
-			if (!row) return;
-			const table = row.closest('tbody');
-			table.querySelectorAll('tr[data-pa-row]').forEach((r) => r.classList.remove('pa-row-selected'));
-			row.classList.add('pa-row-selected');
-
-			const agreementCode = row.dataset.agreement || '-';
-			const colorCode = row.dataset.color || '-';
-			const detailKey = `${agreementCode}::${colorCode}`;
-			const detail = paAgreementDetails ? paAgreementDetails[detailKey] : null;
-			updateSummaries(detail);
-			renderDetailLines(detail);
-		};
-
-		const toggleCompletion = async (row, completed) => {
-			if (!row) return;
-			const agreementCode = row.dataset.agreement || '';
-			const colorCode = row.dataset.color || '';
-			if (!agreementCode) return;
-
-			const url = `/production-agreements/${encodeURIComponent(agreementCode)}/complete?colorCode=${encodeURIComponent(colorCode)}&value=${completed}`;
-
-			try {
-				const response = await fetch(url, {method: 'PATCH'});
-				if (!response.ok) {
-					throw new Error('완료 상태 변경 실패');
-				}
-			} catch (error) {
-				alert('완료 상태 변경에 실패했습니다. 다시 시도해주세요.');
-				const checkbox = row.querySelector('.pa-row-check');
-				if (checkbox) {
-					checkbox.checked = !completed;
-				}
-			}
-		};
-
-		const bindRowEvents = () => {
-			const rows = document.querySelectorAll('[data-pa-row]');
-			rows.forEach((row) => {
-				row.addEventListener('click', (event) => {
-					if (event.target.closest('.pa-row-check')) {
-						return;
-					}
-					selectRow(row);
-				});
-
-				const checkbox = row.querySelector('.pa-row-check');
-				if (checkbox) {
-					checkbox.addEventListener('click', (event) => {
-						event.stopPropagation();
-					});
-					checkbox.addEventListener('change', (event) => {
-						event.stopPropagation();
-						toggleCompletion(row, event.target.checked);
-					});
-				}
-			});
-
-			if (rows.length > 0) {
-				selectRow(rows[0]);
-			}
-		};
-
-		document.addEventListener('DOMContentLoaded', bindRowEvents);
-		/*]]>*/
-	</script>
 </div>

@@ -17,6 +17,59 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 	
 	Optional<ProductionAgreement> findByAgreementCode(String agreementCode);
 
+	@Query(value = """
+			select count(distinct pa.agreement_code)
+			from production_agreements pa
+			join styles s on s.styles_id = pa.styles_id
+			where (:styleCode is null or s.style_code like concat('%', :styleCode, '%'))
+			  and (:agreementCode is null or pa.agreement_code like concat('%', :agreementCode, '%'))
+			""", nativeQuery = true)
+	long countAgreementCodes(@Param("styleCode") String styleCode, @Param("agreementCode") String agreementCode);
+
+	@Query(value = """
+			select pa.agreement_code as agreementCode,
+			       s.style_code as styleCode,
+			       coalesce(min(color_codes.code_name), min(pa.color_code)) as colorName,
+			       sum(pa.quantity) as totalQuantity,
+			       coalesce(min(nullif(pa.production_manager, '')), s.product_emp_no) as productionManager
+			from production_agreements pa
+			join styles s on s.styles_id = pa.styles_id
+			left join codes color_codes
+			  on color_codes.code_type = pa.color_type
+			 and color_codes.code = pa.color_code
+			where (:styleCode is null or s.style_code like concat('%', :styleCode, '%'))
+			  and (:agreementCode is null or pa.agreement_code like concat('%', :agreementCode, '%'))
+			group by pa.agreement_code, s.style_code, s.product_emp_no
+			order by pa.agreement_code desc
+			limit :limit offset :offset
+			""", nativeQuery = true)
+	List<AgreementCodeRowView> findAgreementCodeRows(@Param("styleCode") String styleCode,
+			@Param("agreementCode") String agreementCode, @Param("limit") int limit, @Param("offset") int offset);
+
+	@Query(value = """
+			select pa.agreement_code as agreementCode,
+			       s.style_code as styleCode,
+			       color_codes.code_name as colorName,
+			       pa.color_code as colorCode,
+			       size_codes.code_name as sizeName,
+			       pa.size_code as sizeCode,
+			       pa.quantity as quantity,
+			       s.supply_price as supplyPrice,
+			       (pa.quantity * s.supply_price) as amount,
+			       coalesce(nullif(pa.production_manager, ''), s.product_emp_no) as productionManager
+			from production_agreements pa
+			join styles s on s.styles_id = pa.styles_id
+			left join codes color_codes
+			  on color_codes.code_type = pa.color_type
+			 and color_codes.code = pa.color_code
+			left join codes size_codes
+			  on size_codes.code_type = pa.size_type
+			 and size_codes.code = pa.size_code
+			where pa.agreement_code = :agreementCode
+			order by pa.color_code, pa.size_code
+			""", nativeQuery = true)
+	List<AgreementDetailRowView> findAgreementDetailRows(@Param("agreementCode") String agreementCode);
+
 	@Modifying
 	@Query("""
 			update ProductionAgreement pa
