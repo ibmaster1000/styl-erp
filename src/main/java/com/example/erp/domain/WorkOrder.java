@@ -6,7 +6,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "work_orders")
-public class WorkOrder extends BaseAuditEntity {
+public class WorkOrder {
 
     @Id
     @Column(name = "work_order_id", nullable = false, length = 50)
@@ -15,20 +15,22 @@ public class WorkOrder extends BaseAuditEntity {
     @Column(name = "style_code", length = 50)
     private String styleCode;
 
-    @Column(length = 50)
+    @Column(name = "agreement_code", length = 50)
     private String agreementCode;
 
-    @Column(length = 30)
-    private String color;
+    @Column(name = "color_code", length = 50)
+    private String colorCode;
 
-    @Column(length = 30)
-    private String size;
+    @Column(name = "size_code", length = 50)
+    private String sizeCode;
 
+    @Column(name = "quantity")
     private Integer quantity;
 
+    @Column(name = "due_date")
     private LocalDate dueDate;
 
-    @Column(length = 30)
+    @Column(name = "status", length = 30)
     private String status;
 
     public String getWorkOrderId() {
@@ -55,20 +57,20 @@ public class WorkOrder extends BaseAuditEntity {
         this.agreementCode = agreementCode;
     }
 
-    public String getColor() {
-        return color;
+    public String getColorCode() {
+        return colorCode;
     }
 
-    public void setColor(String color) {
-        this.color = color;
+    public void setColorCode(String colorCode) {
+        this.colorCode = colorCode;
     }
 
-    public String getSize() {
-        return size;
+    public String getSizeCode() {
+        return sizeCode;
     }
 
-    public void setSize(String size) {
-        this.size = size;
+    public void setSizeCode(String sizeCode) {
+        this.sizeCode = sizeCode;
     }
 
     public Integer getQuantity() {

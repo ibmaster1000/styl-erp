@@ -1,7 +1,7 @@
 package com.example.erp.controller;
 
 import com.example.erp.controller.support.PageViewSupport;
-import com.example.erp.domain.ProductionAgreement;
+import com.example.erp.repository.ProductionAgreementView;
 import com.example.erp.service.ProductionAgreementService;
 import com.example.erp.service.StyleRuleService;
 import org.springframework.stereotype.Controller;
@@ -29,7 +29,7 @@ public class ProductionAgreementController extends PageViewSupport {
 
 	@GetMapping
 	public String list(Model model) {
-		List<ProductionAgreement> agreements = productionAgreementService.findAll();
+		List<ProductionAgreementView> agreements = productionAgreementService.findAll();
 		Set<String> styleCodes = productionAgreementService.extractStyleCodes(agreements);
 		Map<String, BigDecimal> supplyPrices = styleRuleService.findSupplyPrices(styleCodes);
 		Map<String, Map<String, List<String>>> styleRules = styleRuleService.findRulesByStyleCodes(styleCodes);

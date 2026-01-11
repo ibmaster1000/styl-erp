@@ -50,7 +50,7 @@
 	</style>
 
 	<div class="mb-3">
-		<h4 class="fw-bold mb-1">원부자재 사양서 등록</h4>
+		<h4 class="fw-bold mb-1">원부자재 사양서 등</h4>
 		<p class="text-muted mb-0">품번 기준 색상×사이즈 정보를 확인하고 자재 사양서를 관리하세요.</p>
 	</div>
 
@@ -131,7 +131,7 @@
 						</tr>
 						<tr th:each="style : ${styles}">
 							<td class="t-left" th:text="${style.styleCode}">ST-0001</td>
-							<td class="t-left" th:text="${style.item}">상의</td>
+							<td class="t-left" th:text="${style.itemName}">상의</td>
 							<td class="text-end">
 								<button type="button" class="btn btn--outline" data-style-pick
 									th:attr="data-style-code=${style.styleCode},data-style-id=${style.stylesId}">선택</button>

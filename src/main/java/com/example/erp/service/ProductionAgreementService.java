@@ -3,8 +3,8 @@ package com.example.erp.service;
 import com.example.erp.controller.dto.ProductionAgreementColorTotal;
 import com.example.erp.controller.dto.ProductionAgreementDetailLine;
 import com.example.erp.controller.dto.ProductionAgreementDetailView;
-import com.example.erp.domain.ProductionAgreement;
 import com.example.erp.repository.ProductionAgreementRepository;
+import com.example.erp.repository.ProductionAgreementView;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -28,27 +29,37 @@ public class ProductionAgreementService {
 		this.productionAgreementRepository = productionAgreementRepository;
 	}
 
-	public List<ProductionAgreement> findAll() {
-		return productionAgreementRepository.findAll();
+	public List<ProductionAgreementView> findAll() {
+		return productionAgreementRepository.findAllWithCodeNames();
 	}
 
-	public Map<String, ProductionAgreementDetailView> buildDetailViews(List<ProductionAgreement> agreements,
+	public Map<String, ProductionAgreementDetailView> buildDetailViews(List<ProductionAgreementView> agreements,
 			Map<String, Map<String, List<String>>> styleRules, Map<String, BigDecimal> supplyPrices) {
 		if (agreements == null || agreements.isEmpty()) {
 			return Collections.emptyMap();
 		}
 
-		Map<String, List<ProductionAgreement>> groupedByAgreement = agreements.stream().filter(Objects::nonNull)
-				.collect(Collectors.groupingBy(ProductionAgreement::getAgreementCode, LinkedHashMap::new,
+		Map<String, List<ProductionAgreementView>> groupedByAgreement = agreements.stream().filter(Objects::nonNull)
+				.collect(Collectors.groupingBy(ProductionAgreementView::getAgreementCode, LinkedHashMap::new,
 						Collectors.toList()));
 
 		Map<String, ProductionAgreementDetailView> result = new LinkedHashMap<>();
 		groupedByAgreement.forEach((agreementCode, items) -> {
-			String styleCode = items.stream().map(ProductionAgreement::getStyleCode).filter(Objects::nonNull).findFirst()
+			String styleCode = items.stream().map(ProductionAgreementView::getStyleCode).filter(Objects::nonNull)
+					.findFirst()
 					.orElse("-");
 
 			Map<String, List<String>> rule = styleRules.getOrDefault(styleCode, Collections.emptyMap());
 			BigDecimal supplyPrice = supplyPrices.getOrDefault(styleCode, BigDecimal.ZERO);
+
+			Map<String, String> colorNames = items.stream()
+					.filter(item -> item.getColorCode() != null && item.getColorName() != null)
+					.collect(Collectors.toMap(ProductionAgreementView::getColorCode, ProductionAgreementView::getColorName,
+							(existing, replacement) -> existing));
+			Map<String, String> sizeNames = items.stream()
+					.filter(item -> item.getSizeCode() != null && item.getSizeName() != null)
+					.collect(Collectors.toMap(ProductionAgreementView::getSizeCode, ProductionAgreementView::getSizeName,
+							(existing, replacement) -> existing));
 
 			List<ProductionAgreementDetailLine> detailLines = new ArrayList<>();
 			if (!rule.isEmpty()) {
@@ -56,13 +67,18 @@ public class ProductionAgreementService {
 					List<String> normalizedSizes = sizes != null ? sizes : List.of("-");
 					normalizedSizes.forEach(size -> {
 						int quantity = findQuantity(items, color, size);
-						detailLines.add(createDetailLine(color, size, quantity, supplyPrice));
+						String colorLabel = valueOrDefault(resolveName(colorNames, color));
+						String sizeLabel = valueOrDefault(resolveName(sizeNames, size));
+						detailLines.add(createDetailLine(colorLabel, sizeLabel, quantity, supplyPrice));
 					});
 				});
 			} else if (!items.isEmpty()) {
-				items.forEach(item -> detailLines
-						.add(createDetailLine(valueOrDefault(item.getColor()), valueOrDefault(item.getSize()),
-								item.getQuantity() != null ? item.getQuantity() : 0, supplyPrice)));
+				items.forEach(item -> {
+					String colorLabel = valueOrDefault(resolveName(colorNames, item.getColorCode()));
+					String sizeLabel = valueOrDefault(resolveName(sizeNames, item.getSizeCode()));
+					detailLines.add(createDetailLine(colorLabel, sizeLabel,
+							Optional.ofNullable(item.getQuantity()).orElse(0), supplyPrice));
+				});
 			} else {
 				detailLines.add(createDetailLine("-", "-", 0, supplyPrice));
 			}
@@ -91,14 +107,22 @@ public class ProductionAgreementService {
 		return result;
 	}
 
-	public Set<String> extractStyleCodes(List<ProductionAgreement> agreements) {
-		return agreements.stream().map(ProductionAgreement::getStyleCode).filter(Objects::nonNull)
+	public Set<String> extractStyleCodes(List<ProductionAgreementView> agreements) {
+		return agreements.stream().map(ProductionAgreementView::getStyleCode).filter(Objects::nonNull)
 				.collect(Collectors.toSet());
 	}
 
-	private int findQuantity(List<ProductionAgreement> items, String color, String size) {
-		return items.stream().filter(item -> matches(item.getColor(), color) && matches(item.getSize(), size))
-				.map(ProductionAgreement::getQuantity).filter(Objects::nonNull).findFirst().orElse(0);
+	private int findQuantity(List<ProductionAgreementView> items, String colorCode, String sizeCode) {
+		return items.stream()
+				.filter(item -> matches(item.getColorCode(), colorCode) && matches(item.getSizeCode(), sizeCode))
+				.map(ProductionAgreementView::getQuantity).filter(Objects::nonNull).findFirst().orElse(0);
+	}
+
+	private String resolveName(Map<String, String> names, String code) {
+		if (code == null) {
+			return null;
+		}
+		return names.getOrDefault(code, code);
 	}
 
 	private boolean matches(String value, String expected) {

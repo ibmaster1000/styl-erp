@@ -155,8 +155,10 @@
 								th:classappend="${iter.index == 0} ? 'pa-row-selected'">
 								<td class="t-left" th:text="${p.styleCode}">ST-001</td>
 								<td class="t-left" th:text="${p.agreementCode}">PA-001</td>
-								<td class="t-left" th:text="${p.color}">RED</td>
-								<td class="t-left" th:text="${p.size}">L</td>
+								<td class="t-left"
+									th:text="${p.colorName != null ? p.colorName : p.colorCode}">RED</td>
+								<td class="t-left"
+									th:text="${p.sizeName != null ? p.sizeName : p.sizeCode}">L</td>
 								<td th:text="${p.quantity}">1000</td>
 								<td class="text-center">
 									<div class="form-check d-inline-flex justify-content-center">
