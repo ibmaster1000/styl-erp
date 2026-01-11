@@ -53,7 +53,6 @@ public class StyleRegistrationService {
         style.setItemCode(item.getItemCode());
         style.setItemName(item.getItemName());
         style.setStartDate(req.getStartDate());
-        style.setCostPrice(req.getCostPrice());
         style.setProductionCost(req.getProductionCost());
         style.setSupplyPrice(req.getSupplyPrice());
         style.setSalesPrice(req.getSalesPrice());
@@ -79,7 +78,6 @@ public class StyleRegistrationService {
         style.setItemCode(item.getItemCode());
         style.setItemName(item.getItemName());
         style.setStartDate(req.getStartDate());
-        style.setCostPrice(req.getCostPrice());
         style.setProductionCost(req.getProductionCost());
         style.setSupplyPrice(req.getSupplyPrice());
         style.setSalesPrice(req.getSalesPrice());
@@ -101,8 +99,16 @@ public class StyleRegistrationService {
         if (stylesId == null) {
             throw new IllegalArgumentException("stylesId is required");
         }
+        Style style = styleRepository.findById(stylesId)
+                .orElseThrow(() -> new IllegalArgumentException("style not found"));
         stylesRuleRepository.deleteByIdStylesId(stylesId);
-        styleRepository.deleteById(stylesId);
+        try {
+            styleRepository.delete(style);
+            styleRepository.flush();
+        } catch (RuntimeException ex) {
+            style.setIsActive(0);
+            styleRepository.save(style);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -141,7 +147,6 @@ public class StyleRegistrationService {
                 style.getSalesEmpNo(),
                 style.getLogisticEmpNo(),
                 style.getStartDate(),
-                style.getCostPrice(),
                 style.getProductionCost(),
                 style.getSupplyPrice(),
                 style.getSalesPrice(),
@@ -208,9 +213,6 @@ public class StyleRegistrationService {
         }
         if (req.getStartDate() == null) {
             throw new IllegalArgumentException("startDate is required");
-        }
-        if (req.getCostPrice() == null) {
-            throw new IllegalArgumentException("costPrice is required");
         }
         if (req.getProductionCost() == null) {
             throw new IllegalArgumentException("productionCost is required");

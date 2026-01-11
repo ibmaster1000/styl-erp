@@ -44,9 +44,6 @@ public class Style {
 	@Column(name = "start_date")
 	private LocalDate startDate;
 
-	@Column(name = "cost_price")
-	private BigDecimal costPrice;
-
 	@Column(name = "production_cost")
 	private BigDecimal productionCost;
 
@@ -129,14 +126,6 @@ public class Style {
 
 	public void setStartDate(LocalDate startDate) {
 		this.startDate = startDate;
-	}
-
-	public BigDecimal getCostPrice() {
-		return costPrice;
-	}
-
-	public void setCostPrice(BigDecimal costPrice) {
-		this.costPrice = costPrice;
 	}
 
 	public BigDecimal getProductionCost() {

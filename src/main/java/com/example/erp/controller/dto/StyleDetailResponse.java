@@ -15,7 +15,6 @@ public class StyleDetailResponse {
     private final String salesEmpNo;
     private final String logisticEmpNo;
     private final LocalDate startDate;
-    private final BigDecimal costPrice;
     private final BigDecimal productionCost;
     private final BigDecimal supplyPrice;
     private final BigDecimal salesPrice;
@@ -27,7 +26,7 @@ public class StyleDetailResponse {
 
     public StyleDetailResponse(Long stylesId, String styleCode, String itemCode, String itemName,
             String designerEmpNo, String productEmpNo, String salesEmpNo, String logisticEmpNo,
-            LocalDate startDate, BigDecimal costPrice, BigDecimal productionCost, BigDecimal supplyPrice,
+            LocalDate startDate, BigDecimal productionCost, BigDecimal supplyPrice,
             BigDecimal salesPrice, Integer isActive, List<String> colorCodes, List<String> sizeCodes,
             List<StyleRuleCodeView> colorRules, List<StyleRuleCodeView> sizeRules) {
         this.stylesId = stylesId;
@@ -39,7 +38,6 @@ public class StyleDetailResponse {
         this.salesEmpNo = salesEmpNo;
         this.logisticEmpNo = logisticEmpNo;
         this.startDate = startDate;
-        this.costPrice = costPrice;
         this.productionCost = productionCost;
         this.supplyPrice = supplyPrice;
         this.salesPrice = salesPrice;
@@ -84,10 +82,6 @@ public class StyleDetailResponse {
 
     public LocalDate getStartDate() {
         return startDate;
-    }
-
-    public BigDecimal getCostPrice() {
-        return costPrice;
     }
 
     public BigDecimal getProductionCost() {

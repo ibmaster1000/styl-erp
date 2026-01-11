@@ -1,5 +1,7 @@
 package com.example.erp.controller.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -12,7 +14,7 @@ public class StyleRegisterRequest {
     private Integer year;
     private Integer month;
     private LocalDate startDate;
-    private BigDecimal costPrice;
+    @JsonAlias("costPrice")
     private BigDecimal productionCost;
     private BigDecimal supplyPrice;
     private BigDecimal salesPrice;
@@ -70,14 +72,6 @@ public class StyleRegisterRequest {
 
     public void setStartDate(LocalDate startDate) {
         this.startDate = startDate;
-    }
-
-    public BigDecimal getCostPrice() {
-        return costPrice;
-    }
-
-    public void setCostPrice(BigDecimal costPrice) {
-        this.costPrice = costPrice;
     }
 
     public BigDecimal getProductionCost() {
