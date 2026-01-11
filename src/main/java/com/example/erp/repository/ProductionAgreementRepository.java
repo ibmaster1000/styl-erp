@@ -6,11 +6,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductionAgreementRepository extends JpaRepository<ProductionAgreement, Long> {
 
 	boolean existsByStylesId(Long stylesId);
+	
+	Optional<ProductionAgreement> findByAgreementCode(String agreementCode);
 
 	@Query(value = """
 			select pa.prd_agree_id as prdAgreeId,

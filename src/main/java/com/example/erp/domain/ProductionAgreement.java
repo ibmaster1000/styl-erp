@@ -7,7 +7,11 @@ import jakarta.persistence.*;
 public class ProductionAgreement extends BaseAuditEntity {
 
     @Id
-    @Column(name = "agreement_code", nullable = false, length = 50)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "prd_agree_id")
+    private Long prdAgreeId;
+
+    @Column(name = "agreement_code", nullable = false, unique = true, length = 50)
     private String agreementCode;
 
     @Column(name = "style_code", length = 50)
@@ -29,6 +33,14 @@ public class ProductionAgreement extends BaseAuditEntity {
 
     public String getAgreementCode() {
         return agreementCode;
+    }
+    
+    public Long getPrdAgreeId() {
+        return prdAgreeId;
+    }
+
+    public void setPrdAgreeId(Long prdAgreeId) {
+        this.prdAgreeId = prdAgreeId;
     }
 
     public void setAgreementCode(String agreementCode) {
