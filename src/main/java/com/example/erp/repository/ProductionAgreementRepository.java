@@ -22,6 +22,8 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 			       pa.styles_id as stylesId,
 			       pa.style_code as styleCode,
 			       pa.production_manager as productionManager,
+			       styles.product_emp_no as productEmpNo,
+			       users.name as productEmpName,
 			       pa.color_type as colorType,
 			       pa.color_code as colorCode,
 			       color_codes.code_name as colorName,
@@ -32,6 +34,10 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 			       pa.status as status,
 			       pa.remark as remark
 			from production_agreements pa
+			left join styles
+			  on styles.styles_id = pa.styles_id
+			left join users
+			  on users.emp_no = styles.product_emp_no
 			left join codes color_codes
 			  on color_codes.code_type = pa.color_type
 			 and color_codes.code = pa.color_code

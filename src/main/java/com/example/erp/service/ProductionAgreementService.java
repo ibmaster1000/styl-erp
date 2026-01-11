@@ -6,7 +6,6 @@ import com.example.erp.controller.dto.ProductionAgreementDetailLine;
 import com.example.erp.controller.dto.ProductionAgreementDetailView;
 import com.example.erp.repository.ProductionAgreementRepository;
 import com.example.erp.repository.ProductionAgreementView;
-import com.example.erp.repository.StyleQueryRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -15,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,12 +26,9 @@ import java.util.stream.Collectors;
 public class ProductionAgreementService {
 
 	private final ProductionAgreementRepository productionAgreementRepository;
-	private final StyleQueryRepository styleQueryRepository;
 
-	public ProductionAgreementService(ProductionAgreementRepository productionAgreementRepository,
-			StyleQueryRepository styleQueryRepository) {
+	public ProductionAgreementService(ProductionAgreementRepository productionAgreementRepository) {
 		this.productionAgreementRepository = productionAgreementRepository;
-		this.styleQueryRepository = styleQueryRepository;
 	}
 
 	public List<ProductionAgreementView> findAll(String styleCode, String agreementCode) {
@@ -47,7 +42,6 @@ public class ProductionAgreementService {
 			return Collections.emptyList();
 		}
 
-		Map<String, String> managerNames = resolveManagerNames(agreements);
 		Map<AgreementGroupKey, AgreementGroup> grouped = new LinkedHashMap<>();
 		for (ProductionAgreementView item : agreements) {
 			if (item == null) {
@@ -60,7 +54,7 @@ public class ProductionAgreementService {
 			AgreementGroupKey key = new AgreementGroupKey(styleCode, agreementCode, colorCode);
 			AgreementGroup group = grouped.computeIfAbsent(key,
 					ignored -> new AgreementGroup(styleCode, agreementCode, colorLabel, colorCode,
-							resolveManagerName(item.getProductionManager(), managerNames)));
+							resolveManagerName(item.getProductEmpNo(), item.getProductEmpName())));
 			group.addQuantity(Optional.ofNullable(item.getQuantity()).orElse(0));
 		}
 
@@ -241,69 +235,14 @@ public class ProductionAgreementService {
 		return value == null || value.isBlank() ? "-" : value;
 	}
 
-	private Map<String, String> resolveManagerNames(List<ProductionAgreementView> agreements) {
-		Set<String> rawValues = new LinkedHashSet<>();
-		for (ProductionAgreementView item : agreements) {
-			if (item != null && StringUtils.hasText(item.getProductionManager())) {
-				rawValues.add(item.getProductionManager().trim());
-			}
+	private String resolveManagerName(String empNo, String empName) {
+		if (!StringUtils.hasText(empNo)) {
+			return "(미지정)";
 		}
-		if (rawValues.isEmpty()) {
-			return Collections.emptyMap();
+		if (StringUtils.hasText(empName)) {
+			return empName;
 		}
-
-		Set<String> numericValues = new LinkedHashSet<>();
-		Set<String> textValues = new LinkedHashSet<>();
-		for (String value : rawValues) {
-			if (isNumeric(value)) {
-				numericValues.add(value);
-			} else {
-				textValues.add(value);
-			}
-		}
-
-		Map<String, String> resolved = new LinkedHashMap<>();
-		if (rawValues.stream().anyMatch(value -> "admin".equalsIgnoreCase(value))) {
-			Map<String, String> adminName = styleQueryRepository.findUserNamesByUsernames(Set.of("admin"));
-			if (!adminName.isEmpty()) {
-				resolved.put("admin", adminName.getOrDefault("admin", "관리자"));
-				resolved.put("ADMIN", adminName.getOrDefault("admin", "관리자"));
-			} else {
-				resolved.put("admin", "관리자");
-				resolved.put("ADMIN", "관리자");
-			}
-		}
-
-		if (!numericValues.isEmpty()) {
-			resolved.putAll(styleQueryRepository.findUserNamesByEmpNos(numericValues));
-		}
-
-		if (!textValues.isEmpty()) {
-			resolved.putAll(styleQueryRepository.findUserNamesByUsernames(textValues));
-			resolved.putAll(styleQueryRepository.findUserNamesByUserIds(textValues));
-			resolved.putAll(styleQueryRepository.findUserNamesByEmpCodes(textValues));
-		}
-
-		return resolved;
-	}
-
-	private String resolveManagerName(String managerCode, Map<String, String> managerNames) {
-		if (!StringUtils.hasText(managerCode)) {
-			return "-";
-		}
-		return managerNames.getOrDefault(managerCode, managerCode);
-	}
-
-	private boolean isNumeric(String value) {
-		if (!StringUtils.hasText(value)) {
-			return false;
-		}
-		for (int i = 0; i < value.length(); i++) {
-			if (!Character.isDigit(value.charAt(i))) {
-				return false;
-			}
-		}
-		return true;
+		return empNo;
 	}
 
 	private String buildDetailKey(String agreementCode, String colorCode) {

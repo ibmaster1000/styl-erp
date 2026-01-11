@@ -130,9 +130,16 @@
 			</form>
 
 			<div class="pa-panel">
-				<div class="d-flex justify-content-between align-items-center mb-2">
-					<h6 class="mb-0 fw-bold">생산합의 목록</h6>
-					<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
+				<div class="d-flex justify-content-between align-items-center mb-2 gap-3 flex-wrap">
+					<div>
+						<h6 class="mb-0 fw-bold">생산합의 목록</h6>
+						<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
+					</div>
+					<div class="d-flex gap-2">
+						<button type="button" class="btn btn-sm btn--primary">등록</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary">수정</button>
+						<button type="button" class="btn btn-sm btn-outline-danger">삭제</button>
+					</div>
 				</div>
 				<div class="table-responsive">
 					<table class="table table-hover align-middle mb-0 pa-table data-table">

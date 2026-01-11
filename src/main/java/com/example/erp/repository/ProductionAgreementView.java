@@ -9,6 +9,10 @@ public interface ProductionAgreementView {
 
 	String getStyleCode();
 
+	String getProductEmpNo();
+
+	String getProductEmpName();
+
 	String getColorType();
 
 	String getColorCode();
