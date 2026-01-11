@@ -21,6 +21,7 @@ const initEmployeePickerModal = (modalElement) => {
 	const bootstrapModal = new bootstrap.Modal(modalElement);
 	let selectedRow = null;
 	let departmentsLoaded = false;
+	let pendingDefaultDept = '';
 
 	const clearSelection = () => {
 		selectedRow = null;
@@ -88,6 +89,18 @@ const initEmployeePickerModal = (modalElement) => {
 		}
 	};
 
+	const applyDefaultDept = (defaultDept) => {
+		if (!deptSelect) {
+			return;
+		}
+		if (!defaultDept) {
+			deptSelect.value = '';
+			return;
+		}
+		const hasOption = Array.from(deptSelect.options || []).some((option) => option.value === defaultDept);
+		deptSelect.value = hasOption ? defaultDept : '';
+	};
+
 	const fetchEmployees = async () => {
 		const params = new URLSearchParams({
 			name: nameInput?.value?.trim() || '',
@@ -122,21 +135,21 @@ const initEmployeePickerModal = (modalElement) => {
 	openButtons.forEach((button) => {
 		button.addEventListener('click', (event) => {
 			event.preventDefault();
+			pendingDefaultDept = button.dataset.defaultDept || '';
 			bootstrapModal.show();
 		});
 	});
 
-	modalElement.addEventListener('shown.bs.modal', () => {
-		fetchDepartments();
+	modalElement.addEventListener('shown.bs.modal', async () => {
+		await fetchDepartments();
 		if (nameInput) {
 			nameInput.value = '';
 		}
 		if (empCodeInput) {
 			empCodeInput.value = '';
 		}
-		if (deptSelect) {
-			deptSelect.value = '';
-		}
+		applyDefaultDept(pendingDefaultDept);
+		pendingDefaultDept = '';
 		fetchEmployees();
 		nameInput?.focus();
 	});

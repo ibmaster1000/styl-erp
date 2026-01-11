@@ -490,7 +490,7 @@
 				</div>
 				<div class="style-form-row-block">
 					<div class="row g-3 style-form-grid">
-						<div class="col-lg-4">
+						<div class="col-12">
 							<label class="form-label fw-semibold">아이템</label>
 							<div class="input-group input-group-sm">
 								<input type="text" class="form-control" name="itemCode" placeholder="아이템 코드">
@@ -499,18 +499,22 @@
 								<button class="btn btn--outline" type="button" data-item-picker-open>검색</button>
 							</div>
 						</div>
-						<div class="col-lg-4 style-section-divider">
+					</div>
+				</div>
+				<div class="style-form-row-block">
+					<div class="row g-3 style-form-grid">
+						<div class="col-lg-6 style-section-divider">
 							<label class="form-label fw-semibold">색상</label>
 							<div class="d-flex align-items-center gap-2">
-								<div class="style-tags" data-tag-list="color"></div>
+								<div class="style-tags flex-grow-1" data-tag-list="color"></div>
 								<button class="btn btn--outline btn-sm" type="button"
 									data-code-picker-open="color">추가</button>
 							</div>
 						</div>
-						<div class="col-lg-4 style-section-divider">
+						<div class="col-lg-6 style-section-divider">
 							<label class="form-label fw-semibold">사이즈</label>
 							<div class="d-flex align-items-center gap-2">
-								<div class="style-tags" data-tag-list="size"></div>
+								<div class="style-tags flex-grow-1" data-tag-list="size"></div>
 								<button class="btn btn--outline btn-sm" type="button"
 									data-code-picker-open="size">추가</button>
 							</div>
@@ -529,7 +533,7 @@
 								<input type="text" class="form-control" name="designerEmpNo"
 									id="style-register-designer-emp" placeholder="사번">
 								<button class="btn btn--outline" type="button"
-									data-employee-picker-open="style-register-designer-picker">
+									data-employee-picker-open="style-register-designer-picker" data-default-dept="디자인">
 									<i class="bi bi-search"></i>
 								</button>
 							</div>
@@ -540,7 +544,7 @@
 								<input type="text" class="form-control" name="productEmpNo"
 									id="style-register-product-emp" placeholder="사번">
 								<button class="btn btn--outline" type="button"
-									data-employee-picker-open="style-register-product-picker">
+									data-employee-picker-open="style-register-product-picker" data-default-dept="생산">
 									<i class="bi bi-search"></i>
 								</button>
 							</div>
@@ -551,7 +555,7 @@
 								<input type="text" class="form-control" name="salesEmpNo" id="style-register-sales-emp"
 									placeholder="사번">
 								<button class="btn btn--outline" type="button"
-									data-employee-picker-open="style-register-sales-picker">
+									data-employee-picker-open="style-register-sales-picker" data-default-dept="영업">
 									<i class="bi bi-search"></i>
 								</button>
 							</div>
@@ -562,7 +566,7 @@
 								<input type="text" class="form-control" name="logisticEmpNo"
 									id="style-register-logistic-emp" placeholder="사번">
 								<button class="btn btn--outline" type="button"
-									data-employee-picker-open="style-register-logistic-picker">
+									data-employee-picker-open="style-register-logistic-picker" data-default-dept="물류">
 									<i class="bi bi-search"></i>
 								</button>
 							</div>
@@ -649,7 +653,7 @@
 							</div>
 							<div class="style-form-row-block">
 								<div class="row g-3 style-form-grid">
-									<div class="col-lg-4">
+									<div class="col-12">
 										<label class="form-label fw-semibold">아이템</label>
 										<div class="input-group input-group-sm">
 											<input type="text" class="form-control" name="itemCode"
@@ -660,18 +664,22 @@
 												data-item-picker-open>검색</button>
 										</div>
 									</div>
-									<div class="col-lg-4 style-section-divider">
+								</div>
+							</div>
+							<div class="style-form-row-block">
+								<div class="row g-3 style-form-grid">
+									<div class="col-lg-6 style-section-divider">
 										<label class="form-label fw-semibold">색상</label>
 										<div class="d-flex align-items-center gap-2">
-											<div class="style-tags" data-tag-list="color"></div>
+											<div class="style-tags flex-grow-1" data-tag-list="color"></div>
 											<button class="btn btn--outline btn-sm" type="button"
 												data-code-picker-open="color">추가</button>
 										</div>
 									</div>
-									<div class="col-lg-4 style-section-divider">
+									<div class="col-lg-6 style-section-divider">
 										<label class="form-label fw-semibold">사이즈</label>
 										<div class="d-flex align-items-center gap-2">
-											<div class="style-tags" data-tag-list="size"></div>
+											<div class="style-tags flex-grow-1" data-tag-list="size"></div>
 											<button class="btn btn--outline btn-sm" type="button"
 												data-code-picker-open="size">추가</button>
 										</div>
@@ -689,7 +697,7 @@
 											<input type="text" class="form-control" name="designerEmpNo"
 												id="style-edit-designer-emp" placeholder="사번">
 											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-designer-picker">
+												data-employee-picker-open="style-edit-designer-picker" data-default-dept="디자인">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>
@@ -700,7 +708,7 @@
 											<input type="text" class="form-control" name="productEmpNo"
 												id="style-edit-product-emp" placeholder="사번">
 											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-product-picker">
+												data-employee-picker-open="style-edit-product-picker" data-default-dept="생산">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>
@@ -711,7 +719,7 @@
 											<input type="text" class="form-control" name="salesEmpNo"
 												id="style-edit-sales-emp" placeholder="사번">
 											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-sales-picker">
+												data-employee-picker-open="style-edit-sales-picker" data-default-dept="영업">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>
@@ -722,7 +730,7 @@
 											<input type="text" class="form-control" name="logisticEmpNo"
 												id="style-edit-logistic-emp" placeholder="사번">
 											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-logistic-picker">
+												data-employee-picker-open="style-edit-logistic-picker" data-default-dept="물류">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>

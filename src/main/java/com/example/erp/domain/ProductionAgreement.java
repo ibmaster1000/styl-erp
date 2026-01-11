@@ -12,6 +12,9 @@ public class ProductionAgreement extends BaseAuditEntity {
 
     @Column(name = "style_code", length = 50)
     private String styleCode;
+    
+    @Column(name = "styles_id")
+    private Long stylesId;
 
     @Column(length = 30)
     private String color;
@@ -40,6 +43,14 @@ public class ProductionAgreement extends BaseAuditEntity {
         this.styleCode = styleCode;
     }
 
+    public Long getStylesId() {
+        return stylesId;
+    }
+
+    public void setStylesId(Long stylesId) {
+        this.stylesId = stylesId;
+    }
+    
     public String getColor() {
         return color;
     }
