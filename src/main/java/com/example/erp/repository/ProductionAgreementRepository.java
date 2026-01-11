@@ -2,6 +2,8 @@ package com.example.erp.repository;
 
 import com.example.erp.domain.ProductionAgreement;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -18,15 +20,6 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 	Optional<ProductionAgreement> findByAgreementCode(String agreementCode);
 
 	@Query(value = """
-			select count(distinct pa.agreement_code)
-			from production_agreements pa
-			join styles s on s.styles_id = pa.styles_id
-			where (:styleCode is null or s.style_code like concat('%', :styleCode, '%'))
-			  and (:agreementCode is null or pa.agreement_code like concat('%', :agreementCode, '%'))
-			""", nativeQuery = true)
-	long countAgreementCodes(@Param("styleCode") String styleCode, @Param("agreementCode") String agreementCode);
-
-	@Query(value = """
 			select pa.agreement_code as agreementCode,
 			       s.style_code as styleCode,
 			       coalesce(min(color_codes.code_name), min(pa.color_code)) as colorName,
@@ -41,10 +34,15 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 			  and (:agreementCode is null or pa.agreement_code like concat('%', :agreementCode, '%'))
 			group by pa.agreement_code, s.style_code, s.product_emp_no
 			order by pa.agreement_code desc
-			limit :limit offset :offset
+			""", countQuery = """
+			select count(distinct pa.agreement_code)
+			from production_agreements pa
+			join styles s on s.styles_id = pa.styles_id
+			where (:styleCode is null or s.style_code like concat('%', :styleCode, '%'))
+			  and (:agreementCode is null or pa.agreement_code like concat('%', :agreementCode, '%'))
 			""", nativeQuery = true)
-	List<AgreementCodeRowView> findAgreementCodeRows(@Param("styleCode") String styleCode,
-			@Param("agreementCode") String agreementCode, @Param("limit") int limit, @Param("offset") int offset);
+	Page<AgreementCodeRowView> findAgreementCodeRows(@Param("styleCode") String styleCode,
+			@Param("agreementCode") String agreementCode, Pageable pageable);
 
 	@Query(value = """
 			select pa.agreement_code as agreementCode,

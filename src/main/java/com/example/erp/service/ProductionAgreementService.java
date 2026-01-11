@@ -8,6 +8,8 @@ import com.example.erp.controller.dto.ProductionAgreementColorTotal;
 import com.example.erp.repository.AgreementCodeRowView;
 import com.example.erp.repository.AgreementDetailRowView;
 import com.example.erp.repository.ProductionAgreementRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -49,13 +51,18 @@ public class ProductionAgreementService {
 		String agreementFilter = normalizeFilter(agreementCode);
 		String selectedFilter = normalizeFilter(selectedAgreementCode);
 		int resolvedSize = size != null && size > 0 ? size : 25;
-		long totalCount = productionAgreementRepository.countAgreementCodes(styleFilter, agreementFilter);
-		int totalPages = totalCount == 0 ? 0 : (int) Math.ceil((double) totalCount / resolvedSize);
-		int resolvedPage = resolvePage(page, totalPages);
-		int offset = Math.max(resolvedPage - 1, 0) * resolvedSize;
-
-		List<AgreementCodeRowView> pageRows = productionAgreementRepository.findAgreementCodeRows(styleFilter,
-				agreementFilter, resolvedSize, offset);
+		int requestedPage = page == null || page < 1 ? 1 : page;
+		Page<AgreementCodeRowView> pageResult = productionAgreementRepository.findAgreementCodeRows(styleFilter,
+				agreementFilter, PageRequest.of(requestedPage - 1, resolvedSize));
+		int totalPages = pageResult.getTotalPages();
+		int resolvedPage = resolvePage(requestedPage, totalPages);
+		if (resolvedPage != requestedPage && resolvedPage > 0) {
+			pageResult = productionAgreementRepository.findAgreementCodeRows(styleFilter, agreementFilter,
+					PageRequest.of(resolvedPage - 1, resolvedSize));
+			totalPages = pageResult.getTotalPages();
+		}
+		long totalCount = pageResult.getTotalElements();
+		List<AgreementCodeRowView> pageRows = pageResult.getContent();
 		List<AgreementCodeRow> leftRows = pageRows.stream()
 				.map(row -> new AgreementCodeRow(valueOrDefault(row.getStyleCode()),
 						valueOrDefault(row.getAgreementCode()),
@@ -147,8 +154,11 @@ public class ProductionAgreementService {
 	}
 
 	private int resolvePage(Integer requestedPage, int totalPages) {
+		if (totalPages == 0) {
+			return 0;
+		}
 		if (requestedPage == null || requestedPage < 1) {
-			return totalPages > 0 ? 1 : 0;
+			return 1;
 		}
 		if (totalPages > 0 && requestedPage > totalPages) {
 			return totalPages;
