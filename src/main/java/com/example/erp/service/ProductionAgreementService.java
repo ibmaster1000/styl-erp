@@ -1,17 +1,21 @@
 package com.example.erp.service;
 
+import com.example.erp.controller.dto.AgreementLeftRow;
 import com.example.erp.controller.dto.ProductionAgreementColorTotal;
 import com.example.erp.controller.dto.ProductionAgreementDetailLine;
 import com.example.erp.controller.dto.ProductionAgreementDetailView;
 import com.example.erp.repository.ProductionAgreementRepository;
 import com.example.erp.repository.ProductionAgreementView;
+import com.example.erp.repository.StyleQueryRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,30 +28,88 @@ import java.util.stream.Collectors;
 public class ProductionAgreementService {
 
 	private final ProductionAgreementRepository productionAgreementRepository;
+	private final StyleQueryRepository styleQueryRepository;
 
-	public ProductionAgreementService(ProductionAgreementRepository productionAgreementRepository) {
+	public ProductionAgreementService(ProductionAgreementRepository productionAgreementRepository,
+			StyleQueryRepository styleQueryRepository) {
 		this.productionAgreementRepository = productionAgreementRepository;
+		this.styleQueryRepository = styleQueryRepository;
 	}
 
-	public List<ProductionAgreementView> findAll() {
-		return productionAgreementRepository.findAllWithCodeNames();
+	public List<ProductionAgreementView> findAll(String styleCode, String agreementCode) {
+		String styleFilter = normalizeFilter(styleCode);
+		String agreementFilter = normalizeFilter(agreementCode);
+		return productionAgreementRepository.findAllWithCodeNamesFiltered(styleFilter, agreementFilter);
 	}
 
-	public Map<String, ProductionAgreementDetailView> buildDetailViews(List<ProductionAgreementView> agreements,
+	public List<AgreementLeftRow> buildLeftRows(List<ProductionAgreementView> agreements) {
+		if (agreements == null || agreements.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		Map<String, String> managerNames = resolveManagerNames(agreements);
+		Map<AgreementGroupKey, AgreementGroup> grouped = new LinkedHashMap<>();
+		for (ProductionAgreementView item : agreements) {
+			if (item == null) {
+				continue;
+			}
+			String styleCode = valueOrDefault(item.getStyleCode());
+			String agreementCode = valueOrDefault(item.getAgreementCode());
+			String colorCode = valueOrDefault(resolveColorKey(item));
+			String colorLabel = valueOrDefault(resolveDisplayColor(item));
+			AgreementGroupKey key = new AgreementGroupKey(styleCode, agreementCode, colorCode);
+			AgreementGroup group = grouped.computeIfAbsent(key,
+					ignored -> new AgreementGroup(styleCode, agreementCode, colorLabel, colorCode,
+							resolveManagerName(item.getProductionManager(), managerNames)));
+			group.addQuantity(Optional.ofNullable(item.getQuantity()).orElse(0));
+		}
+
+		List<AgreementLeftRow> result = new ArrayList<>();
+		String lastStyleCode = null;
+		String lastAgreementCode = null;
+		for (AgreementGroup group : grouped.values()) {
+			String displayStyleCode = group.styleCode();
+			String displayAgreementCode = group.agreementCode();
+			if (Objects.equals(lastStyleCode, group.styleCode())) {
+				displayStyleCode = "";
+			} else {
+				lastStyleCode = group.styleCode();
+				lastAgreementCode = null;
+			}
+			if (Objects.equals(lastAgreementCode, group.agreementCode())) {
+				displayAgreementCode = "";
+			} else {
+				lastAgreementCode = group.agreementCode();
+			}
+			result.add(new AgreementLeftRow(group.styleCode(), group.agreementCode(), group.colorLabel(),
+					group.colorCode(), group.totalQuantity(), group.managerName(), displayStyleCode,
+					displayAgreementCode));
+		}
+
+		return result;
+	}
+
+	public Map<String, ProductionAgreementDetailView> buildDetailViewsByColor(List<ProductionAgreementView> agreements,
 			Map<String, Map<String, List<String>>> styleRules, Map<String, BigDecimal> supplyPrices) {
 		if (agreements == null || agreements.isEmpty()) {
 			return Collections.emptyMap();
 		}
 
 		Map<String, List<ProductionAgreementView>> groupedByAgreement = agreements.stream().filter(Objects::nonNull)
-				.collect(Collectors.groupingBy(ProductionAgreementView::getAgreementCode, LinkedHashMap::new,
-						Collectors.toList()));
+				.collect(Collectors.groupingBy(
+						item -> buildDetailKey(item.getAgreementCode(), resolveColorKey(item)),
+						LinkedHashMap::new, Collectors.toList()));
 
 		Map<String, ProductionAgreementDetailView> result = new LinkedHashMap<>();
-		groupedByAgreement.forEach((agreementCode, items) -> {
+		groupedByAgreement.forEach((detailKey, items) -> {
 			String styleCode = items.stream().map(ProductionAgreementView::getStyleCode).filter(Objects::nonNull)
 					.findFirst()
 					.orElse("-");
+			String agreementCode = items.stream().map(ProductionAgreementView::getAgreementCode)
+					.filter(Objects::nonNull).findFirst().orElse("-");
+			String colorCode = items.stream().map(this::resolveColorKey).filter(Objects::nonNull).findFirst().orElse("-");
+			String colorName = items.stream().map(this::resolveDisplayColor).filter(StringUtils::hasText).findFirst()
+					.orElse(colorCode);
 
 			Map<String, List<String>> rule = styleRules.getOrDefault(styleCode, Collections.emptyMap());
 			BigDecimal supplyPrice = supplyPrices.getOrDefault(styleCode, BigDecimal.ZERO);
@@ -62,15 +124,14 @@ public class ProductionAgreementService {
 							(existing, replacement) -> existing));
 
 			List<ProductionAgreementDetailLine> detailLines = new ArrayList<>();
-			if (!rule.isEmpty()) {
-				rule.forEach((color, sizes) -> {
-					List<String> normalizedSizes = sizes != null ? sizes : List.of("-");
-					normalizedSizes.forEach(size -> {
-						int quantity = findQuantity(items, color, size);
-						String colorLabel = valueOrDefault(resolveName(colorNames, color));
-						String sizeLabel = valueOrDefault(resolveName(sizeNames, size));
-						detailLines.add(createDetailLine(colorLabel, sizeLabel, quantity, supplyPrice));
-					});
+			List<String> ruleSizes = resolveRuleSizes(rule, colorCode, colorName);
+			if (ruleSizes != null) {
+				String colorLabel = valueOrDefault(resolveName(colorNames, colorCode));
+				List<String> normalizedSizes = ruleSizes.isEmpty() ? List.of("-") : ruleSizes;
+				normalizedSizes.forEach(size -> {
+					int quantity = findQuantity(items, colorCode, size);
+					String sizeLabel = valueOrDefault(resolveName(sizeNames, size));
+					detailLines.add(createDetailLine(colorLabel, sizeLabel, quantity, supplyPrice));
 				});
 			} else if (!items.isEmpty()) {
 				items.forEach(item -> {
@@ -100,7 +161,7 @@ public class ProductionAgreementService {
 			BigDecimal grandAmount = detailLines.stream().map(ProductionAgreementDetailLine::getAmount)
 					.reduce(BigDecimal.ZERO, BigDecimal::add);
 
-			result.put(agreementCode, new ProductionAgreementDetailView(styleCode, agreementCode, detailLines,
+			result.put(detailKey, new ProductionAgreementDetailView(styleCode, agreementCode, detailLines,
 					new ArrayList<>(colorTotals.values()), grandQuantity, grandAmount));
 		});
 
@@ -112,10 +173,51 @@ public class ProductionAgreementService {
 				.collect(Collectors.toSet());
 	}
 
+	private String normalizeFilter(String value) {
+		if (!StringUtils.hasText(value)) {
+			return null;
+		}
+		String trimmed = value.trim();
+		return trimmed.isEmpty() ? null : trimmed;
+	}
+
 	private int findQuantity(List<ProductionAgreementView> items, String colorCode, String sizeCode) {
 		return items.stream()
 				.filter(item -> matches(item.getColorCode(), colorCode) && matches(item.getSizeCode(), sizeCode))
 				.map(ProductionAgreementView::getQuantity).filter(Objects::nonNull).findFirst().orElse(0);
+	}
+
+	private String resolveColorKey(ProductionAgreementView item) {
+		if (item == null) {
+			return null;
+		}
+		if (StringUtils.hasText(item.getColorCode())) {
+			return item.getColorCode();
+		}
+		return item.getColorName();
+	}
+
+	private String resolveDisplayColor(ProductionAgreementView item) {
+		if (item == null) {
+			return null;
+		}
+		if (StringUtils.hasText(item.getColorName())) {
+			return item.getColorName();
+		}
+		return item.getColorCode();
+	}
+
+	private List<String> resolveRuleSizes(Map<String, List<String>> rule, String colorCode, String colorName) {
+		if (rule == null || rule.isEmpty()) {
+			return null;
+		}
+		if (StringUtils.hasText(colorCode) && rule.containsKey(colorCode)) {
+			return Optional.ofNullable(rule.get(colorCode)).orElse(Collections.emptyList());
+		}
+		if (StringUtils.hasText(colorName) && rule.containsKey(colorName)) {
+			return Optional.ofNullable(rule.get(colorName)).orElse(Collections.emptyList());
+		}
+		return null;
 	}
 
 	private String resolveName(Map<String, String> names, String code) {
@@ -139,11 +241,130 @@ public class ProductionAgreementService {
 		return value == null || value.isBlank() ? "-" : value;
 	}
 
+	private Map<String, String> resolveManagerNames(List<ProductionAgreementView> agreements) {
+		Set<String> rawValues = new LinkedHashSet<>();
+		for (ProductionAgreementView item : agreements) {
+			if (item != null && StringUtils.hasText(item.getProductionManager())) {
+				rawValues.add(item.getProductionManager().trim());
+			}
+		}
+		if (rawValues.isEmpty()) {
+			return Collections.emptyMap();
+		}
+
+		Set<String> numericValues = new LinkedHashSet<>();
+		Set<String> textValues = new LinkedHashSet<>();
+		for (String value : rawValues) {
+			if (isNumeric(value)) {
+				numericValues.add(value);
+			} else {
+				textValues.add(value);
+			}
+		}
+
+		Map<String, String> resolved = new LinkedHashMap<>();
+		if (rawValues.stream().anyMatch(value -> "admin".equalsIgnoreCase(value))) {
+			Map<String, String> adminName = styleQueryRepository.findUserNamesByUsernames(Set.of("admin"));
+			if (!adminName.isEmpty()) {
+				resolved.put("admin", adminName.getOrDefault("admin", "관리자"));
+				resolved.put("ADMIN", adminName.getOrDefault("admin", "관리자"));
+			} else {
+				resolved.put("admin", "관리자");
+				resolved.put("ADMIN", "관리자");
+			}
+		}
+
+		if (!numericValues.isEmpty()) {
+			resolved.putAll(styleQueryRepository.findUserNamesByEmpNos(numericValues));
+		}
+
+		if (!textValues.isEmpty()) {
+			resolved.putAll(styleQueryRepository.findUserNamesByUsernames(textValues));
+			resolved.putAll(styleQueryRepository.findUserNamesByUserIds(textValues));
+			resolved.putAll(styleQueryRepository.findUserNamesByEmpCodes(textValues));
+		}
+
+		return resolved;
+	}
+
+	private String resolveManagerName(String managerCode, Map<String, String> managerNames) {
+		if (!StringUtils.hasText(managerCode)) {
+			return "-";
+		}
+		return managerNames.getOrDefault(managerCode, managerCode);
+	}
+
+	private boolean isNumeric(String value) {
+		if (!StringUtils.hasText(value)) {
+			return false;
+		}
+		for (int i = 0; i < value.length(); i++) {
+			if (!Character.isDigit(value.charAt(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private String buildDetailKey(String agreementCode, String colorCode) {
+		return valueOrDefault(agreementCode) + "::" + valueOrDefault(colorCode);
+	}
+
 	private ProductionAgreementDetailLine createDetailLine(String color, String size, int quantity,
 			BigDecimal supplyPrice) {
 		BigDecimal effectiveSupply = supplyPrice != null ? supplyPrice : BigDecimal.ZERO;
 		BigDecimal amount = effectiveSupply.multiply(BigDecimal.valueOf(quantity));
 		return new ProductionAgreementDetailLine(valueOrDefault(color), valueOrDefault(size), quantity, effectiveSupply,
 				amount);
+	}
+
+	private record AgreementGroupKey(String styleCode, String agreementCode, String colorCode) {
+	}
+
+	private static class AgreementGroup {
+		private final String styleCode;
+		private final String agreementCode;
+		private final String colorLabel;
+		private final String colorCode;
+		private final String managerName;
+		private int totalQuantity;
+
+		private AgreementGroup(String styleCode, String agreementCode, String colorLabel, String colorCode,
+				String managerName) {
+			this.styleCode = styleCode;
+			this.agreementCode = agreementCode;
+			this.colorLabel = colorLabel;
+			this.colorCode = colorCode;
+			this.managerName = managerName;
+			this.totalQuantity = 0;
+		}
+
+		private void addQuantity(int quantity) {
+			this.totalQuantity += quantity;
+		}
+
+		private String styleCode() {
+			return styleCode;
+		}
+
+		private String agreementCode() {
+			return agreementCode;
+		}
+
+		private String colorLabel() {
+			return colorLabel;
+		}
+
+		private String colorCode() {
+			return colorCode;
+		}
+
+		private int totalQuantity() {
+			return totalQuantity;
+		}
+
+		private String managerName() {
+			return managerName;
+		}
 	}
 }

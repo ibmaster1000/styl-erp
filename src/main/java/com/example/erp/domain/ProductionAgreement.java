@@ -11,7 +11,7 @@ public class ProductionAgreement extends BaseAuditEntity {
     @Column(name = "prd_agree_id")
     private Long prdAgreeId;
 
-    @Column(name = "agreement_code", nullable = false, unique = true, length = 50)
+    @Column(name = "agreement_code", nullable = false, length = 50)
     private String agreementCode;
 
     @Column(name = "style_code", length = 50)
@@ -20,11 +20,20 @@ public class ProductionAgreement extends BaseAuditEntity {
     @Column(name = "styles_id")
     private Long stylesId;
 
-    @Column(length = 30)
-    private String color;
+    @Column(name = "production_manager", length = 50)
+    private String productionManager;
 
-    @Column(length = 30)
-    private String size;
+    @Column(name = "color_type", length = 30)
+    private String colorType;
+
+    @Column(name = "color_code", length = 30)
+    private String colorCode;
+
+    @Column(name = "size_type", length = 30)
+    private String sizeType;
+
+    @Column(name = "size_code", length = 30)
+    private String sizeCode;
 
     private Integer quantity;
 
@@ -63,20 +72,44 @@ public class ProductionAgreement extends BaseAuditEntity {
         this.stylesId = stylesId;
     }
     
-    public String getColor() {
-        return color;
+    public String getProductionManager() {
+        return productionManager;
     }
 
-    public void setColor(String color) {
-        this.color = color;
+    public void setProductionManager(String productionManager) {
+        this.productionManager = productionManager;
     }
 
-    public String getSize() {
-        return size;
+    public String getColorType() {
+        return colorType;
     }
 
-    public void setSize(String size) {
-        this.size = size;
+    public void setColorType(String colorType) {
+        this.colorType = colorType;
+    }
+
+    public String getColorCode() {
+        return colorCode;
+    }
+
+    public void setColorCode(String colorCode) {
+        this.colorCode = colorCode;
+    }
+
+    public String getSizeType() {
+        return sizeType;
+    }
+
+    public void setSizeType(String sizeType) {
+        this.sizeType = sizeType;
+    }
+
+    public String getSizeCode() {
+        return sizeCode;
+    }
+
+    public void setSizeCode(String sizeCode) {
+        this.sizeCode = sizeCode;
     }
 
     public Integer getQuantity() {

@@ -26,4 +26,6 @@ public interface ProductionAgreementView {
 	String getStatus();
 
 	String getRemark();
+
+	String getProductionManager();
 }

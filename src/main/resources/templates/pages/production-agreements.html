@@ -141,8 +141,8 @@
 								<th class="t-left">품번</th>
 								<th class="t-left">생산합의코드</th>
 								<th class="t-left">색상</th>
-								<th class="t-left">사이즈</th>
 								<th>합의량</th>
+								<th class="t-left">생산담당자</th>
 								<th class="text-center">선택</th>
 							</tr>
 						</thead>
@@ -151,15 +151,13 @@
 								<td colspan="6" class="text-center text-muted">조회된 데이터가 없습니다.</td>
 							</tr>
 							<tr th:each="p, iter : ${list}" data-pa-row
-								th:attr="data-agreement=${p.agreementCode},data-style=${p.styleCode}"
+								th:attr="data-agreement=${p.agreementCode},data-style=${p.styleCode},data-color=${p.colorCode}"
 								th:classappend="${iter.index == 0} ? 'pa-row-selected'">
-								<td class="t-left" th:text="${p.styleCode}">ST-001</td>
-								<td class="t-left" th:text="${p.agreementCode}">PA-001</td>
-								<td class="t-left"
-									th:text="${p.colorName != null ? p.colorName : p.colorCode}">RED</td>
-								<td class="t-left"
-									th:text="${p.sizeName != null ? p.sizeName : p.sizeCode}">L</td>
-								<td th:text="${p.quantity}">1000</td>
+								<td class="t-left" th:text="${p.displayStyleCode}">ST-001</td>
+								<td class="t-left" th:text="${p.displayAgreementCode}">PA-001</td>
+								<td class="t-left" th:text="${p.color}">RED</td>
+								<td th:text="${p.colorTotalQuantity}">1000</td>
+								<td class="t-left" th:text="${p.managerName}">홍길동</td>
 								<td class="text-center">
 									<div class="form-check d-inline-flex justify-content-center">
 										<input class="form-check-input pa-row-check" type="checkbox"
@@ -389,8 +387,10 @@
 				checkbox.checked = true;
 			}
 
-			const agreementCode = row.dataset.agreement;
-			const detail = paAgreementDetails ? paAgreementDetails[agreementCode] : null;
+			const agreementCode = row.dataset.agreement || '-';
+			const colorCode = row.dataset.color || '-';
+			const detailKey = `${agreementCode}::${colorCode}`;
+			const detail = paAgreementDetails ? paAgreementDetails[detailKey] : null;
 			updateSummaries(detail);
 			renderDetailLines(detail);
 		};
