@@ -3,6 +3,7 @@ package com.example.erp.controller.dto;
 public class AgreementCodeRow {
 	private final String styleCode;
 	private final String agreementCode;
+	private final String colorCode;
 	private final String displayStyleCode;
 	private final String displayAgreementCode;
 	private final String color;
@@ -10,10 +11,11 @@ public class AgreementCodeRow {
 	private final String managerName;
 
 	public AgreementCodeRow(String styleCode, String agreementCode, String displayStyleCode,
-			String displayAgreementCode, String color, int totalQuantity,
+			String displayAgreementCode, String colorCode, String color, int totalQuantity,
 			String managerName) {
 		this.styleCode = styleCode;
 		this.agreementCode = agreementCode;
+		this.colorCode = colorCode;
 		this.displayStyleCode = displayStyleCode;
 		this.displayAgreementCode = displayAgreementCode;
 		this.color = color;
@@ -27,6 +29,10 @@ public class AgreementCodeRow {
 
 	public String getAgreementCode() {
 		return agreementCode;
+	}
+
+	public String getColorCode() {
+		return colorCode;
 	}
 
 	public String getDisplayStyleCode() {

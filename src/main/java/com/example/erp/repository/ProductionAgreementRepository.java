@@ -20,12 +20,15 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 	Optional<ProductionAgreement> findByAgreementCode(String agreementCode);
 
 	@Query(value = """
-			select pa.agreement_code as agreementCode,
-			       s.style_code as styleCode,
-			       coalesce(color_codes.code_name, pa.color_code) as colorName,
+			select s.style_code as styleCode,
+			       pa.agreement_code as agreementCode,
+			       pa.color_code as colorCode,
+			       coalesce(min(color_codes.code_name),
+			                min(nullif(trim(pa.color), '')),
+			                pa.color_code) as colorName,
 			       sum(pa.quantity) as totalQuantity,
-			       coalesce(manager_user.name,
-			                coalesce(nullif(pa.production_manager, ''), s.product_emp_no)) as productionManagerName
+			       coalesce(nullif(min(trim(pa.production_manager)), ''), s.product_emp_no) as productionManager,
+			       min(manager_user.name) as productionManagerName
 			from production_agreements pa
 			join styles s on s.styles_id = pa.styles_id
 			left join codes color_codes
@@ -35,10 +38,8 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 			  on manager_user.emp_no = coalesce(nullif(pa.production_manager, ''), s.product_emp_no)
 			where (:styleCode is null or s.style_code like concat('%', :styleCode, '%'))
 			  and (:agreementCode is null or pa.agreement_code like concat('%', :agreementCode, '%'))
-			group by pa.agreement_code, s.style_code, pa.color_code, color_codes.code_name,
-			         manager_user.name, s.product_emp_no, pa.production_manager
-			order by s.style_code asc, pa.agreement_code asc,
-			         coalesce(color_codes.code_name, pa.color_code) asc
+			group by s.style_code, pa.agreement_code, pa.color_code
+			order by s.style_code asc, pa.agreement_code asc, colorName asc
 			""", countQuery = """
 			select count(distinct concat(ifnull(s.style_code, ''), '|', ifnull(pa.agreement_code, ''), '|',
 			       ifnull(pa.color_code, '')))
@@ -83,6 +84,27 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 			""")
 	int updateStatusByAgreementCodeAndColorCode(@Param("agreementCode") String agreementCode,
 			@Param("colorCode") String colorCode, @Param("status") String status);
+
+	@Modifying
+	@Query("""
+			update ProductionAgreement pa
+			   set pa.quantity = :quantity
+			 where pa.agreementCode = :agreementCode
+			   and pa.colorCode = :colorCode
+			   and pa.sizeCode = :sizeCode
+			""")
+	int updateQuantityByAgreementCodeAndColorCodeAndSizeCode(@Param("agreementCode") String agreementCode,
+			@Param("colorCode") String colorCode, @Param("sizeCode") String sizeCode,
+			@Param("quantity") Integer quantity);
+
+	@Modifying
+	@Query("""
+			delete from ProductionAgreement pa
+			 where pa.agreementCode = :agreementCode
+			   and (:colorCode is null or pa.colorCode = :colorCode)
+			""")
+	int deleteByAgreementCodeAndColorCode(@Param("agreementCode") String agreementCode,
+			@Param("colorCode") String colorCode);
 
 	@Query(value = """
 			select pa.prd_agree_id as prdAgreeId,

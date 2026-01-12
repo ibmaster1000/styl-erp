@@ -105,6 +105,7 @@
 		<h4 class="fw-bold mb-1">생산합의 관리</h4>
 		<p class="text-muted mb-0">생산 합의서 관리</p>
 	</div>
+	<div th:if="${message}" class="alert alert-info py-2" th:text="${message}">작업 결과 메시지</div>
 	<div class="pa-layout">
 		<div class="pa-left">
 			<form class="ui-card ui-card-body pa-search-form" method="get" th:action="@{/production-agreements}">
@@ -133,11 +134,17 @@
 							th:text="'총 ' + ${pageInfo != null ? pageInfo.totalCount : 0} + '건'">총 0건</span>
 					</div>
 					<div class="d-flex gap-2">
-						<button type="button" class="btn btn-sm btn--primary">등록</button>
-						<button type="button" class="btn btn-sm btn-outline-secondary">수정</button>
-						<button type="button" class="btn btn-sm btn-outline-danger">삭제</button>
+						<button type="button" class="btn btn-sm btn--primary" id="pa-open-create">등록</button>
+						<button type="submit" class="btn btn-sm btn-outline-secondary" form="pa-update-form"
+							id="pa-update-button">수정</button>
+						<button type="submit" class="btn btn-sm btn-outline-danger" form="pa-delete-form">삭제</button>
 					</div>
 				</div>
+				<form id="pa-delete-form" method="post" th:action="@{/production-agreements/delete}">
+					<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+					<input type="hidden" name="agreementCode" th:value="${selectedAgreementCode}" />
+					<input type="hidden" name="colorCode" th:value="${selectedColorCode}" />
+				</form>
 				<div class="table-responsive">
 					<table class="table table-hover align-middle mb-0 pa-table data-table">
 						<thead class="table-light">
@@ -154,8 +161,9 @@
 								<td colspan="5" class="text-center text-muted">조회된 데이터가 없습니다.</td>
 							</tr>
 							<tr th:each="p, iter : ${list}" data-pa-row
-								th:classappend="${selectedAgreementCode == p.agreementCode} ? 'pa-row-selected'"
-								th:onclick="|window.location='@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageInfo.page},selectedAgreementCode=${p.agreementCode})}'|">
+								th:classappend="${selectedAgreementCode == p.agreementCode and selectedColorCode == p.colorCode} ? 'pa-row-selected'"
+								th:attr="data-color-code=${p.colorCode}"
+								th:onclick="|window.location='@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageInfo.page},selectedAgreementCode=${p.agreementCode},selectedColorCode=${p.colorCode})}'|">
 								<td class="t-left" th:text="${p.displayStyleCode}">ST-001</td>
 								<td class="t-left" th:text="${p.displayAgreementCode}">PA-001</td>
 								<td class="t-left" th:text="${p.color}">RED</td>
@@ -169,19 +177,19 @@
 					<ul class="pagination justify-content-center mb-0">
 						<li class="page-item" th:classappend="${pageInfo.page <= 1} ? 'disabled'">
 							<a class="page-link"
-								th:href="@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageInfo.page - 1},selectedAgreementCode=${selectedAgreementCode})}">
+								th:href="@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageInfo.page - 1},selectedAgreementCode=${selectedAgreementCode},selectedColorCode=${selectedColorCode})}">
 								이전
 							</a>
 						</li>
 						<li class="page-item" th:each="pageNumber : ${#numbers.sequence(1, pageInfo.totalPages)}"
 							th:classappend="${pageInfo.page == pageNumber} ? 'active'">
 							<a class="page-link"
-								th:href="@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageNumber},selectedAgreementCode=${selectedAgreementCode})}"
+								th:href="@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageNumber},selectedAgreementCode=${selectedAgreementCode},selectedColorCode=${selectedColorCode})}"
 								th:text="${pageNumber}">1</a>
 						</li>
 						<li class="page-item" th:classappend="${pageInfo.page >= pageInfo.totalPages} ? 'disabled'">
 							<a class="page-link"
-								th:href="@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageInfo.page + 1},selectedAgreementCode=${selectedAgreementCode})}">
+								th:href="@{/production-agreements(styleCode=${styleCode},agreementCode=${agreementCode},page=${pageInfo.page + 1},selectedAgreementCode=${selectedAgreementCode},selectedColorCode=${selectedColorCode})}">
 								다음
 							</a>
 						</li>
@@ -210,8 +218,12 @@
 				</div>
 
 				<div th:if="${detailView != null}" class="flex-grow-1 d-flex flex-column">
-					<div class="table-responsive flex-grow-1">
-						<table class="table table-sm align-middle pa-detail-table data-table">
+					<form id="pa-update-form" method="post" th:action="@{/production-agreements/update}"
+						class="flex-grow-1 d-flex flex-column">
+						<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+						<input type="hidden" name="agreementCode" th:value="${detailView.agreementCode}" />
+						<div class="table-responsive flex-grow-1">
+							<table class="table table-sm align-middle pa-detail-table data-table">
 							<thead class="table-light">
 								<tr>
 									<th class="t-left">색상</th>
@@ -224,11 +236,15 @@
 							<tbody>
 								<th:block th:each="group : ${detailView.colorGroups}">
 									<tr th:each="line : ${group.rows}">
-										<td class="t-left"><span class="pa-chip" th:text="${line.color}">RED</span></td>
+										<td class="t-left">
+											<input type="hidden" name="colorCode" th:value="${line.colorCode}" />
+											<input type="hidden" name="sizeCode" th:value="${line.sizeCode}" />
+											<span class="pa-chip" th:text="${line.color}">RED</span>
+										</td>
 										<td class="t-left" th:text="${line.size}">M</td>
 										<td>
 											<input type="number" class="form-control form-control-sm" min="0"
-												th:value="${line.quantity}">
+												name="quantity" th:value="${line.quantity}">
 										</td>
 										<td th:text="${#numbers.formatDecimal(line.supplyPrice, 1, 'COMMA', 0, 'POINT')}">
 											0
@@ -257,10 +273,95 @@
 									<td th:text="${#numbers.formatDecimal(detailView.grandAmount, 1, 'COMMA', 0, 'POINT')}">0</td>
 								</tr>
 							</tfoot>
-						</table>
-					</div>
+							</table>
+						</div>
+					</form>
 				</div>
 			</div>
 		</div>
 	</div>
+
+	<dialog id="pa-create-dialog">
+		<form method="post" th:action="@{/production-agreements/create}" class="p-3">
+			<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+			<h6 class="fw-bold mb-3">생산합의 등록</h6>
+			<div class="row g-2">
+				<div class="col-md-6">
+					<label class="form-label">품번</label>
+					<input type="text" class="form-control" name="styleCode" placeholder="품번 코드" required>
+				</div>
+				<div class="col-md-6">
+					<label class="form-label">생산합의 코드</label>
+					<input type="text" class="form-control" name="agreementCode" placeholder="생산합의 코드" required>
+				</div>
+				<div class="col-md-6">
+					<label class="form-label">색상 타입</label>
+					<input type="text" class="form-control" name="colorType" placeholder="COLOR">
+				</div>
+				<div class="col-md-6">
+					<label class="form-label">색상 코드</label>
+					<input type="text" class="form-control" name="colorCode" placeholder="RED" required>
+				</div>
+				<div class="col-md-6">
+					<label class="form-label">사이즈 타입</label>
+					<input type="text" class="form-control" name="sizeType" placeholder="SIZE">
+				</div>
+				<div class="col-md-6">
+					<label class="form-label">사이즈 코드</label>
+					<input type="text" class="form-control" name="sizeCode" placeholder="M" required>
+				</div>
+				<div class="col-md-6">
+					<label class="form-label">수량</label>
+					<input type="number" class="form-control" name="quantity" min="0" required>
+				</div>
+				<div class="col-md-6">
+					<label class="form-label">생산 담당자</label>
+					<input type="text" class="form-control" name="productionManager" placeholder="사번">
+				</div>
+			</div>
+			<div class="d-flex justify-content-end gap-2 mt-3">
+				<button type="button" class="btn btn-outline-secondary" id="pa-close-create">취소</button>
+				<button type="submit" class="btn btn--primary">등록</button>
+			</div>
+		</form>
+	</dialog>
+
+	<script>
+		const createDialog = document.getElementById('pa-create-dialog');
+		const openCreate = document.getElementById('pa-open-create');
+		const closeCreate = document.getElementById('pa-close-create');
+		if (openCreate && createDialog) {
+			openCreate.addEventListener('click', () => createDialog.showModal());
+		}
+		if (closeCreate && createDialog) {
+			closeCreate.addEventListener('click', () => createDialog.close());
+		}
+		const deleteForm = document.getElementById('pa-delete-form');
+		if (deleteForm) {
+			deleteForm.addEventListener('submit', (event) => {
+				const agreementInput = deleteForm.querySelector('input[name="agreementCode"]');
+				if (!agreementInput || !agreementInput.value.trim()) {
+					event.preventDefault();
+					alert('선택된 생산합의가 없습니다.');
+				}
+			});
+		}
+		const updateForm = document.getElementById('pa-update-form');
+		if (updateForm) {
+			updateForm.addEventListener('submit', (event) => {
+				const agreementInput = updateForm.querySelector('input[name="agreementCode"]');
+				if (!agreementInput || !agreementInput.value.trim()) {
+					event.preventDefault();
+					alert('선택된 생산합의가 없습니다.');
+				}
+			});
+		}
+		const updateButton = document.getElementById('pa-update-button');
+		if (updateButton && !updateForm) {
+			updateButton.addEventListener('click', (event) => {
+				event.preventDefault();
+				alert('선택된 생산합의가 없습니다.');
+			});
+		}
+	</script>
 </div>

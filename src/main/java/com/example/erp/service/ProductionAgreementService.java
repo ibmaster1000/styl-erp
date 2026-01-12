@@ -8,7 +8,10 @@ import com.example.erp.controller.dto.PageInfo;
 import com.example.erp.controller.dto.ProductionAgreementColorTotal;
 import com.example.erp.repository.AgreementCodeRowView;
 import com.example.erp.repository.AgreementDetailRowView;
+import com.example.erp.domain.ProductionAgreement;
+import com.example.erp.domain.Style;
 import com.example.erp.repository.ProductionAgreementRepository;
+import com.example.erp.repository.StyleRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -29,9 +32,12 @@ import java.util.stream.Collectors;
 public class ProductionAgreementService {
 
 	private final ProductionAgreementRepository productionAgreementRepository;
+	private final StyleRepository styleRepository;
 
-	public ProductionAgreementService(ProductionAgreementRepository productionAgreementRepository) {
+	public ProductionAgreementService(ProductionAgreementRepository productionAgreementRepository,
+			StyleRepository styleRepository) {
 		this.productionAgreementRepository = productionAgreementRepository;
+		this.styleRepository = styleRepository;
 	}
 
 	@Transactional
@@ -48,9 +54,15 @@ public class ProductionAgreementService {
 
 	public AgreementPageResult fetchAgreementPage(String styleCode, String agreementCode, Integer page,
 			Integer size, String selectedAgreementCode) {
+		return fetchAgreementPage(styleCode, agreementCode, page, size, selectedAgreementCode, null);
+	}
+
+	public AgreementPageResult fetchAgreementPage(String styleCode, String agreementCode, Integer page,
+			Integer size, String selectedAgreementCode, String selectedColorCode) {
 		String styleFilter = normalizeFilter(styleCode);
 		String agreementFilter = normalizeFilter(agreementCode);
 		String selectedFilter = normalizeFilter(selectedAgreementCode);
+		String selectedColorFilter = normalizeFilter(selectedColorCode);
 		int resolvedSize = size != null && size > 0 ? size : 25;
 		int requestedPage = page == null || page < 1 ? 1 : page;
 		Page<AgreementCodeRowView> pageResult = productionAgreementRepository.findAgreementCodeRows(styleFilter,
@@ -68,6 +80,7 @@ public class ProductionAgreementService {
 
 		String resolvedSelected = StringUtils.hasText(selectedFilter) ? selectedFilter
 				: leftRows.stream().map(AgreementCodeRow::getAgreementCode).findFirst().orElse(null);
+		String resolvedColor = resolveSelectedColor(selectedColorFilter, resolvedSelected, leftRows);
 
 		AgreementDetailView detailView = null;
 		if (StringUtils.hasText(resolvedSelected)) {
@@ -77,7 +90,7 @@ public class ProductionAgreementService {
 		}
 
 		PageInfo pageInfo = new PageInfo(resolvedPage, resolvedSize, totalCount, totalPages);
-		return new AgreementPageResult(leftRows, pageInfo, resolvedSelected, detailView);
+		return new AgreementPageResult(leftRows, pageInfo, resolvedSelected, resolvedColor, detailView);
 	}
 
 	private String normalizeFilter(String value) {
@@ -145,7 +158,8 @@ public class ProductionAgreementService {
 		BigDecimal supplyPrice = view.getSupplyPrice() != null ? view.getSupplyPrice() : BigDecimal.ZERO;
 		BigDecimal amount = view.getAmount() != null ? view.getAmount()
 				: supplyPrice.multiply(BigDecimal.valueOf(quantity));
-		return new AgreementDetailRow(valueOrDefault(color), valueOrDefault(size), quantity, supplyPrice, amount);
+		return new AgreementDetailRow(valueOrDefault(color), view.getColorCode(),
+				valueOrDefault(size), view.getSizeCode(), quantity, supplyPrice, amount);
 	}
 
 	private String resolveLabel(String name, String code) {
@@ -169,9 +183,11 @@ public class ProductionAgreementService {
 		for (AgreementCodeRowView row : pageRows) {
 			String styleCode = valueOrDefault(row.getStyleCode());
 			String agreementCode = valueOrDefault(row.getAgreementCode());
+			String colorCode = row.getColorCode();
 			String displayStyleCode = Objects.equals(styleCode, lastStyleCode) ? "" : styleCode;
 			String displayAgreementCode = Objects.equals(agreementCode, lastAgreementCode) ? "" : agreementCode;
 			leftRows.add(new AgreementCodeRow(styleCode, agreementCode, displayStyleCode, displayAgreementCode,
+					colorCode,
 					valueOrDefault(row.getColorName()),
 					row.getTotalQuantity() != null ? row.getTotalQuantity() : 0,
 					resolveManagerLabel(row.getProductionManagerName())));
@@ -179,6 +195,21 @@ public class ProductionAgreementService {
 			lastAgreementCode = agreementCode;
 		}
 		return leftRows;
+	}
+
+	private String resolveSelectedColor(String selectedColorCode, String selectedAgreementCode,
+			List<AgreementCodeRow> leftRows) {
+		if (StringUtils.hasText(selectedColorCode)) {
+			return selectedColorCode;
+		}
+		if (!StringUtils.hasText(selectedAgreementCode)) {
+			return leftRows.stream().findFirst().map(AgreementCodeRow::getColorCode).orElse(null);
+		}
+		return leftRows.stream()
+				.filter(row -> Objects.equals(row.getAgreementCode(), selectedAgreementCode))
+				.map(AgreementCodeRow::getColorCode)
+				.findFirst()
+				.orElse(null);
 	}
 
 	private int resolvePage(Integer requestedPage, int totalPages) {
@@ -195,6 +226,65 @@ public class ProductionAgreementService {
 	}
 
 	public record AgreementPageResult(List<AgreementCodeRow> leftRows, PageInfo pageInfo,
-			String selectedAgreementCode, AgreementDetailView detailView) {
+			String selectedAgreementCode, String selectedColorCode, AgreementDetailView detailView) {
+	}
+
+	@Transactional
+	public void createAgreement(String agreementCode, String styleCode, String colorType, String colorCode,
+			String sizeType, String sizeCode, Integer quantity, String productionManager) {
+		if (!StringUtils.hasText(agreementCode) || !StringUtils.hasText(styleCode)
+				|| !StringUtils.hasText(colorCode) || !StringUtils.hasText(sizeCode) || quantity == null) {
+			throw new IllegalArgumentException("필수 입력값이 누락되었습니다.");
+		}
+		Style style = styleRepository.findByStyleCode(styleCode)
+				.orElseThrow(() -> new IllegalArgumentException("품번을 찾을 수 없습니다."));
+		ProductionAgreement agreement = new ProductionAgreement();
+		agreement.setAgreementCode(agreementCode.trim());
+		agreement.setStyleCode(styleCode.trim());
+		agreement.setStylesId(style.getStylesId());
+		agreement.setColorType(normalizeFilter(colorType));
+		agreement.setColorCode(colorCode.trim());
+		agreement.setSizeType(normalizeFilter(sizeType));
+		agreement.setSizeCode(sizeCode.trim());
+		agreement.setQuantity(quantity);
+		agreement.setProductionManager(normalizeFilter(productionManager));
+		agreement.setStatus("CONFIRMED");
+		productionAgreementRepository.save(agreement);
+	}
+
+	@Transactional
+	public int updateAgreementQuantities(String agreementCode, List<String> colorCodes, List<String> sizeCodes,
+			List<Integer> quantities) {
+		if (!StringUtils.hasText(agreementCode)) {
+			throw new IllegalArgumentException("생산합의 코드가 없습니다.");
+		}
+		if (colorCodes == null || sizeCodes == null || quantities == null
+				|| colorCodes.isEmpty() || sizeCodes.isEmpty() || quantities.isEmpty()) {
+			throw new IllegalArgumentException("수정할 항목이 없습니다.");
+		}
+		if (colorCodes.size() != sizeCodes.size() || colorCodes.size() != quantities.size()) {
+			throw new IllegalArgumentException("수정 요청 데이터가 일치하지 않습니다.");
+		}
+		int updated = 0;
+		for (int index = 0; index < colorCodes.size(); index++) {
+			String colorCode = normalizeFilter(colorCodes.get(index));
+			String sizeCode = normalizeFilter(sizeCodes.get(index));
+			Integer quantity = quantities.get(index);
+			if (!StringUtils.hasText(colorCode) || !StringUtils.hasText(sizeCode) || quantity == null) {
+				continue;
+			}
+			updated += productionAgreementRepository.updateQuantityByAgreementCodeAndColorCodeAndSizeCode(
+					agreementCode, colorCode, sizeCode, quantity);
+		}
+		return updated;
+	}
+
+	@Transactional
+	public int deleteAgreement(String agreementCode, String colorCode) {
+		if (!StringUtils.hasText(agreementCode)) {
+			throw new IllegalArgumentException("삭제할 생산합의 코드가 없습니다.");
+		}
+		String normalizedColor = StringUtils.hasText(colorCode) ? colorCode.trim() : null;
+		return productionAgreementRepository.deleteByAgreementCodeAndColorCode(agreementCode.trim(), normalizedColor);
 	}
 }

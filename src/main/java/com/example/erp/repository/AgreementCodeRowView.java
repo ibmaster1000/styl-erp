@@ -5,6 +5,8 @@ public interface AgreementCodeRowView {
 
 	String getStyleCode();
 
+	String getColorCode();
+
 	String getColorName();
 
 	Integer getTotalQuantity();
