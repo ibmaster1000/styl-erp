@@ -199,7 +199,7 @@
 					<span class="badge text-bg-light" id="ms-style-chip">-</span>
 				</div>
 				<div class="table-responsive">
-					<table class="table data-table mb-0">
+					<table class="table data-table mb-0" id="colorSizeMatrix">
 						<thead id="ms-rule-head">
 							<tr>
 								<th class="t-left">색상</th>
@@ -208,7 +208,7 @@
 						</thead>
 						<tbody id="ms-rule-body">
 							<tr>
-								<td colspan="2" class="text-center text-muted">품번/색상/생산합의코드를 조회하세요.</td>
+								<td colspan="2" class="text-center text-muted">품번을 확인하세요.</td>
 							</tr>
 						</tbody>
 					</table>
@@ -375,7 +375,7 @@
 		let selectedSupplierCode = null;
 		let styleVerified = false;
 
-		const resetContextState = () => {
+		const resetContextState = ({ resetMatrix } = {}) => {
 			contextLoaded = false;
 			addRowButton.disabled = true;
 			saveButton.disabled = true;
@@ -385,7 +385,9 @@
 			deletedIds = new Set();
 			currentPage = 1;
 			renderMaterials();
-			renderRuleTable([], {}, '');
+			if (resetMatrix) {
+				renderMatrixStatus('품번을 확인하세요.');
+			}
 		};
 
 		const updateSelectOptions = (select, options, placeholder) => {
@@ -436,47 +438,76 @@
 			}
 		};
 
-		const renderRuleTable = (sizes, quantities, colorCode) => {
+		const renderMatrixStatus = (message) => {
 			ruleHead.innerHTML = '';
 			ruleBody.innerHTML = '';
-			if (!sizes || sizes.length === 0) {
-				const headRow = document.createElement('tr');
-				headRow.innerHTML = '<th class="t-left">색상</th><th class="text-muted">-</th>';
-				ruleHead.appendChild(headRow);
+			const headRow = document.createElement('tr');
+			headRow.innerHTML = '<th class="t-left">색상</th><th class="text-muted">-</th>';
+			ruleHead.appendChild(headRow);
 
-				const emptyRow = document.createElement('tr');
-				const td = document.createElement('td');
-				td.colSpan = 2;
-				td.className = 'text-center text-muted';
-				td.textContent = '선택된 품번의 스타일 규칙 없습니다.';
-				emptyRow.appendChild(td);
-				ruleBody.appendChild(emptyRow);
-				return;
-			}
+			const emptyRow = document.createElement('tr');
+			const td = document.createElement('td');
+			td.colSpan = 2;
+			td.className = 'text-center text-muted';
+			td.textContent = message;
+			emptyRow.appendChild(td);
+			ruleBody.appendChild(emptyRow);
+		};
+
+		const renderMatrixTable = (colors, sizes, quantities) => {
+			ruleHead.innerHTML = '';
+			ruleBody.innerHTML = '';
+			const safeColors = colors && colors.length > 0 ? colors : [{ code: '-', name: '-' }];
+			const safeSizes = sizes && sizes.length > 0 ? sizes : [{ code: '-', name: '-' }];
 			const headRow = document.createElement('tr');
 			const colorHead = document.createElement('th');
 			colorHead.textContent = '색상';
 			colorHead.classList.add('t-left');
 			headRow.appendChild(colorHead);
-			sizes.forEach((size) => {
+			safeSizes.forEach((size) => {
 				const th = document.createElement('th');
-				th.textContent = size;
+				th.textContent = size.name || size.code || '-';
 				headRow.appendChild(th);
 			});
 			ruleHead.appendChild(headRow);
 
-			const row = document.createElement('tr');
-			const colorCell = document.createElement('td');
-			colorCell.classList.add('t-left');
-			colorCell.textContent = colorCode || '-';
-			row.appendChild(colorCell);
-			sizes.forEach((size) => {
-				const td = document.createElement('td');
-				const qty = quantities && quantities[size] !== undefined ? quantities[size] : '-';
-				td.textContent = qty;
-				row.appendChild(td);
+			safeColors.forEach((color) => {
+				const row = document.createElement('tr');
+				const colorCell = document.createElement('td');
+				colorCell.classList.add('t-left');
+				colorCell.textContent = color.name || color.code || '-';
+				row.appendChild(colorCell);
+				safeSizes.forEach((size) => {
+					const td = document.createElement('td');
+					const key = `${color.code || ''}|${size.code || ''}`;
+					const qty = quantities && Object.prototype.hasOwnProperty.call(quantities, key)
+						? quantities[key]
+						: '-';
+					td.textContent = qty;
+					row.appendChild(td);
+				});
+				ruleBody.appendChild(row);
 			});
-			ruleBody.appendChild(row);
+		};
+
+		const loadMatrix = async (styleCode) => {
+			if (!styleCode) {
+				renderMatrixStatus('품번을 확인하세요.');
+				return;
+			}
+			try {
+				const response = await fetch(`/materials/spec/matrix?styleCode=${encodeURIComponent(styleCode)}`);
+				if (!response.ok) {
+					throw new Error('matrix');
+				}
+				const data = await response.json();
+				const colors = Array.isArray(data.colors) ? data.colors : [];
+				const sizes = Array.isArray(data.sizes) ? data.sizes : [];
+				const quantities = data.quantities && typeof data.quantities === 'object' ? data.quantities : {};
+				renderMatrixTable(colors, sizes, quantities);
+			} catch (error) {
+				renderMatrixStatus('색상/사이즈 정보를 불러오지 못했습니다.');
+			}
 		};
 
 		const toCategoryCode = (category) => {
@@ -764,7 +795,6 @@
 				currentPage = 1;
 				updateMaterialCodes();
 				renderMaterials();
-				renderRuleTable(data.sizes || [], data.quantities || {}, colorCode);
 				addRowButton.disabled = false;
 				saveButton.disabled = false;
 				updateSummary();
@@ -788,6 +818,7 @@
 			const hasColor = selectFirstOption(colorInput);
 			const hasAgreement = selectFirstOption(agreementInput);
 			updateSearchButtonState();
+			await loadMatrix(styleCode);
 			if (hasColor && hasAgreement) {
 				await doSearch();
 			}
@@ -999,7 +1030,7 @@
 		styleInput.addEventListener('input', () => {
 			clearStatusMessage();
 			resetOptionState();
-			resetContextState();
+			resetContextState({ resetMatrix: true });
 		});
 
 		colorInput.addEventListener('change', () => {
@@ -1012,7 +1043,7 @@
 			updateSearchButtonState();
 		});
 
-		resetContextState();
+		resetContextState({ resetMatrix: true });
 		resetOptionState();
 		clearStatusMessage();
 		/*]]>*/

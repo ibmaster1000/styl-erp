@@ -3,6 +3,8 @@ package com.example.erp.service;
 import com.example.erp.controller.dto.MaterialSpecCodeView;
 import com.example.erp.controller.dto.MaterialSpecContextView;
 import com.example.erp.controller.dto.MaterialSpecItemView;
+import com.example.erp.controller.dto.MaterialSpecMatrixCodeView;
+import com.example.erp.controller.dto.MaterialSpecMatrixResponse;
 import com.example.erp.controller.dto.MaterialSpecOptionsResponse;
 import com.example.erp.controller.dto.MaterialSpecSaveItem;
 import com.example.erp.controller.dto.MaterialSpecSaveRequest;
@@ -89,6 +91,71 @@ public class MaterialSpecService {
         List<String> agreements = findDistinctValues("production_agreements", agreementColumn, styleCodeColumn,
                 normalizedStyleCode);
         return new MaterialSpecOptionsResponse(colors, agreements);
+    }
+
+    public MaterialSpecMatrixResponse loadMatrix(String styleCode) {
+        String normalizedStyleCode = normalize(styleCode);
+        if (!StringUtils.hasText(normalizedStyleCode) || !hasTable("production_agreements")) {
+            return new MaterialSpecMatrixResponse(Collections.emptyList(), Collections.emptyList(),
+                    Collections.emptyMap());
+        }
+        String styleCodeColumn = findFirstExistingColumn("production_agreements", List.of("style_code"));
+        String colorColumn = findFirstExistingColumn("production_agreements", List.of("color_code"));
+        String sizeColumn = findFirstExistingColumn("production_agreements", List.of("size_code"));
+        String qtyColumn = findFirstExistingColumn("production_agreements", List.of("quantity"));
+        String colorTypeColumn = findFirstExistingColumn("production_agreements", List.of("color_type"));
+        String sizeTypeColumn = findFirstExistingColumn("production_agreements", List.of("size_type"));
+        if (styleCodeColumn == null || colorColumn == null || sizeColumn == null) {
+            return new MaterialSpecMatrixResponse(Collections.emptyList(), Collections.emptyList(),
+                    Collections.emptyMap());
+        }
+
+        String colorColumnRef = "pa." + colorColumn;
+        String sizeColumnRef = "pa." + sizeColumn;
+        String styleColumnRef = "pa." + styleCodeColumn;
+        String colorTypeExpr = colorTypeColumn != null ? "pa." + colorTypeColumn : "'COLOR'";
+        String sizeTypeExpr = sizeTypeColumn != null ? "pa." + sizeTypeColumn : "'SIZE'";
+
+        boolean canJoinCodes = hasTable("codes");
+        String codeTypeColumn = canJoinCodes ? findFirstExistingColumn("codes", List.of("code_type", "id_code_type"))
+                : null;
+        String codeColumn = canJoinCodes ? findFirstExistingColumn("codes", List.of("code", "id_code")) : null;
+        String codeNameColumn = canJoinCodes ? findFirstExistingColumn("codes", List.of("code_name", "name")) : null;
+        canJoinCodes = canJoinCodes && codeTypeColumn != null && codeColumn != null && codeNameColumn != null;
+
+        MapSqlParameterSource params = new MapSqlParameterSource("styleCode", normalizedStyleCode);
+
+        String colorSql = buildMatrixCodeSql("color_codes", colorColumnRef, styleColumnRef, colorTypeExpr,
+                codeTypeColumn, codeColumn, codeNameColumn, canJoinCodes);
+        List<MaterialSpecMatrixCodeView> colors = jdbcTemplate.query(colorSql, params,
+                (rs, rowNum) -> new MaterialSpecMatrixCodeView(rs.getString("code"), rs.getString("name")));
+
+        String sizeSql = buildMatrixCodeSql("size_codes", sizeColumnRef, styleColumnRef, sizeTypeExpr,
+                codeTypeColumn, codeColumn, codeNameColumn, canJoinCodes);
+        List<MaterialSpecMatrixCodeView> sizes = jdbcTemplate.query(sizeSql, params,
+                (rs, rowNum) -> new MaterialSpecMatrixCodeView(rs.getString("code"), rs.getString("name")));
+
+        Map<String, Integer> quantities = Collections.emptyMap();
+        if (qtyColumn != null) {
+            String qtySql = "select " + colorColumnRef + " as color_code, " + sizeColumnRef
+                    + " as size_code, pa." + qtyColumn + " as quantity from production_agreements pa where "
+                    + styleColumnRef + " = :styleCode and " + colorColumnRef + " is not null and "
+                    + sizeColumnRef + " is not null";
+            quantities = jdbcTemplate.query(qtySql, params, rs -> {
+                Map<String, Integer> result = new LinkedHashMap<>();
+                while (rs.next()) {
+                    Integer quantity = rs.getObject("quantity") != null ? rs.getInt("quantity") : null;
+                    if (quantity == null) {
+                        continue;
+                    }
+                    String key = rs.getString("color_code") + "|" + rs.getString("size_code");
+                    result.put(key, quantity);
+                }
+                return result;
+            });
+        }
+
+        return new MaterialSpecMatrixResponse(colors, sizes, quantities);
     }
 
     @Transactional
@@ -703,5 +770,26 @@ public class MaterialSpecService {
                 + " = :styleCode and " + valueColumn + " is not null order by " + valueColumn;
         MapSqlParameterSource params = new MapSqlParameterSource("styleCode", styleCode);
         return jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("value"));
+    }
+
+    private String buildMatrixCodeSql(String alias, String codeColumnRef, String styleColumnRef, String typeExpr,
+            String codeTypeColumn, String codeColumn, String codeNameColumn, boolean canJoinCodes) {
+        StringBuilder sql = new StringBuilder("select ").append(codeColumnRef).append(" as code, ");
+        if (canJoinCodes) {
+            sql.append("coalesce(min(").append(alias).append(".").append(codeNameColumn).append("), ")
+                    .append(codeColumnRef).append(") as name ");
+        } else {
+            sql.append(codeColumnRef).append(" as name ");
+        }
+        sql.append("from production_agreements pa ");
+        if (canJoinCodes) {
+            sql.append("left join codes ").append(alias).append(" on ").append(alias).append(".")
+                    .append(codeTypeColumn).append(" = ").append(typeExpr).append(" and ").append(alias).append(".")
+                    .append(codeColumn).append(" = ").append(codeColumnRef).append(" ");
+        }
+        sql.append("where ").append(styleColumnRef).append(" = :styleCode and ").append(codeColumnRef)
+                .append(" is not null ");
+        sql.append("group by ").append(codeColumnRef).append(" order by ").append(codeColumnRef);
+        return sql.toString();
     }
 }

@@ -1,6 +1,7 @@
 package com.example.erp.controller;
 
 import com.example.erp.controller.dto.MaterialSpecContextView;
+import com.example.erp.controller.dto.MaterialSpecMatrixResponse;
 import com.example.erp.controller.dto.MaterialSpecOptionsResponse;
 import com.example.erp.controller.dto.MaterialSpecVerifyResponse;
 import com.example.erp.service.MaterialSpecService;
@@ -35,6 +36,11 @@ public class MaterialSpecApiController {
     @GetMapping("/options")
     public MaterialSpecOptionsResponse loadOptions(@RequestParam("styleCode") String styleCode) {
         return materialSpecService.loadOptions(styleCode);
+    }
+
+    @GetMapping("/matrix")
+    public MaterialSpecMatrixResponse loadMatrix(@RequestParam("styleCode") String styleCode) {
+        return materialSpecService.loadMatrix(styleCode);
     }
 
     @GetMapping("/search")
