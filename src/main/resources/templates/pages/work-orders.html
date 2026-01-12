@@ -27,7 +27,7 @@
 		}
 
 		.wo-search-panel {
-			max-width: 320px;
+			max-width: 420px;
 		}
 
 		.wo-search-form {
@@ -44,16 +44,7 @@
 		}
 
 		.wo-search-row input {
-			width: 160px;
-		}
-
-		.is-hidden {
-			display: none;
-		}
-
-		.measure-table th.size-col,
-		.measure-table td.size-col {
-			min-width: 90px;
+			width: 200px;
 		}
 
 		.measure-table thead th {
@@ -64,11 +55,6 @@
 			position: sticky;
 			top: 0;
 			z-index: 1;
-		}
-
-		.measure-table {
-			width: max-content;
-			min-width: 100%;
 		}
 
 		.measure-table tbody th {
@@ -121,17 +107,6 @@
 			align-items: center;
 			gap: 10px;
 			margin-bottom: 8px;
-		}
-
-		.attachment-upload-btn {
-			background: #111827;
-			color: #fff;
-			border: none;
-		}
-
-		.attachment-upload-btn:hover {
-			background: #0f172a;
-			color: #fff;
 		}
 
 		.attachment-delete {
@@ -254,11 +229,11 @@
 							<button type="submit" class="btn btn--primary">검색</button>
 						</div>
 					</div>
-					<div class="text-danger small" th:if="${styleNotFound}">올바른 품번 코드가 아닙니다.</div>
+					<div class="text-danger small" th:if="${styleNotFound}">존재하지 않는 품번입니다</div>
 				</form>
 			</div>
 
-			<div class="wo-panel" th:classappend="${hasResult} ? '' : ' is-hidden'">
+			<div class="wo-panel">
 				<div class="d-flex justify-content-between align-items-center mb-2">
 					<div>
 						<h6 class="mb-0 fw-bold">치수표</h6>
@@ -279,16 +254,12 @@
 			</div>
 		</div>
 		<div class="wo-right">
-			<div class="wo-panel wo-attachments-panel h-100" th:classappend="${hasResult} ? '' : ' is-hidden'">
+			<div class="wo-panel wo-attachments-panel h-100">
 				<div class="attachment-section">
 					<div class="attachment-header">
 						<div>
 							<div class="fw-bold">도식화</div>
 							<div class="text-muted small">등록된 도식화를 확인하세요.</div>
-						</div>
-						<div>
-							<button type="button" class="btn btn-sm attachment-upload-btn" id="illustration-upload-btn">등록</button>
-							<input type="file" id="illustration-upload" accept="image/*" hidden>
 						</div>
 					</div>
 					<div class="attachment-grid" id="illustration-grid"></div>
@@ -299,10 +270,6 @@
 						<div>
 							<div class="fw-bold">봉제 방법</div>
 							<div class="text-muted small">등록된 봉제 방법을 확인하세요.</div>
-						</div>
-						<div>
-							<button type="button" class="btn btn-sm attachment-upload-btn" id="sewing-upload-btn">등록</button>
-							<input type="file" id="sewing-upload" accept="image/*" hidden>
 						</div>
 					</div>
 					<div class="attachment-grid" id="sewing-grid"></div>
@@ -325,7 +292,6 @@
 		const orderId = /*[[${orderId}]]*/ null;
 		const styleCode = /*[[${styleCode}]]*/ '';
 		const styleNotFound = /*[[${styleNotFound}]]*/ false;
-		const hasResult = /*[[${hasResult}]]*/ false;
 
 		const measureItems = [
 			{ label: '총기장', key: 'totalLength' },
@@ -336,16 +302,6 @@
 		];
 
 		const measureState = {};
-		const measureColumns = (() => {
-			if (sizeCodes.length >= 8) {
-				return sizeCodes.map((code) => ({ code, active: true }));
-			}
-			const columns = sizeCodes.map((code) => ({ code, active: true }));
-			while (columns.length < 8) {
-				columns.push({ code: '-', active: false });
-			}
-			return columns;
-		})();
 
 		const initMeasureState = () => {
 			sizeCodes.forEach((size) => {
@@ -370,11 +326,10 @@
 			nameTh.textContent = '구분';
 			headRow.appendChild(nameTh);
 
-			measureColumns.forEach((column) => {
+			sizeCodes.forEach((size) => {
 				const th = document.createElement('th');
-				th.textContent = column.active ? column.code : '-';
+				th.textContent = size;
 				th.classList.add('text-center');
-				th.classList.add('size-col');
 				headRow.appendChild(th);
 			});
 
@@ -384,25 +339,17 @@
 				label.textContent = item.label;
 				tr.appendChild(label);
 
-				measureColumns.forEach((column) => {
+				sizeCodes.forEach((size) => {
 					const td = document.createElement('td');
-					td.classList.add('size-col');
 					const input = document.createElement('input');
-					if (column.active) {
-						input.type = 'number';
-						input.step = '0.01';
-						input.className = 'form-control form-control-sm';
-						input.value = measureState[column.code]?.[item.key] ?? '';
-						input.addEventListener('input', (e) => {
-							measureState[column.code] = measureState[column.code] || {};
-							measureState[column.code][item.key] = e.target.value;
-						});
-					} else {
-						input.type = 'text';
-						input.disabled = true;
-						input.className = 'form-control form-control-sm text-center';
-						input.value = '-';
-					}
+					input.type = 'number';
+					input.step = '0.01';
+					input.className = 'form-control form-control-sm';
+					input.value = measureState[size]?.[item.key] ?? '';
+					input.addEventListener('input', (e) => {
+						measureState[size] = measureState[size] || {};
+						measureState[size][item.key] = e.target.value;
+					});
 					td.appendChild(input);
 					tr.appendChild(td);
 				});
@@ -416,7 +363,7 @@
 			if (!path) {
 				const empty = document.createElement('div');
 				empty.className = 'attachment-card attachment-empty';
-				empty.textContent = '없습니다';
+				empty.textContent = emptyText;
 				container.appendChild(empty);
 				return;
 			}
@@ -443,10 +390,10 @@
 			renderAttachment(attachmentInfo.sewingPath, 'sewing-grid', '봉제 방법이 없습니다', 'SEWING');
 		};
 
-		const getCsrfHeaders = (withJson = true) => {
+		const getCsrfHeaders = () => {
 			const token = document.querySelector('meta[name="_csrf"]')?.content;
 			const header = document.querySelector('meta[name="_csrf_header"]')?.content;
-			const headers = withJson ? { 'Content-Type': 'application/json' } : {};
+			const headers = { 'Content-Type': 'application/json' };
 			if (token && header) {
 				headers[header] = token;
 			}
@@ -460,7 +407,6 @@
 		};
 
 		const buildPayload = () => ({
-			orderId,
 			styleCode,
 			specs: sizeCodes.map((size) => {
 				const values = measureState[size] || {};
@@ -486,9 +432,9 @@
 				return;
 			}
 			try {
-				const response = await fetch('/work-orders/save-size-specs', {
+				const response = await fetch('/work-orders/save', {
 					method: 'POST',
-					headers: getCsrfHeaders(true),
+					headers: getCsrfHeaders(),
 					body: JSON.stringify(buildPayload())
 				});
 				const data = await response.json();
@@ -509,11 +455,9 @@
 				return;
 			}
 			try {
-				const endpoint = type === 'ILLUSTRATION' ? '/work-orders/delete-illustration' : '/work-orders/delete-sewing';
-				const response = await fetch(endpoint, {
-					method: 'POST',
-					headers: getCsrfHeaders(true),
-					body: JSON.stringify({ orderId })
+				const response = await fetch(`/work-orders/attachments?orderId=${orderId}&type=${type}`, {
+					method: 'DELETE',
+					headers: getCsrfHeaders()
 				});
 				const data = await response.json();
 				if (data.success) {
@@ -526,36 +470,6 @@
 				}
 			} catch (error) {
 				alert('삭제에 실패했습니다.');
-			}
-		};
-
-		const uploadAttachment = async (type, file) => {
-			if (!orderId || !file) {
-				return;
-			}
-			const endpoint = type === 'ILLUSTRATION' ? '/work-orders/upload-illustration' : '/work-orders/upload-sewing';
-			const formData = new FormData();
-			formData.append('orderId', orderId);
-			formData.append('file', file);
-			try {
-				const response = await fetch(endpoint, {
-					method: 'POST',
-					headers: getCsrfHeaders(false),
-					body: formData
-				});
-				const data = await response.json();
-				if (data.success) {
-					if (type === 'ILLUSTRATION') {
-						attachmentInfo.illustrationPath = data.path;
-					} else {
-						attachmentInfo.sewingPath = data.path;
-					}
-					updateAttachments();
-				} else {
-					alert(data.message || '업로드에 실패했습니다.');
-				}
-			} catch (error) {
-				alert('업로드에 실패했습니다.');
 			}
 		};
 
@@ -578,37 +492,11 @@
 
 		document.addEventListener('DOMContentLoaded', () => {
 			initMeasureState();
-			if (hasResult) {
-				renderMeasureTable();
-				updateAttachments();
-				const saveBtn = document.getElementById('save-btn');
-				if (saveBtn) {
-					saveBtn.addEventListener('click', saveMeasureTable);
-				}
-				const illustrationUploadBtn = document.getElementById('illustration-upload-btn');
-				const illustrationUploadInput = document.getElementById('illustration-upload');
-				const sewingUploadBtn = document.getElementById('sewing-upload-btn');
-				const sewingUploadInput = document.getElementById('sewing-upload');
-				if (illustrationUploadBtn && illustrationUploadInput) {
-					illustrationUploadBtn.addEventListener('click', () => illustrationUploadInput.click());
-					illustrationUploadInput.addEventListener('change', (event) => {
-						const file = event.target.files?.[0];
-						if (file) {
-							uploadAttachment('ILLUSTRATION', file);
-						}
-						event.target.value = '';
-					});
-				}
-				if (sewingUploadBtn && sewingUploadInput) {
-					sewingUploadBtn.addEventListener('click', () => sewingUploadInput.click());
-					sewingUploadInput.addEventListener('change', (event) => {
-						const file = event.target.files?.[0];
-						if (file) {
-							uploadAttachment('SEWING', file);
-						}
-						event.target.value = '';
-					});
-				}
+			renderMeasureTable();
+			updateAttachments();
+			const saveBtn = document.getElementById('save-btn');
+			if (saveBtn) {
+				saveBtn.addEventListener('click', saveMeasureTable);
 			}
 		});
 		/*]]>*/
