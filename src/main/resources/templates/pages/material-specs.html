@@ -350,8 +350,19 @@
 		const pagination = document.getElementById('ms-pagination');
 		const contextSummary = document.getElementById('ms-context-summary');
 
-		const colorModal = new bootstrap.Modal(document.getElementById('msColorModal'));
-		const supplierModal = new bootstrap.Modal(document.getElementById('msSupplierModal'));
+		const createModal = (element, label) => {
+			if (window.bootstrap?.Modal) {
+				return new window.bootstrap.Modal(element);
+			}
+			console.warn(`${label} 모달을 초기화할 수 없습니다. Bootstrap JS가 필요합니다.`);
+			return {
+				show: () => {},
+				hide: () => {}
+			};
+		};
+
+		const colorModal = createModal(document.getElementById('msColorModal'), '색상');
+		const supplierModal = createModal(document.getElementById('msSupplierModal'), '자재처');
 
 		let materials = [];
 		let deletedIds = new Set();
