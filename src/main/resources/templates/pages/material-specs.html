@@ -611,8 +611,9 @@
 					colorTargetInput = colorInputField;
 					selectedColorCode = null;
 					document.getElementById('msColorKeyword').value = '';
-					resetColorResults();
+					resetColorResults('조회 중입니다...');
 					colorModal.show();
+					loadColorResults('');
 				});
 				colorGroup.appendChild(colorInputField);
 				colorGroup.appendChild(colorBtn);
@@ -643,8 +644,9 @@
 					supplierTargetInput = supplierInput;
 					selectedSupplierCode = null;
 					document.getElementById('msSupplierKeyword').value = '';
-					resetSupplierResults();
+					resetSupplierResults('조회 중입니다...');
 					supplierModal.show();
+					loadSupplierResults('');
 				});
 				supplierGroup.appendChild(supplierInput);
 				supplierGroup.appendChild(supplierBtn);
@@ -824,39 +826,77 @@
 				alert('조회 후 저장할 수 있습니다.');
 				return;
 			}
+			const normalizeValue = (value) => {
+				if (typeof value !== 'string') {
+					return value;
+				}
+				const trimmed = value.trim();
+				return trimmed.length ? trimmed : null;
+			};
+			const items = materials.map((item) => ({
+				...item,
+				category: normalizeValue(item.category) || item.category,
+				materialName: normalizeValue(item.materialName),
+				materialUsage: normalizeValue(item.materialUsage),
+				spec: normalizeValue(item.spec),
+				materialColor: normalizeValue(item.materialColor),
+				uom: normalizeValue(item.uom),
+				materialCode: normalizeValue(item.materialCode),
+				supplierCode: normalizeValue(item.supplierCode),
+				orderUom: normalizeValue(item.orderUom),
+				remark: normalizeValue(item.remark)
+			}));
 			const payload = {
-				styleCode: styleInput.value.trim(),
-				colorCode: colorInput.value.trim(),
-				prdAgreeCode: agreementInput.value.trim(),
-				items: materials,
+				styleCode: styleInput.value.trim() || null,
+				colorCode: colorInput.value.trim() || null,
+				prdAgreeCode: agreementInput.value.trim() || null,
+				items,
 				deletedIds: Array.from(deletedIds)
 			};
+			if (!submitSave.loggedPayload) {
+				console.info('[material-specs] save payload', {
+					itemCount: payload.items.length,
+					styleCode: payload.styleCode,
+					colorCode: payload.colorCode,
+					prdAgreeCode: payload.prdAgreeCode
+				});
+				submitSave.loggedPayload = true;
+			}
 			const response = await fetch('/production/material-specs/save', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
 			});
 			if (!response.ok) {
-				alert('저장 중 오류가 발생했습니다.');
+				let errorMessage = '저장 중 오류가 발생했습니다.';
+				try {
+					const error = await response.json();
+					if (error && error.message) {
+						errorMessage = error.message;
+					}
+				} catch (error) {
+					// ignore parse errors
+				}
+				alert(errorMessage);
 				return;
 			}
 			const result = await response.json();
-			if (result.success) {
+			if (result.success && result.savedCount > 0) {
 				alert('저장되었습니다.');
-				doSearch();
+				await doSearch();
 			} else {
 				alert(result.message || '저장에 실패했습니다.');
 			}
 		};
 
-		const resetColorResults = () => {
+		const resetColorResults = (message = '검색어를 입력하세요.') => {
 			const tbody = document.getElementById('msColorResults');
-			tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">검색어를 입력하세요.</td></tr>';
+			tbody.innerHTML = `<tr><td colspan="2" class="text-center text-muted">${message}</td></tr>`;
 		};
 
-		const resetSupplierResults = () => {
+		const resetSupplierResults = (message = '검색어를 입력하세요.') => {
 			const tbody = document.getElementById('msSupplierResults');
-			tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">검색어를 입력하세요.</td></tr>';
+			tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">${message}</td></tr>`;
 		};
 
 		const renderCodeRows = (tbody, codes, columns) => {
@@ -907,6 +947,16 @@
 			return response.json();
 		};
 
+		const loadColorResults = async (keyword) => {
+			const results = await fetchCodes('COLOR', keyword);
+			renderCodeRows(document.getElementById('msColorResults'), results, 2);
+		};
+
+		const loadSupplierResults = async (keyword) => {
+			const results = await fetchCodes('CUSTOMER', keyword);
+			renderCodeRows(document.getElementById('msSupplierResults'), results, 3);
+		};
+
 		const applyColorSelection = () => {
 			if (!selectedColorCode || !colorTargetInput) {
 				alert('선택된 색상이 없습니다.');
@@ -929,16 +979,14 @@
 
 		document.getElementById('msColorSearchBtn').addEventListener('click', async () => {
 			const keyword = document.getElementById('msColorKeyword').value.trim();
-			const results = await fetchCodes('COLOR', keyword);
-			renderCodeRows(document.getElementById('msColorResults'), results, 2);
+			loadColorResults(keyword);
 		});
 
 		document.getElementById('msColorSelectBtn').addEventListener('click', applyColorSelection);
 
 		document.getElementById('msSupplierSearchBtn').addEventListener('click', async () => {
 			const keyword = document.getElementById('msSupplierKeyword').value.trim();
-			const results = await fetchCodes('CUSTOMER', keyword);
-			renderCodeRows(document.getElementById('msSupplierResults'), results, 3);
+			loadSupplierResults(keyword);
 		});
 
 		document.getElementById('msSupplierSelectBtn').addEventListener('click', applySupplierSelection);

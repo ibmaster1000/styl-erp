@@ -50,7 +50,15 @@ public class MaterialSpecController extends PageViewSupport {
     @PostMapping("/save")
     @ResponseBody
     public ResponseEntity<?> saveSpecs(@RequestBody MaterialSpecSaveRequest request) {
-        return ResponseEntity.ok(materialSpecService.saveSpecs(request));
+        try {
+            return ResponseEntity.ok(materialSpecService.saveSpecs(request));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("success", false, "savedCount", 0, "message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(java.util.Map.of("success", false, "savedCount", 0, "message", e.getMessage()));
+        }
     }
 
     @GetMapping("/codes")

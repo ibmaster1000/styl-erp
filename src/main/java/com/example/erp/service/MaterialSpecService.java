@@ -7,6 +7,8 @@ import com.example.erp.controller.dto.MaterialSpecOptionsResponse;
 import com.example.erp.controller.dto.MaterialSpecSaveItem;
 import com.example.erp.controller.dto.MaterialSpecSaveRequest;
 import com.example.erp.domain.Code;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,7 @@ import java.util.Set;
 public class MaterialSpecService {
 
     private static final int MATERIAL_CODE_PADDING = 3;
+    private static final Logger log = LoggerFactory.getLogger(MaterialSpecService.class);
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final StyleRuleService styleRuleService;
@@ -92,12 +95,10 @@ public class MaterialSpecService {
     public Map<String, Object> saveSpecs(MaterialSpecSaveRequest request) {
         if (request == null || !StringUtils.hasText(request.getStyleCode())
                 || !StringUtils.hasText(request.getPrdAgreeCode()) || !StringUtils.hasText(request.getColorCode())) {
-            return Map.of("success", false, "message", "조회된 컨텍스트가 없습니다.", "created", 0, "updated", 0,
-                    "deleted", 0);
+            throw new IllegalArgumentException("조회된 컨텍스트가 없습니다.");
         }
         if (!hasTable("material_specs")) {
-            return Map.of("success", false, "message", "material_specs 테이블이 없습니다.", "created", 0, "updated", 0,
-                    "deleted", 0);
+            throw new IllegalStateException("material_specs 테이블이 없습니다.");
         }
 
         String styleCode = normalize(request.getStyleCode());
@@ -141,8 +142,7 @@ public class MaterialSpecService {
                     continue;
                 }
                 if (!StringUtils.hasText(normalize(item.getSupplierCode()))) {
-                    return Map.of("success", false, "message", "자재처는 필수입니다.", "created", 0, "updated", 0,
-                            "deleted", 0);
+                    throw new IllegalArgumentException("자재처는 필수입니다.");
                 }
             }
         }
@@ -266,7 +266,15 @@ public class MaterialSpecService {
             }
         }
 
-        return Map.of("success", true, "created", created, "updated", updated, "deleted", deleted);
+        int savedCount = created + updated + deleted;
+        log.info("Material spec save result savedCount={} created={} updated={} deleted={} prdAgreeId={} prdAgreeCode={} "
+                        + "colorCode={} styleCode={}", savedCount, created, updated, deleted, prdAgreeId, prdAgreeCode,
+                colorCode, styleCode);
+        if (savedCount == 0) {
+            throw new IllegalStateException("저장된 데이터가 없습니다.");
+        }
+        return Map.of("success", true, "savedCount", savedCount, "created", created, "updated", updated,
+                "deleted", deleted, "message", "저장되었습니다.");
     }
 
     private List<String> findSizes(String styleCode, String colorCode) {
