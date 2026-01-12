@@ -712,7 +712,16 @@
 			renderMaterials();
 		};
 
-		const loadContext = async () => {
+		const selectFirstOption = (select) => {
+			const options = Array.from(select.options);
+			const validOption = options.find((option) => option.value);
+			if (validOption) {
+				select.value = validOption.value;
+			}
+			return Boolean(validOption);
+		};
+
+		const doSearch = async () => {
 			const styleCode = styleInput.value.trim();
 			const colorCode = colorInput.value.trim();
 			const agreeCode = agreementInput.value.trim();
@@ -724,38 +733,42 @@
 				alert('색상과 생산합의코드를 선택하세요.');
 				return;
 			}
-			const response = await fetch(`/materials/spec/search?styleCode=${encodeURIComponent(styleCode)}&color=${encodeURIComponent(colorCode)}&agreementCode=${encodeURIComponent(agreeCode)}`);
-			if (!response.ok) {
+			try {
+				const response = await fetch(`/materials/spec/search?styleCode=${encodeURIComponent(styleCode)}&color=${encodeURIComponent(colorCode)}&agreementCode=${encodeURIComponent(agreeCode)}`);
+				if (!response.ok) {
+					alert('조회 중 오류가 발생했습니다.');
+					return;
+				}
+				const data = await response.json();
+				contextLoaded = true;
+				styleChip.textContent = styleCode;
+				materials = Array.isArray(data.materials) ? data.materials.map((item) => ({
+					bomId: item.bomId,
+					category: item.category || '원자재',
+					materialName: item.materialName || '',
+					materialUsage: item.materialUsage || '',
+					spec: item.spec || '',
+					materialColor: item.materialColor || '',
+					uom: item.uom || '',
+					qtyPerPiece: item.qtyPerPiece,
+					materialCode: item.materialCode || '',
+					supplierCode: item.supplierCode || '',
+					lossRate: item.lossRate,
+					orderUom: item.orderUom || '',
+					unitPrice: item.unitPrice,
+					remark: item.remark || ''
+				})) : [];
+				deletedIds = new Set();
+				currentPage = 1;
+				updateMaterialCodes();
+				renderMaterials();
+				renderRuleTable(data.sizes || [], data.quantities || {}, colorCode);
+				addRowButton.disabled = false;
+				saveButton.disabled = false;
+				updateSummary();
+			} catch (error) {
 				alert('조회 중 오류가 발생했습니다.');
-				return;
 			}
-			const data = await response.json();
-			contextLoaded = true;
-			styleChip.textContent = styleCode;
-			materials = Array.isArray(data.materials) ? data.materials.map((item) => ({
-				bomId: item.bomId,
-				category: item.category || '원자재',
-				materialName: item.materialName || '',
-				materialUsage: item.materialUsage || '',
-				spec: item.spec || '',
-				materialColor: item.materialColor || '',
-				uom: item.uom || '',
-				qtyPerPiece: item.qtyPerPiece,
-				materialCode: item.materialCode || '',
-				supplierCode: item.supplierCode || '',
-				lossRate: item.lossRate,
-				orderUom: item.orderUom || '',
-				unitPrice: item.unitPrice,
-				remark: item.remark || ''
-			})) : [];
-			deletedIds = new Set();
-			currentPage = 1;
-			updateMaterialCodes();
-			renderMaterials();
-			renderRuleTable(data.sizes || [], data.quantities || {}, colorCode);
-			addRowButton.disabled = false;
-			saveButton.disabled = false;
-			updateSummary();
 		};
 
 		const loadOptions = async (styleCode) => {
@@ -764,11 +777,18 @@
 				throw new Error('options');
 			}
 			const data = await response.json();
-			updateSelectOptions(colorInput, Array.isArray(data.colors) ? data.colors : [], '색상 선택');
-			updateSelectOptions(agreementInput, Array.isArray(data.agreements) ? data.agreements : [], '생산합의코드 선택');
+			const colors = Array.isArray(data.colors) ? data.colors : [];
+			const agreements = Array.isArray(data.agreements) ? data.agreements : [];
+			updateSelectOptions(colorInput, colors, '색상 선택');
+			updateSelectOptions(agreementInput, agreements, '생산합의코드 선택');
 			colorInput.disabled = false;
 			agreementInput.disabled = false;
+			const hasColor = selectFirstOption(colorInput);
+			const hasAgreement = selectFirstOption(agreementInput);
 			updateSearchButtonState();
+			if (hasColor && hasAgreement) {
+				await doSearch();
+			}
 		};
 
 		const verifyStyleCode = async () => {
@@ -823,7 +843,7 @@
 			const result = await response.json();
 			if (result.success) {
 				alert('저장되었습니다.');
-				loadContext();
+				doSearch();
 			} else {
 				alert(result.message || '저장에 실패했습니다.');
 			}
@@ -924,7 +944,7 @@
 		document.getElementById('msSupplierSelectBtn').addEventListener('click', applySupplierSelection);
 
 		verifyButton.addEventListener('click', verifyStyleCode);
-		searchButton.addEventListener('click', loadContext);
+		searchButton.addEventListener('click', doSearch);
 		addRowButton.addEventListener('click', addNewRow);
 		saveButton.addEventListener('click', submitSave);
 

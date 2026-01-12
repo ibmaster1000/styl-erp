@@ -128,6 +128,24 @@ public class MaterialSpecService {
         String remarkColumn = findFirstExistingColumn("material_specs", List.of("remark"));
         String colorTypeColumn = findFirstExistingColumn("material_specs", List.of("color_type"));
         String supplierTypeColumn = findFirstExistingColumn("material_specs", List.of("supplier_type"));
+        if (isGeneratedColumn("material_specs", colorTypeColumn)) {
+            colorTypeColumn = null;
+        }
+        if (isGeneratedColumn("material_specs", supplierTypeColumn)) {
+            supplierTypeColumn = null;
+        }
+
+        if (supplierCodeColumn != null && !isNullableColumn("material_specs", supplierCodeColumn)) {
+            for (MaterialSpecSaveItem item : safeItems(request.getItems())) {
+                if (item == null) {
+                    continue;
+                }
+                if (!StringUtils.hasText(normalize(item.getSupplierCode()))) {
+                    return Map.of("success", false, "message", "자재처는 필수입니다.", "created", 0, "updated", 0,
+                            "deleted", 0);
+                }
+            }
+        }
 
         int created = 0;
         int updated = 0;
@@ -628,6 +646,46 @@ public class MaterialSpecService {
             return count != null && count > 0;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private boolean isGeneratedColumn(String tableName, String columnName) {
+        if (!StringUtils.hasText(columnName)) {
+            return false;
+        }
+        try {
+            Integer count = jdbcTemplate.queryForObject("""
+                    select count(*)
+                    from information_schema.columns
+                    where upper(table_name) = upper(:tableName)
+                      and upper(column_name) = upper(:columnName)
+                      and generation_expression is not null
+                      and generation_expression <> ''
+                    """, new MapSqlParameterSource()
+                    .addValue("tableName", tableName)
+                    .addValue("columnName", columnName), Integer.class);
+            return count != null && count > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean isNullableColumn(String tableName, String columnName) {
+        if (!StringUtils.hasText(columnName)) {
+            return true;
+        }
+        try {
+            String isNullable = jdbcTemplate.queryForObject("""
+                    select is_nullable
+                    from information_schema.columns
+                    where upper(table_name) = upper(:tableName)
+                      and upper(column_name) = upper(:columnName)
+                    """, new MapSqlParameterSource()
+                    .addValue("tableName", tableName)
+                    .addValue("columnName", columnName), String.class);
+            return "YES".equalsIgnoreCase(isNullable);
+        } catch (Exception e) {
+            return true;
         }
     }
 
