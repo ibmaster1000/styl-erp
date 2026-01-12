@@ -3,6 +3,7 @@ package com.example.erp.service;
 import com.example.erp.controller.dto.MaterialSpecCodeView;
 import com.example.erp.controller.dto.MaterialSpecContextView;
 import com.example.erp.controller.dto.MaterialSpecItemView;
+import com.example.erp.controller.dto.MaterialSpecOptionsResponse;
 import com.example.erp.controller.dto.MaterialSpecSaveItem;
 import com.example.erp.controller.dto.MaterialSpecSaveRequest;
 import com.example.erp.domain.Code;
@@ -66,6 +67,25 @@ public class MaterialSpecService {
                 .sorted(Comparator.comparing(Code::getCode, Comparator.nullsLast(String::compareToIgnoreCase)))
                 .map(code -> new MaterialSpecCodeView(code.getCode(), code.getCodeName(), code.getRemark()))
                 .toList();
+    }
+
+    public MaterialSpecOptionsResponse loadOptions(String styleCode) {
+        String normalizedStyleCode = normalize(styleCode);
+        if (!StringUtils.hasText(normalizedStyleCode) || !hasTable("production_agreements")) {
+            return new MaterialSpecOptionsResponse(Collections.emptyList(), Collections.emptyList());
+        }
+        String styleCodeColumn = findFirstExistingColumn("production_agreements", List.of("style_code"));
+        String colorColumn = findFirstExistingColumn("production_agreements", List.of("color_code"));
+        String agreementColumn = findFirstExistingColumn("production_agreements",
+                List.of("prd_agree_code", "agreement_code"));
+        if (styleCodeColumn == null || colorColumn == null || agreementColumn == null) {
+            return new MaterialSpecOptionsResponse(Collections.emptyList(), Collections.emptyList());
+        }
+        List<String> colors = findDistinctValues("production_agreements", colorColumn, styleCodeColumn,
+                normalizedStyleCode);
+        List<String> agreements = findDistinctValues("production_agreements", agreementColumn, styleCodeColumn,
+                normalizedStyleCode);
+        return new MaterialSpecOptionsResponse(colors, agreements);
     }
 
     @Transactional
@@ -609,5 +629,13 @@ public class MaterialSpecService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private List<String> findDistinctValues(String tableName, String valueColumn, String styleCodeColumn,
+            String styleCode) {
+        String sql = "select distinct " + valueColumn + " as value from " + tableName + " where " + styleCodeColumn
+                + " = :styleCode and " + valueColumn + " is not null order by " + valueColumn;
+        MapSqlParameterSource params = new MapSqlParameterSource("styleCode", styleCode);
+        return jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("value"));
     }
 }

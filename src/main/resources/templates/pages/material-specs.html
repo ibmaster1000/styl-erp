@@ -6,6 +6,14 @@
 			gap: 16px;
 		}
 
+		.ms-card {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 8px;
+			padding: 20px;
+			margin-bottom: 16px;
+		}
+
 		.ms-top-layout {
 			display: flex;
 			gap: 16px;
@@ -50,7 +58,11 @@
 			min-width: 140px;
 		}
 
-		.ms-color-input .form-control {
+		.ms-meta-item .form-select {
+			min-width: 140px;
+		}
+
+		.ms-color-input {
 			min-width: 120px;
 		}
 
@@ -62,6 +74,10 @@
 			width: 140px;
 			align-self: stretch;
 			min-height: 38px;
+		}
+
+		.ms-status {
+			font-size: 13px;
 		}
 
 		.ms-rule-card {
@@ -124,35 +140,6 @@
 			background: #f3f4f6;
 		}
 
-		.ms-modal-backdrop {
-			position: fixed;
-			inset: 0;
-			display: none;
-			align-items: center;
-			justify-content: center;
-			background: rgba(15, 23, 42, 0.45);
-			padding: 20px;
-			z-index: 1050;
-		}
-
-		.ms-modal-backdrop.active {
-			display: flex;
-		}
-
-		.ms-modal {
-			background: #ffffff;
-			border-radius: 12px;
-			border: 1px solid #e5e7eb;
-			box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-			padding: 16px;
-			max-width: 520px;
-			width: 100%;
-		}
-
-		.ms-modal .table-responsive {
-			max-height: 320px;
-		}
-
 		.ms-modal-row {
 			cursor: pointer;
 		}
@@ -168,40 +155,42 @@
 		}
 	</style>
 
-	<div class="mb-3">
+	<div class="ms-card">
 		<h4 class="fw-bold mb-1">원부자재 사양서 등록</h4>
 		<p class="text-muted mb-0">선택된 품번/색상/생산합의 기준으로 원부자재 사양서를 등록합니다.</p>
 	</div>
 
 	<div class="ms-layout">
 		<div class="ms-top-layout">
-			<div class="material-panel ms-search-controls">
+			<div class="material-panel ms-search-controls ms-card">
 				<div class="ms-row form-row">
 					<label class="form-label fw-bold mb-0">품번</label>
 					<div class="input-group ms-style-input">
 						<input type="text" class="form-control" id="ms-style-input" placeholder="품번을 입력하세요">
-						<button class="btn btn--outline" type="button" id="ms-style-search">품번 검색</button>
+						<button class="btn btn--outline" type="button" id="ms-style-verify">확인</button>
 					</div>
+					<span class="ms-status text-muted" id="ms-style-status"></span>
 				</div>
 				<div class="ms-row form-row">
 					<div class="ms-meta-item">
 						<label class="form-label fw-bold mb-0">색상</label>
-						<div class="input-group ms-color-input">
-							<input type="text" class="form-control" id="ms-color-input" placeholder="색상 입력">
-							<button class="btn btn--outline" type="button" id="ms-color-search">검색</button>
-						</div>
+						<select class="form-select ms-color-input" id="ms-color-input" disabled>
+							<option value="">색상 선택</option>
+						</select>
 					</div>
 					<div class="ms-meta-item ms-agree-input">
 						<label class="form-label fw-bold mb-0">생산합의코드</label>
-						<input type="text" class="form-control" id="ms-agreement-input" placeholder="생산합의코드 입력">
+						<select class="form-select" id="ms-agreement-input" disabled>
+							<option value="">생산합의코드 선택</option>
+						</select>
 					</div>
 					<div class="actions">
-						<button class="btn btn--primary ms-search-button" type="button" id="ms-search-button">조회</button>
+						<button class="btn btn--primary ms-search-button" type="button" id="ms-search-button" disabled>조회</button>
 					</div>
 				</div>
 			</div>
 
-			<div class="material-panel ms-rule-card">
+			<div class="material-panel ms-rule-card ms-card">
 				<div class="d-flex justify-content-between align-items-center">
 					<div>
 						<div class="fw-bold">색상 × 사이즈 규칙</div>
@@ -227,7 +216,7 @@
 			</div>
 		</div>
 
-		<div class="material-panel">
+		<div class="material-panel ms-card">
 			<div class="d-flex justify-content-between align-items-center mb-2">
 				<div>
 					<h6 class="mb-0 fw-bold">원부자재 사양서 목록</h6>
@@ -248,7 +237,7 @@
 							<th>자재규격</th>
 							<th>자재색상</th>
 							<th>소요량단위</th>
-							<th>1매 소요량</th>
+							<th>1매 소량</th>
 							<th>자재코드</th>
 							<th>자재처</th>
 							<th>LOSS율</th>
@@ -268,39 +257,6 @@
 			<nav class="mt-3">
 				<ul class="pagination pagination-sm justify-content-center mb-0" id="ms-pagination"></ul>
 			</nav>
-		</div>
-	</div>
-
-	<div class="ms-modal-backdrop" id="style-search-modal">
-		<div class="ms-modal">
-			<div class="d-flex justify-content-between align-items-center mb-2">
-				<h6 class="mb-0 fw-bold">품번 검색</h6>
-				<button type="button" class="btn-close" aria-label="닫기" id="ms-style-close"></button>
-			</div>
-			<div class="table-responsive">
-				<table class="table data-table align-middle mb-0">
-					<thead class="table-light">
-						<tr>
-							<th class="t-left">품번</th>
-							<th class="t-left">품목</th>
-							<th class="text-end">선택</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr th:if="${#lists.isEmpty(styles)}">
-							<td colspan="3" class="text-center text-muted">등록된 품번이 없습니다.</td>
-						</tr>
-						<tr th:each="style : ${styles}">
-							<td class="t-left" th:text="${style.styleCode}">ST-0001</td>
-							<td class="t-left" th:text="${style.itemName}">상의</td>
-							<td class="text-end">
-								<button type="button" class="btn btn--outline" data-style-pick
-									th:attr="data-style-code=${style.styleCode}">선택</button>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
 		</div>
 	</div>
 
@@ -382,6 +338,8 @@
 		const styleInput = document.getElementById('ms-style-input');
 		const colorInput = document.getElementById('ms-color-input');
 		const agreementInput = document.getElementById('ms-agreement-input');
+		const verifyButton = document.getElementById('ms-style-verify');
+		const statusMessage = document.getElementById('ms-style-status');
 		const styleChip = document.getElementById('ms-style-chip');
 		const searchButton = document.getElementById('ms-search-button');
 		const addRowButton = document.getElementById('ms-add-row');
@@ -404,8 +362,7 @@
 		let supplierTargetInput = null;
 		let selectedColorCode = null;
 		let selectedSupplierCode = null;
-
-		const closeStyleModal = () => document.getElementById('style-search-modal').classList.remove('active');
+		let styleVerified = false;
 
 		const resetContextState = () => {
 			contextLoaded = false;
@@ -418,6 +375,45 @@
 			currentPage = 1;
 			renderMaterials();
 			renderRuleTable([], {}, '');
+		};
+
+		const updateSelectOptions = (select, options, placeholder) => {
+			select.innerHTML = '';
+			const defaultOption = document.createElement('option');
+			defaultOption.value = '';
+			defaultOption.textContent = placeholder;
+			select.appendChild(defaultOption);
+			options.forEach((optionValue) => {
+				const option = document.createElement('option');
+				option.value = optionValue;
+				option.textContent = optionValue;
+				select.appendChild(option);
+			});
+		};
+
+		const updateSearchButtonState = () => {
+			searchButton.disabled = !(styleVerified && colorInput.value && agreementInput.value);
+		};
+
+		const clearStatusMessage = () => {
+			statusMessage.textContent = '';
+			statusMessage.classList.remove('text-success', 'text-danger');
+			statusMessage.classList.add('text-muted');
+		};
+
+		const setStatusMessage = (message, isSuccess) => {
+			statusMessage.textContent = message;
+			statusMessage.classList.remove('text-muted', 'text-success', 'text-danger');
+			statusMessage.classList.add(isSuccess ? 'text-success' : 'text-danger');
+		};
+
+		const resetOptionState = () => {
+			styleVerified = false;
+			colorInput.disabled = true;
+			agreementInput.disabled = true;
+			updateSelectOptions(colorInput, [], '색상 선택');
+			updateSelectOptions(agreementInput, [], '생산합의코드 선택');
+			updateSearchButtonState();
 		};
 
 		const updateSummary = () => {
@@ -709,11 +705,15 @@
 			const styleCode = styleInput.value.trim();
 			const colorCode = colorInput.value.trim();
 			const agreeCode = agreementInput.value.trim();
-			if (!styleCode || !colorCode || !agreeCode) {
-				alert('품번, 색상, 생산합의코드를 입력하세요.');
+			if (!styleVerified) {
+				alert('품번 확인 후 조회할 수 있습니다.');
 				return;
 			}
-			const response = await fetch(`/production/material-specs/context?styleCode=${encodeURIComponent(styleCode)}&prdAgreeCode=${encodeURIComponent(agreeCode)}&colorCode=${encodeURIComponent(colorCode)}`);
+			if (!colorCode || !agreeCode) {
+				alert('색상과 생산합의코드를 선택하세요.');
+				return;
+			}
+			const response = await fetch(`/materials/spec/search?styleCode=${encodeURIComponent(styleCode)}&color=${encodeURIComponent(colorCode)}&agreementCode=${encodeURIComponent(agreeCode)}`);
 			if (!response.ok) {
 				alert('조회 중 오류가 발생했습니다.');
 				return;
@@ -745,6 +745,47 @@
 			addRowButton.disabled = false;
 			saveButton.disabled = false;
 			updateSummary();
+		};
+
+		const loadOptions = async (styleCode) => {
+			const response = await fetch(`/materials/spec/options?styleCode=${encodeURIComponent(styleCode)}`);
+			if (!response.ok) {
+				throw new Error('options');
+			}
+			const data = await response.json();
+			updateSelectOptions(colorInput, Array.isArray(data.colors) ? data.colors : [], '색상 선택');
+			updateSelectOptions(agreementInput, Array.isArray(data.agreements) ? data.agreements : [], '생산합의코드 선택');
+			colorInput.disabled = false;
+			agreementInput.disabled = false;
+			updateSearchButtonState();
+		};
+
+		const verifyStyleCode = async () => {
+			const styleCode = styleInput.value.trim();
+			resetContextState();
+			if (!styleCode) {
+				resetOptionState();
+				setStatusMessage('품번을 입력하세요.', false);
+				return;
+			}
+			try {
+				const response = await fetch(`/materials/spec/verify?styleCode=${encodeURIComponent(styleCode)}`);
+				if (!response.ok) {
+					throw new Error('verify');
+				}
+				const data = await response.json();
+				if (data.exists) {
+					styleVerified = true;
+					setStatusMessage(data.message || '품번이 확인되었습니다.', true);
+					await loadOptions(styleCode);
+				} else {
+					resetOptionState();
+					setStatusMessage(data.message || '없는 품번입니다.', false);
+				}
+			} catch (error) {
+				resetOptionState();
+				setStatusMessage('품번 확인 중 오류가 발생했습니다.', false);
+			}
 		};
 
 		const submitSave = async () => {
@@ -855,34 +896,6 @@
 			supplierModal.hide();
 		};
 
-		document.getElementById('ms-style-search').addEventListener('click', () => {
-			document.getElementById('style-search-modal').classList.add('active');
-		});
-
-		document.getElementById('ms-style-close').addEventListener('click', closeStyleModal);
-		document.getElementById('style-search-modal').addEventListener('click', (event) => {
-			if (event.target.id === 'style-search-modal') closeStyleModal();
-		});
-
-		document.querySelectorAll('[data-style-pick]').forEach((button) => {
-			button.addEventListener('click', (event) => {
-				const selectedCode = event.currentTarget.dataset.styleCode;
-				if (!selectedCode) return;
-				styleInput.value = selectedCode;
-				styleChip.textContent = selectedCode;
-				closeStyleModal();
-				resetContextState();
-			});
-		});
-
-		document.getElementById('ms-color-search').addEventListener('click', () => {
-			colorTargetInput = colorInput;
-			selectedColorCode = null;
-			document.getElementById('msColorKeyword').value = '';
-			resetColorResults();
-			colorModal.show();
-		});
-
 		document.getElementById('msColorSearchBtn').addEventListener('click', async () => {
 			const keyword = document.getElementById('msColorKeyword').value.trim();
 			const results = await fetchCodes('COLOR', keyword);
@@ -899,22 +912,30 @@
 
 		document.getElementById('msSupplierSelectBtn').addEventListener('click', applySupplierSelection);
 
+		verifyButton.addEventListener('click', verifyStyleCode);
 		searchButton.addEventListener('click', loadContext);
 		addRowButton.addEventListener('click', addNewRow);
 		saveButton.addEventListener('click', submitSave);
 
-		[styleInput, colorInput, agreementInput].forEach((input) => {
-			input.addEventListener('input', () => {
-				resetContextState();
-			});
+		styleInput.addEventListener('input', () => {
+			clearStatusMessage();
+			resetOptionState();
+			resetContextState();
 		});
 
 		colorInput.addEventListener('change', () => {
-			updateMaterialCodes();
-			renderMaterials();
+			resetContextState();
+			updateSearchButtonState();
+		});
+
+		agreementInput.addEventListener('change', () => {
+			resetContextState();
+			updateSearchButtonState();
 		});
 
 		resetContextState();
+		resetOptionState();
+		clearStatusMessage();
 		/*]]>*/
 	</script>
 </div>

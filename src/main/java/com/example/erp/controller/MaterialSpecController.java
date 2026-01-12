@@ -5,10 +5,8 @@ import com.example.erp.controller.dto.MaterialSpecContextView;
 import com.example.erp.controller.dto.MaterialSpecSaveRequest;
 import com.example.erp.controller.support.PageViewSupport;
 import com.example.erp.domain.Code;
-import com.example.erp.domain.Style;
 import com.example.erp.service.CodeService;
 import com.example.erp.service.MaterialSpecService;
-import com.example.erp.service.StyleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,23 +24,18 @@ import java.util.List;
 public class MaterialSpecController extends PageViewSupport {
 
     private final MaterialSpecService materialSpecService;
-    private final StyleService styleService;
     private final CodeService codeService;
 
     public MaterialSpecController(MaterialSpecService materialSpecService,
-            StyleService styleService,
             CodeService codeService) {
         this.materialSpecService = materialSpecService;
-        this.styleService = styleService;
         this.codeService = codeService;
     }
 
     @GetMapping
     public String list(Model model) {
-        List<Style> styles = styleService.findAll();
         populate(model, "원부자재 사양서 등록", "material-specs", "pages/material-specs",
                 List.of());
-        model.addAttribute("styles", styles);
         return "layout/layout";
     }
 

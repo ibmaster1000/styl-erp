@@ -18,4 +18,8 @@ public class StyleService {
     public List<Style> findAll() {
         return styleRepository.findAll();
     }
+
+    public boolean existsByStyleCode(String styleCode) {
+        return styleRepository.existsByStyleCode(styleCode);
+    }
 }
