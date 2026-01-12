@@ -38,7 +38,7 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 			  on manager_user.emp_no = coalesce(nullif(pa.production_manager, ''), s.product_emp_no)
 			where (:styleCode is null or s.style_code like concat('%', :styleCode, '%'))
 			  and (:agreementCode is null or pa.agreement_code like concat('%', :agreementCode, '%'))
-			group by s.style_code, pa.agreement_code, pa.color_code
+			group by s.style_code, pa.agreement_code, pa.color_code, s.product_emp_no
 			order by s.style_code asc, pa.agreement_code asc, colorName asc
 			""", countQuery = """
 			select count(distinct concat(ifnull(s.style_code, ''), '|', ifnull(pa.agreement_code, ''), '|',
