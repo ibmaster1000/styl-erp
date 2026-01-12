@@ -1,7 +1,8 @@
 package com.example.erp.service;
 
+import com.example.erp.domain.Style;
+import com.example.erp.repository.StyleRepository;
 import com.example.erp.repository.WorkOrderRepository;
-import com.example.erp.repository.WorkOrderRepository.AttachmentRow;
 import com.example.erp.repository.WorkOrderRepository.SizeSpecRow;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,16 +14,17 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class WorkOrderService {
 
     private final WorkOrderRepository workOrderRepository;
+    private final StyleRepository styleRepository;
 
-    public WorkOrderService(WorkOrderRepository workOrderRepository) {
+    public WorkOrderService(WorkOrderRepository workOrderRepository, StyleRepository styleRepository) {
         this.workOrderRepository = workOrderRepository;
+        this.styleRepository = styleRepository;
     }
 
     public WorkOrderDetail loadByStyleCode(String styleCode) {
@@ -31,29 +33,40 @@ public class WorkOrderService {
         }
 
         String trimmed = styleCode.trim();
-        Optional<Long> stylesId = workOrderRepository.findStylesIdByStyleCode(trimmed);
-        if (stylesId.isEmpty()) {
+
+        Style styles = styleRepository.findByStyleCode(trimmed).orElse(null);
+        if (styles == null) {
             return WorkOrderDetail.notFound(trimmed);
         }
 
-        List<String> sizeCodes = workOrderRepository.findSizeCodes(stylesId.get());
-        LocalDateTime now = LocalDateTime.now();
-        Long orderId = workOrderRepository.findOrderIdByStylesId(stylesId.get())
-                .orElseGet(() -> workOrderRepository.insertWorkOrder(stylesId.get(), now));
+        final Long stylesId = styles.getStylesId();
+        final List<String> sizeCodes = workOrderRepository.findSizeCodes(stylesId);
+
+        // order_id 조회/생성 (람다(orElseGet) 제거 -> final 이슈 원천 차단)
+        Long orderId = workOrderRepository.findOrderIdByStylesId(stylesId).orElse(null);
+        if (orderId == null) {
+            orderId = workOrderRepository.insertWorkOrder(stylesId, LocalDateTime.now());
+        }
 
         Map<String, SizeSpec> sizeSpecs = Collections.emptyMap();
         AttachmentPaths attachments = AttachmentPaths.empty();
+
         if (orderId != null) {
             Map<String, SizeSpecRow> rows = workOrderRepository.findSizeSpecs(orderId);
             sizeSpecs = rows.values().stream()
-                    .collect(Collectors.toMap(SizeSpecRow::sizeCode, this::mapToSizeSpec,
-                            (existing, replacement) -> existing, LinkedHashMap::new));
+                    .collect(Collectors.toMap(
+                            SizeSpecRow::sizeCode,
+                            this::mapToSizeSpec,
+                            (existing, replacement) -> existing,
+                            LinkedHashMap::new
+                    ));
+
             attachments = workOrderRepository.findAttachment(orderId)
                     .map(row -> new AttachmentPaths(row.illustrationPath(), row.sewingPath()))
                     .orElse(AttachmentPaths.empty());
         }
 
-        return new WorkOrderDetail(stylesId.get(), orderId, sizeCodes, sizeSpecs, attachments, false, trimmed);
+        return new WorkOrderDetail(stylesId, orderId, sizeCodes, sizeSpecs, attachments, false, trimmed);
     }
 
     @Transactional
@@ -61,42 +74,50 @@ public class WorkOrderService {
         if (request == null) {
             return SaveResult.failure("품번을 입력하세요.");
         }
-        Optional<Long> stylesId = Optional.empty();
-        Long orderId = request.orderId();
-        if (orderId != null) {
-            stylesId = workOrderRepository.findStylesIdByOrderId(orderId);
-        }
-        if (stylesId.isEmpty() && StringUtils.hasText(request.styleCode())) {
-            stylesId = workOrderRepository.findStylesIdByStyleCode(request.styleCode().trim());
-        }
-        if (stylesId.isEmpty()) {
+
+        // 1) stylesId를 '최종값'으로 확정 (재할당 변수 제거)
+        final Long resolvedStylesId = resolveStylesId(request);
+        if (resolvedStylesId == null) {
             return SaveResult.failure("존재하지 않는 품번입니다.");
         }
 
-        List<String> sizeCodes = workOrderRepository.findSizeCodes(stylesId.get());
+        // 2) size 목록 확인
+        final List<String> sizeCodes = workOrderRepository.findSizeCodes(resolvedStylesId);
         if (sizeCodes.isEmpty()) {
             return SaveResult.failure("등록된 사이즈가 없습니다.");
         }
 
+        // 3) orderId 확보 (조회 -> 없으면 생성). 람다(orElseGet) 제거
         LocalDateTime now = LocalDateTime.now();
-        if (orderId == null) {
-            orderId = workOrderRepository.findOrderIdByStylesId(stylesId.get())
-                    .orElseGet(() -> workOrderRepository.insertWorkOrder(stylesId.get(), now));
+        Long orderId = request.orderId();
+
+        if (orderId != null) {
+            // 방어: 넘어온 orderId가 실제로 이 stylesId의 order인지 확인하고 싶으면 여기서 검증 가능
+            // (지금은 기존 로직 유지: orderId가 있으면 그대로 사용)
+        } else {
+            orderId = workOrderRepository.findOrderIdByStylesId(resolvedStylesId).orElse(null);
+            if (orderId == null) {
+                orderId = workOrderRepository.insertWorkOrder(resolvedStylesId, now);
+            }
         }
+
         if (orderId == null) {
             return SaveResult.failure("작업지시 저장에 실패했습니다.");
         }
 
+        // 4) 요청 spec 맵 구성
         Map<String, SizeSpecRow> requestSpecs = new LinkedHashMap<>();
         if (request.specs() != null) {
             for (SizeSpecInput input : request.specs()) {
                 if (input == null || !StringUtils.hasText(input.sizeCode())) {
                     continue;
                 }
-                requestSpecs.put(input.sizeCode().trim(), input.toRow());
+                String code = input.sizeCode().trim();
+                requestSpecs.put(code, input.toRow());
             }
         }
 
+        // 5) 저장 (기존 로직 유지: row별 exists -> update/insert)
         for (String sizeCode : sizeCodes) {
             SizeSpecRow spec = requestSpecs.getOrDefault(sizeCode, SizeSpecRow.empty(sizeCode));
             if (workOrderRepository.existsSizeSpec(orderId, sizeCode)) {
@@ -108,6 +129,33 @@ public class WorkOrderService {
         workOrderRepository.updateWorkOrderUpdatedAt(orderId, now);
 
         return SaveResult.success(orderId);
+    }
+
+    /**
+     * stylesId를 한 번에 "확정"해서 반환.
+     * - orderId가 있으면 orderId -> stylesId 조회
+     * - 없으면 styleCode로 styles 조회
+     * 이 메서드 밖에서 stylesId를 재할당하지 않게 만들기 위한 분리.
+     */
+    private Long resolveStylesId(SaveRequest request) {
+        // orderId 기반 우선
+        if (request.orderId() != null) {
+            Long fromOrder = workOrderRepository.findStylesIdByOrderId(request.orderId()).orElse(null);
+            if (fromOrder != null) {
+                return fromOrder;
+            }
+        }
+
+        // styleCode 기반
+        if (StringUtils.hasText(request.styleCode())) {
+            String trimmedCode = request.styleCode().trim();
+            Style styles = styleRepository.findByStyleCode(trimmedCode).orElse(null);
+            if (styles != null) {
+                return styles.getStylesId();
+            }
+        }
+
+        return null;
     }
 
     @Transactional
@@ -123,11 +171,14 @@ public class WorkOrderService {
         if (orderId == null || type == null || file == null || file.isEmpty()) {
             return UploadResult.failure("파일을 선택하세요.");
         }
+
         String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
         String safeExtension = (extension == null || extension.isBlank()) ? "" : "." + extension.toLowerCase();
         String filename = type.name().toLowerCase() + "_" + System.currentTimeMillis() + safeExtension;
+
         java.nio.file.Path dir = java.nio.file.Paths.get("uploads", "work-orders", String.valueOf(orderId));
         java.nio.file.Path destination = dir.resolve(filename);
+
         try {
             java.nio.file.Files.createDirectories(dir);
             file.transferTo(destination);
@@ -141,8 +192,13 @@ public class WorkOrderService {
     }
 
     private SizeSpec mapToSizeSpec(SizeSpecRow row) {
-        return new SizeSpec(row.totalLength(), row.waistWidth(), row.thighWidth(), row.hipWidth(),
-                row.inseamLength());
+        return new SizeSpec(
+                row.totalLength(),
+                row.waistWidth(),
+                row.thighWidth(),
+                row.hipWidth(),
+                row.inseamLength()
+        );
     }
 
     public record WorkOrderDetail(Long stylesId, Long orderId, List<String> sizeCodes,
