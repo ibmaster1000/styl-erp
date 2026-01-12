@@ -1,20 +1,25 @@
 package com.example.erp.controller;
 
+import com.example.erp.controller.dto.MaterialSpecCodeView;
+import com.example.erp.controller.dto.MaterialSpecContextView;
+import com.example.erp.controller.dto.MaterialSpecSaveRequest;
 import com.example.erp.controller.support.PageViewSupport;
+import com.example.erp.domain.Code;
 import com.example.erp.domain.Style;
+import com.example.erp.service.CodeService;
 import com.example.erp.service.MaterialSpecService;
-import com.example.erp.service.StyleRuleService;
 import com.example.erp.service.StyleService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/production/material-specs")
@@ -22,29 +27,44 @@ public class MaterialSpecController extends PageViewSupport {
 
     private final MaterialSpecService materialSpecService;
     private final StyleService styleService;
-    private final StyleRuleService styleRuleService;
+    private final CodeService codeService;
 
     public MaterialSpecController(MaterialSpecService materialSpecService,
             StyleService styleService,
-            StyleRuleService styleRuleService) {
+            CodeService codeService) {
         this.materialSpecService = materialSpecService;
         this.styleService = styleService;
-        this.styleRuleService = styleRuleService;
+        this.codeService = codeService;
     }
 
     @GetMapping
     public String list(Model model) {
         List<Style> styles = styleService.findAll();
-        Set<String> styleCodes = styles.stream()
-                .map(Style::getStyleCode)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        Map<String, Map<String, List<String>>> styleRules = styleRuleService.findRulesByStyleCodes(styleCodes);
-
         populate(model, "원부자재 사양서 등록", "material-specs", "pages/material-specs",
-                materialSpecService.findAllSorted());
+                List.of());
         model.addAttribute("styles", styles);
-        model.addAttribute("styleRules", styleRules);
         return "layout/layout";
+    }
+
+    @GetMapping("/context")
+    @ResponseBody
+    public MaterialSpecContextView loadContext(@RequestParam("styleCode") String styleCode,
+            @RequestParam("prdAgreeCode") String prdAgreeCode,
+            @RequestParam("colorCode") String colorCode) {
+        return materialSpecService.loadContext(styleCode, prdAgreeCode, colorCode);
+    }
+
+    @PostMapping("/save")
+    @ResponseBody
+    public ResponseEntity<?> saveSpecs(@RequestBody MaterialSpecSaveRequest request) {
+        return ResponseEntity.ok(materialSpecService.saveSpecs(request));
+    }
+
+    @GetMapping("/codes")
+    @ResponseBody
+    public List<MaterialSpecCodeView> loadCodes(@RequestParam("codeType") String codeType,
+            @RequestParam(name = "keyword", required = false) String keyword) {
+        List<Code> codes = codeService.searchActiveCodes(codeType, null, null, null);
+        return materialSpecService.filterCodes(codes, keyword);
     }
 }
