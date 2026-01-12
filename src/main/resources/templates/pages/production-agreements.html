@@ -105,7 +105,7 @@
 		<h4 class="fw-bold mb-1">생산합의 관리</h4>
 		<p class="text-muted mb-0">생산 합의서 관리</p>
 	</div>
-	<div th:if="${message}" class="alert alert-info py-2" th:text="${message}">작업 결과 메시지</div>
+	<div th:if="${message}" class="alert alert-info py-2" th:text="${message}">작업 과 메시지</div>
 	<div class="pa-layout">
 		<div class="pa-left">
 			<form class="ui-card ui-card-body pa-search-form" method="get" th:action="@{/production-agreements}">
@@ -135,13 +135,14 @@
 					</div>
 					<div class="d-flex gap-2">
 						<button type="button" class="btn btn-sm btn--primary" id="pa-open-create">등록</button>
-						<button type="submit" class="btn btn-sm btn-outline-secondary" form="pa-update-form"
-							id="pa-update-button">수정</button>
-						<button type="submit" class="btn btn-sm btn-outline-danger" form="pa-delete-form">삭제</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="pa-update-button">수정</button>
+						<button type="button" class="btn btn-sm btn-outline-danger" id="pa-delete-button">삭제</button>
 					</div>
 				</div>
 				<form id="pa-delete-form" method="post" th:action="@{/production-agreements/delete}">
-					<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+					<th:block th:if="${_csrf != null}">
+						<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+					</th:block>
 					<input type="hidden" name="agreementCode" th:value="${selectedAgreementCode}" />
 					<input type="hidden" name="colorCode" th:value="${selectedColorCode}" />
 				</form>
@@ -220,7 +221,9 @@
 				<div th:if="${detailView != null}" class="flex-grow-1 d-flex flex-column">
 					<form id="pa-update-form" method="post" th:action="@{/production-agreements/update}"
 						class="flex-grow-1 d-flex flex-column">
-						<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+						<th:block th:if="${_csrf != null}">
+							<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+						</th:block>
 						<input type="hidden" name="agreementCode" th:value="${detailView.agreementCode}" />
 						<div class="table-responsive flex-grow-1">
 							<table class="table table-sm align-middle pa-detail-table data-table">
@@ -283,7 +286,9 @@
 
 	<dialog id="pa-create-dialog">
 		<form method="post" th:action="@{/production-agreements/create}" class="p-3">
-			<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+			<th:block th:if="${_csrf != null}">
+				<input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+			</th:block>
 			<h6 class="fw-bold mb-3">생산합의 등록</h6>
 			<div class="row g-2">
 				<div class="col-md-6">
@@ -295,7 +300,7 @@
 					<input type="text" class="form-control" name="agreementCode" placeholder="생산합의 코드" required>
 				</div>
 				<div class="col-md-6">
-					<label class="form-label">색상 타입</label>
+					<label class="form-label">상 타입</label>
 					<input type="text" class="form-control" name="colorType" placeholder="COLOR">
 				</div>
 				<div class="col-md-6">
@@ -327,41 +332,85 @@
 	</dialog>
 
 	<script>
-		const createDialog = document.getElementById('pa-create-dialog');
-		const openCreate = document.getElementById('pa-open-create');
-		const closeCreate = document.getElementById('pa-close-create');
-		if (openCreate && createDialog) {
-			openCreate.addEventListener('click', () => createDialog.showModal());
-		}
-		if (closeCreate && createDialog) {
-			closeCreate.addEventListener('click', () => createDialog.close());
-		}
-		const deleteForm = document.getElementById('pa-delete-form');
-		if (deleteForm) {
-			deleteForm.addEventListener('submit', (event) => {
-				const agreementInput = deleteForm.querySelector('input[name="agreementCode"]');
-				if (!agreementInput || !agreementInput.value.trim()) {
-					event.preventDefault();
-					alert('선택된 생산합의가 없습니다.');
+		document.addEventListener('DOMContentLoaded', () => {
+			const createDialog = document.getElementById('pa-create-dialog');
+			const openCreate = document.getElementById('pa-open-create');
+			const closeCreate = document.getElementById('pa-close-create');
+			const deleteForm = document.getElementById('pa-delete-form');
+			const updateForm = document.getElementById('pa-update-form');
+			const updateButton = document.getElementById('pa-update-button');
+			const deleteButton = document.getElementById('pa-delete-button');
+			const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+			const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+			const attachCsrfHeader = (headers) => {
+				if (csrfToken && csrfHeader) {
+					return { ...headers, [csrfHeader]: csrfToken };
 				}
-			});
-		}
-		const updateForm = document.getElementById('pa-update-form');
-		if (updateForm) {
-			updateForm.addEventListener('submit', (event) => {
-				const agreementInput = updateForm.querySelector('input[name="agreementCode"]');
-				if (!agreementInput || !agreementInput.value.trim()) {
+				return headers;
+			};
+
+			if (openCreate && createDialog) {
+				openCreate.addEventListener('click', () => createDialog.showModal());
+			}
+			if (closeCreate && createDialog) {
+				closeCreate.addEventListener('click', () => createDialog.close());
+			}
+			if (deleteButton) {
+				deleteButton.addEventListener('click', (event) => {
 					event.preventDefault();
-					alert('선택된 생산합의가 없습니다.');
-				}
-			});
-		}
-		const updateButton = document.getElementById('pa-update-button');
-		if (updateButton && !updateForm) {
-			updateButton.addEventListener('click', (event) => {
-				event.preventDefault();
-				alert('선택된 생산합의가 없습니다.');
-			});
-		}
+					if (!deleteForm) {
+						alert('삭제할 생산합의가 없습니다.');
+						return;
+					}
+					const agreementInput = deleteForm.querySelector('input[name="agreementCode"]');
+					if (!agreementInput || !agreementInput.value.trim()) {
+						alert('선택된 생산합의가 없습니다.');
+						return;
+					}
+					deleteForm.submit();
+				});
+			}
+			if (updateButton) {
+				updateButton.addEventListener('click', (event) => {
+					event.preventDefault();
+					if (!updateForm) {
+						alert('선택된 생산합의가 없습니다.');
+						return;
+					}
+					const agreementInput = updateForm.querySelector('input[name="agreementCode"]');
+					if (!agreementInput || !agreementInput.value.trim()) {
+						alert('선택된 생산합의가 없습니다.');
+						return;
+					}
+					updateForm.submit();
+				});
+			}
+			if (deleteForm) {
+				deleteForm.addEventListener('submit', (event) => {
+					const agreementInput = deleteForm.querySelector('input[name="agreementCode"]');
+					if (!agreementInput || !agreementInput.value.trim()) {
+						event.preventDefault();
+						alert('선택된 생산합의가 없습니다.');
+					}
+				});
+			}
+			if (updateForm) {
+				updateForm.addEventListener('submit', (event) => {
+					const agreementInput = updateForm.querySelector('input[name="agreementCode"]');
+					if (!agreementInput || !agreementInput.value.trim()) {
+						event.preventDefault();
+						alert('선택된 생산합의가 없습니다.');
+					}
+				});
+			}
+			window.productionAgreementFetch = (url, options = {}) => {
+				const headers = attachCsrfHeader(options.headers || {});
+				return fetch(url, { ...options, headers }).catch((error) => {
+					alert('요청 처리 중 오류가 발생했습니다.');
+					throw error;
+				});
+			};
+		});
 	</script>
 </div>
