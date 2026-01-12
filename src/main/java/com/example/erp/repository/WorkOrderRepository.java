@@ -47,6 +47,18 @@ public class WorkOrderRepository {
         return result.isEmpty() ? Optional.empty() : Optional.ofNullable(result.get(0));
     }
 
+    public Optional<Long> findStylesIdByOrderId(Long orderId) {
+        String sql = """
+                select styles_id
+                from work_orders
+                where order_id = :orderId
+                limit 1
+                """;
+        MapSqlParameterSource params = new MapSqlParameterSource("orderId", orderId);
+        List<Long> result = jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getLong("styles_id"));
+        return result.isEmpty() ? Optional.empty() : Optional.ofNullable(result.get(0));
+    }
+
     public List<String> findSizeCodes(Long stylesId) {
         String sql = """
                 select code
@@ -170,6 +182,30 @@ public class WorkOrderRepository {
                 where order_id = :orderId
                 """.formatted(column);
         jdbcTemplate.update(sql, new MapSqlParameterSource("orderId", orderId));
+    }
+
+    public void upsertAttachment(Long orderId, AttachmentType type, String path, LocalDateTime now) {
+        String column = type == AttachmentType.ILLUSTRATION ? "illustration_path" : "sewing_path";
+        String updateSql = "update work_order_attachments set " + column + " = :path where order_id = :orderId";
+        MapSqlParameterSource updateParams = new MapSqlParameterSource()
+                .addValue("orderId", orderId)
+                .addValue("path", path);
+        int updated = jdbcTemplate.update(updateSql, updateParams);
+        if (updated > 0) {
+            return;
+        }
+        String insertSql = """
+                insert into work_order_attachments
+                (order_id, illustration_path, sewing_path, created_date)
+                values
+                (:orderId, :illustrationPath, :sewingPath, :createdDate)
+                """;
+        MapSqlParameterSource insertParams = new MapSqlParameterSource()
+                .addValue("orderId", orderId)
+                .addValue("illustrationPath", type == AttachmentType.ILLUSTRATION ? path : null)
+                .addValue("sewingPath", type == AttachmentType.SEWING ? path : null)
+                .addValue("createdDate", Timestamp.valueOf(now));
+        jdbcTemplate.update(insertSql, insertParams);
     }
 
     private MapSqlParameterSource buildSizeSpecParams(Long orderId, String sizeCode, SizeSpecRow spec,

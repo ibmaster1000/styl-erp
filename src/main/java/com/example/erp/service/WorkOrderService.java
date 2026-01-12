@@ -37,33 +37,40 @@ public class WorkOrderService {
         }
 
         List<String> sizeCodes = workOrderRepository.findSizeCodes(stylesId.get());
-        Optional<Long> orderId = workOrderRepository.findOrderIdByStylesId(stylesId.get());
+        LocalDateTime now = LocalDateTime.now();
+        Long orderId = workOrderRepository.findOrderIdByStylesId(stylesId.get())
+                .orElseGet(() -> workOrderRepository.insertWorkOrder(stylesId.get(), now));
+
         Map<String, SizeSpec> sizeSpecs = Collections.emptyMap();
         AttachmentPaths attachments = AttachmentPaths.empty();
-
-        if (orderId.isPresent()) {
-            Map<String, SizeSpecRow> rows = workOrderRepository.findSizeSpecs(orderId.get());
+        if (orderId != null) {
+            Map<String, SizeSpecRow> rows = workOrderRepository.findSizeSpecs(orderId);
             sizeSpecs = rows.values().stream()
                     .collect(Collectors.toMap(SizeSpecRow::sizeCode, this::mapToSizeSpec,
                             (existing, replacement) -> existing, LinkedHashMap::new));
-            attachments = workOrderRepository.findAttachment(orderId.get())
+            attachments = workOrderRepository.findAttachment(orderId)
                     .map(row -> new AttachmentPaths(row.illustrationPath(), row.sewingPath()))
                     .orElse(AttachmentPaths.empty());
         }
 
-        return new WorkOrderDetail(stylesId.get(), orderId.orElse(null), sizeCodes, sizeSpecs, attachments, false,
-                trimmed);
+        return new WorkOrderDetail(stylesId.get(), orderId, sizeCodes, sizeSpecs, attachments, false, trimmed);
     }
 
     @Transactional
     public SaveResult saveSizeSpecs(SaveRequest request) {
-        if (request == null || !StringUtils.hasText(request.styleCode())) {
+        if (request == null) {
             return SaveResult.failure("품번을 입력하세요.");
         }
-        String styleCode = request.styleCode().trim();
-        Optional<Long> stylesId = workOrderRepository.findStylesIdByStyleCode(styleCode);
+        Optional<Long> stylesId = Optional.empty();
+        Long orderId = request.orderId();
+        if (orderId != null) {
+            stylesId = workOrderRepository.findStylesIdByOrderId(orderId);
+        }
+        if (stylesId.isEmpty() && StringUtils.hasText(request.styleCode())) {
+            stylesId = workOrderRepository.findStylesIdByStyleCode(request.styleCode().trim());
+        }
         if (stylesId.isEmpty()) {
-            return SaveResult.failure("존재하지 않는 품번입니다");
+            return SaveResult.failure("존재하지 않는 품번입니다.");
         }
 
         List<String> sizeCodes = workOrderRepository.findSizeCodes(stylesId.get());
@@ -72,8 +79,10 @@ public class WorkOrderService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        Long orderId = workOrderRepository.findOrderIdByStylesId(stylesId.get())
-                .orElseGet(() -> workOrderRepository.insertWorkOrder(stylesId.get(), now));
+        if (orderId == null) {
+            orderId = workOrderRepository.findOrderIdByStylesId(stylesId.get())
+                    .orElseGet(() -> workOrderRepository.insertWorkOrder(stylesId.get(), now));
+        }
         if (orderId == null) {
             return SaveResult.failure("작업지시 저장에 실패했습니다.");
         }
@@ -110,6 +119,27 @@ public class WorkOrderService {
         return true;
     }
 
+    public UploadResult uploadAttachment(Long orderId, AttachmentType type, org.springframework.web.multipart.MultipartFile file) {
+        if (orderId == null || type == null || file == null || file.isEmpty()) {
+            return UploadResult.failure("파일을 선택하세요.");
+        }
+        String extension = StringUtils.getFilenameExtension(file.getOriginalFilename());
+        String safeExtension = (extension == null || extension.isBlank()) ? "" : "." + extension.toLowerCase();
+        String filename = type.name().toLowerCase() + "_" + System.currentTimeMillis() + safeExtension;
+        java.nio.file.Path dir = java.nio.file.Paths.get("uploads", "work-orders", String.valueOf(orderId));
+        java.nio.file.Path destination = dir.resolve(filename);
+        try {
+            java.nio.file.Files.createDirectories(dir);
+            file.transferTo(destination);
+        } catch (java.io.IOException e) {
+            return UploadResult.failure("업로드에 실패했습니다.");
+        }
+
+        String path = "/uploads/work-orders/" + orderId + "/" + filename;
+        workOrderRepository.upsertAttachment(orderId, type.toRepositoryType(), path, LocalDateTime.now());
+        return UploadResult.success(path);
+    }
+
     private SizeSpec mapToSizeSpec(SizeSpecRow row) {
         return new SizeSpec(row.totalLength(), row.waistWidth(), row.thighWidth(), row.hipWidth(),
                 row.inseamLength());
@@ -137,7 +167,7 @@ public class WorkOrderService {
         }
     }
 
-    public record SaveRequest(String styleCode, List<SizeSpecInput> specs) {
+    public record SaveRequest(Long orderId, String styleCode, List<SizeSpecInput> specs) {
     }
 
     public record SizeSpecInput(String sizeCode, BigDecimal totalLength, BigDecimal waistWidth,
@@ -154,6 +184,16 @@ public class WorkOrderService {
 
         public static SaveResult failure(String message) {
             return new SaveResult(false, message, null);
+        }
+    }
+
+    public record UploadResult(boolean success, String message, String path) {
+        public static UploadResult success(String path) {
+            return new UploadResult(true, "업로드되었습니다.", path);
+        }
+
+        public static UploadResult failure(String message) {
+            return new UploadResult(false, message, null);
         }
     }
 
