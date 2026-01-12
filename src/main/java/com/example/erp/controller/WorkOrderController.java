@@ -1,48 +1,67 @@
 package com.example.erp.controller;
 
 import com.example.erp.controller.support.PageViewSupport;
-import com.example.erp.domain.WorkOrder;
 import com.example.erp.service.WorkOrderService;
-import com.example.erp.service.StyleRuleService;
-import com.example.erp.service.WorkOrderAttachmentService;
-import com.example.erp.service.WorkOrderAttachmentService.AttachmentType;
+import com.example.erp.service.WorkOrderService.AttachmentType;
+import com.example.erp.service.WorkOrderService.SaveRequest;
+import com.example.erp.service.WorkOrderService.SaveResult;
+import com.example.erp.service.WorkOrderService.WorkOrderDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/work-orders")
 public class WorkOrderController extends PageViewSupport {
 
-	private final WorkOrderService workOrderService;
-	private final StyleRuleService styleRuleService;
-	private final WorkOrderAttachmentService workOrderAttachmentService;
+    private final WorkOrderService workOrderService;
 
-	public WorkOrderController(WorkOrderService workOrderService, StyleRuleService styleRuleService,
-			WorkOrderAttachmentService workOrderAttachmentService) {
-		this.workOrderService = workOrderService;
-		this.styleRuleService = styleRuleService;
-		this.workOrderAttachmentService = workOrderAttachmentService;
-	}
+    public WorkOrderController(WorkOrderService workOrderService) {
+        this.workOrderService = workOrderService;
+    }
 
-	@GetMapping
-	public String list(Model model) {
-		List<WorkOrder> workOrders = workOrderService.findAll();
-		Set<String> styleCodes = workOrders.stream().map(WorkOrder::getStyleCode).filter(v -> v != null && !v.isBlank())
-				.collect(Collectors.toSet());
-		Map<String, Map<String, List<String>>> styleRules = styleRuleService.findRulesByStyleCodes(styleCodes);
-		Map<AttachmentType, List<com.example.erp.controller.dto.WorkOrderAttachmentView>> attachments = workOrderAttachmentService
-				.fetchGroupedAttachments();
+    @GetMapping
+    public String list(@RequestParam(name = "styleCode", required = false) String styleCode, Model model) {
+        WorkOrderDetail detail = workOrderService.loadByStyleCode(styleCode);
 
-		populate(model, "작업 지시서", "workorder", "pages/work-orders", workOrders);
-		model.addAttribute("styleRules", styleRules);
-		model.addAttribute("attachments", attachments);
-		return "layout/layout";
-	}
+        populate(model, "작업 지시서", "workorder", "pages/work-orders", Collections.emptyList());
+        model.addAttribute("styleCode", detail.styleCode());
+        model.addAttribute("stylesId", detail.stylesId());
+        model.addAttribute("orderId", detail.orderId());
+        model.addAttribute("sizeCodes", detail.sizeCodes());
+        model.addAttribute("sizeSpecs", detail.sizeSpecs());
+        model.addAttribute("attachments", detail.attachments());
+        model.addAttribute("styleNotFound", detail.notFound());
+        return "layout/layout";
+    }
+
+    @PostMapping("/save")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> save(@RequestBody SaveRequest request) {
+        SaveResult result = workOrderService.saveSizeSpecs(request);
+        return ResponseEntity.ok(Map.of(
+                "success", result.success(),
+                "message", result.message(),
+                "orderId", result.orderId()
+        ));
+    }
+
+    @DeleteMapping("/attachments")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteAttachment(@RequestParam("orderId") Long orderId,
+            @RequestParam("type") String type) {
+        AttachmentType attachmentType = AttachmentType.from(type);
+        boolean success = workOrderService.deleteAttachment(orderId, attachmentType);
+        return ResponseEntity.ok(Map.of("success", success));
+    }
 }

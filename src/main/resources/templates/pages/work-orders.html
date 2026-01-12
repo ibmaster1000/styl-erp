@@ -26,28 +26,25 @@
 			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 		}
 
-		.wo-table thead th {
-			font-size: 13px;
-			font-weight: 800;
-			background: #f9fafb;
-			white-space: nowrap;
+		.wo-search-panel {
+			max-width: 420px;
 		}
 
-		.wo-table tbody td {
-			font-size: 13px;
-			vertical-align: middle;
-			white-space: nowrap;
+		.wo-search-form {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
 		}
 
-		.wo-row-selected {
-			background: rgba(124, 58, 237, 0.06);
-			box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.35);
+		.wo-search-row {
+			display: flex;
+			gap: 12px;
+			align-items: flex-end;
+			flex-wrap: nowrap;
 		}
 
-		.wo-summary-grid {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 10px 16px;
+		.wo-search-row input {
+			width: 200px;
 		}
 
 		.measure-table thead th {
@@ -112,6 +109,25 @@
 			margin-bottom: 8px;
 		}
 
+		.attachment-delete {
+			position: absolute;
+			top: 8px;
+			right: 8px;
+			width: 30px;
+			height: 30px;
+			border: none;
+			border-radius: 50%;
+			background: rgba(239, 68, 68, 0.9);
+			color: #fff;
+			font-weight: 800;
+			opacity: 0;
+			transition: opacity 0.2s ease;
+		}
+
+		.attachment-card:hover .attachment-delete {
+			opacity: 1;
+		}
+
 		.wo-attachments-panel {
 			height: 100%;
 			display: flex;
@@ -162,13 +178,6 @@
 			background: #0b1021;
 		}
 
-		.modal-actions {
-			display: flex;
-			gap: 8px;
-			margin-top: 12px;
-			justify-content: flex-end;
-		}
-
 		.modal-close {
 			position: absolute;
 			right: 16px;
@@ -181,6 +190,11 @@
 			color: #fff;
 			font-weight: 800;
 			box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+		}
+
+		.save-message {
+			min-height: 20px;
+			font-weight: 600;
 		}
 
 		@media (max-width: 1200px) {
@@ -203,93 +217,32 @@
 	</div>
 	<div class="wo-layout">
 		<div class="wo-left">
-			<form class="wo-panel mb-1" method="get" th:action="@{/work-orders}">
-				<div class="row g-3 align-items-end">
-					<div class="col-md-5">
-						<label class="form-label fw-semibold">품번</label>
-						<input type="text" class="form-control" name="styleCode" th:value="${param.styleCode}"
-							placeholder="품번 코드">
-					</div>
-					<div class="col-md-5">
-						<label class="form-label fw-semibold">작업지시</label>
-						<input type="text" class="form-control" name="workOrderId" th:value="${param.workOrderId}"
-							placeholder="작업지시 코드">
-					</div>
-					<div class="col-md-2 d-grid">
-						<div class="actions">
-							<button type="submit" class="btn btn--primary w-100">검색</button>
+			<div class="wo-panel wo-search-panel">
+				<form class="wo-search-form" method="get" th:action="@{/work-orders}">
+					<div class="wo-search-row">
+						<div>
+							<label class="form-label fw-semibold">품번</label>
+							<input type="text" class="form-control" name="styleCode" th:value="${styleCode}"
+								placeholder="품번 코드">
+						</div>
+						<div>
+							<button type="submit" class="btn btn--primary">검색</button>
 						</div>
 					</div>
-				</div>
-			</form>
+					<div class="text-danger small" th:if="${styleNotFound}">존재하지 않는 품번입니다</div>
+				</form>
+			</div>
 
 			<div class="wo-panel">
 				<div class="d-flex justify-content-between align-items-center mb-2">
-					<h6 class="mb-0 fw-bold">작업지시 목록</h6>
-					<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
-				</div>
-				<div class="table-responsive" style="max-height: 240px;">
-					<table class="table table-hover align-middle mb-0 wo-table data-table">
-						<thead class="table-light">
-							<tr>
-								<th class="t-left">작업지시</th>
-								<th class="t-left">품번</th>
-								<th class="t-left">생산합의</th>
-								<th class="t-left">색상</th>
-								<th class="t-left">사이즈</th>
-								<th>수량</th>
-								<th class="t-left">납기일</th>
-								<th class="t-left">상태</th>
-							</tr>
-						</thead>
-						<tbody id="wo-list-body">
-							<tr th:if="${#lists.isEmpty(list)}">
-								<td colspan="8" class="text-center text-muted">조회된 데이터가 없습니다.</td>
-							</tr>
-							<tr th:each="w, iter : ${list}" data-wo-row
-								th:classappend="${iter.index == 0} ? 'wo-row-selected'">
-								<td class="t-left" th:text="${w.workOrderId}" data-field="workOrderId">WO-001</td>
-								<td class="t-left" th:text="${w.styleCode}" data-field="styleCode">ST-001</td>
-								<td class="t-left" th:text="${w.agreementCode}" data-field="agreementCode">PA-001</td>
-								<td class="t-left" th:text="${w.colorCode}" data-field="color">RED</td>
-								<td class="t-left" th:text="${w.sizeCode}" data-field="size">L</td>
-								<td th:text="${w.quantity}" data-field="quantity">100</td>
-								<td class="t-left" th:text="${w.dueDate}" data-field="dueDate">2024-01-10</td>
-								<td class="t-left" th:text="${w.status}" data-field="status">진행</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</div>
-			<div class="wo-panel">
-				<div class="d-flex justify-content-between align-items-center mb-3">
-					<h6 class="mb-0 fw-bold">작업지시 기본 정보</h6>
-					<span class="text-muted small">선택한 작업지시 기준</span>
-				</div>
-				<div class="wo-summary-grid">
 					<div>
-						<div class="text-muted small">작업지시</div>
-						<div class="fw-bold" id="wo-summary-id">-</div>
+						<h6 class="mb-0 fw-bold">치수표</h6>
+						<span class="text-muted small">구분 × 사이즈별 입력</span>
 					</div>
-					<div>
-						<div class="text-muted small">품번</div>
-						<div class="fw-bold" id="wo-summary-style">-</div>
-					</div>
-					<div>
-						<div class="text-muted small">생산합의</div>
-						<div class="fw-bold" id="wo-summary-agreement">-</div>
-					</div>
-					<div>
-						<div class="text-muted small">납기일</div>
-						<div class="fw-bold" id="wo-summary-due">-</div>
-					</div>
+					<button type="button" class="btn btn--primary btn-sm" id="save-btn"
+						th:disabled="${styleNotFound or #lists.isEmpty(sizeCodes)}">변경사항 저장</button>
 				</div>
-			</div>
-			<div class="wo-panel">
-				<div class="d-flex justify-content-between align-items-center mb-2">
-					<h6 class="mb-0 fw-bold">치수표</h6>
-					<span class="text-muted small">구분 × 사이즈별 입력</span>
-				</div>
+				<div class="save-message" id="save-message"></div>
 				<div class="table-responsive" style="max-height: 420px;">
 					<table class="table table-sm align-middle measure-table data-table" id="measure-table">
 						<thead>
@@ -308,9 +261,6 @@
 							<div class="fw-bold">도식화</div>
 							<div class="text-muted small">등록된 도식화를 확인하세요.</div>
 						</div>
-						<div class="actions">
-							<button type="button" class="btn btn--outline btn-sm">도식화 등록</button>
-						</div>
 					</div>
 					<div class="attachment-grid" id="illustration-grid"></div>
 				</div>
@@ -318,11 +268,8 @@
 				<div class="attachment-section">
 					<div class="attachment-header">
 						<div>
-							<div class="fw-bold">봉제방법</div>
-							<div class="text-muted small">등록된 봉제방법을 확인하세요.</div>
-						</div>
-						<div class="actions">
-							<button type="button" class="btn btn--outline btn-sm">봉제방법 등록</button>
+							<div class="fw-bold">봉제 방법</div>
+							<div class="text-muted small">등록된 봉제 방법을 확인하세요.</div>
 						</div>
 					</div>
 					<div class="attachment-grid" id="sewing-grid"></div>
@@ -334,37 +281,42 @@
 	<div class="modal-backdrop" id="wo-preview-modal">
 		<div class="modal-body">
 			<img id="wo-preview-image" alt="미리보기">
-			<div class="modal-actions">
-				<button type="button" class="btn btn--outline btn-sm">편집(준비중)</button>
-				<button type="button" class="btn btn--outline btn-sm">다운로드(준비중)</button>
-				<button type="button" class="btn btn--primary btn-sm">삭제(준비중)</button>
-			</div>
 			<button type="button" class="modal-close" id="wo-modal-close">×</button>
 		</div>
 	</div>
 	<script th:inline="javascript">
 		/*<![CDATA[*/
-		const workOrders = /*[[${list}]]*/[];
-		const styleRules = /*[[${styleRules}]]*/ {};
-		const attachments = /*[[${attachments}]]*/ {};
+		const sizeCodes = /*[[${sizeCodes}]]*/ [];
+		const sizeSpecs = /*[[${sizeSpecs}]]*/ {};
+		const attachmentInfo = /*[[${attachments}]]*/ {};
+		const orderId = /*[[${orderId}]]*/ null;
+		const styleCode = /*[[${styleCode}]]*/ '';
+		const styleNotFound = /*[[${styleNotFound}]]*/ false;
 
-		const defaultSizes = ['095', '100', '105', '110'];
-		const measureItems = ['총기장', '허리폭', '다리폭', '둔폭', '밑길이'];
+		const measureItems = [
+			{ label: '총기장', key: 'totalLength' },
+			{ label: '허리폭', key: 'waistWidth' },
+			{ label: '다리폭', key: 'thighWidth' },
+			{ label: '둔폭', key: 'hipWidth' },
+			{ label: '밑길이', key: 'inseamLength' }
+		];
+
 		const measureState = {};
 
-		const getSizesByStyle = (styleCode) => {
-			if (!styleCode || !styleRules || !styleRules[styleCode]) return defaultSizes;
-			const rule = styleRules[styleCode];
-			const sizes = new Set();
-			Object.values(rule).forEach((list) => {
-				if (Array.isArray(list)) {
-					list.forEach((size) => sizes.add(size));
-				}
+		const initMeasureState = () => {
+			sizeCodes.forEach((size) => {
+				const spec = sizeSpecs[size] || {};
+				measureState[size] = {
+					totalLength: spec.totalLength ?? '',
+					waistWidth: spec.waistWidth ?? '',
+					thighWidth: spec.thighWidth ?? '',
+					hipWidth: spec.hipWidth ?? '',
+					inseamLength: spec.inseamLength ?? ''
+				};
 			});
-			return sizes.size ? Array.from(sizes) : defaultSizes;
 		};
 
-		const renderMeasureTable = (sizes, workOrderId) => {
+		const renderMeasureTable = () => {
 			const headRow = document.getElementById('measure-head-row');
 			const body = document.getElementById('measure-body');
 			headRow.innerHTML = '';
@@ -374,32 +326,29 @@
 			nameTh.textContent = '구분';
 			headRow.appendChild(nameTh);
 
-			sizes.forEach((size) => {
+			sizeCodes.forEach((size) => {
 				const th = document.createElement('th');
 				th.textContent = size;
 				th.classList.add('text-center');
 				headRow.appendChild(th);
 			});
 
-			const currentState = measureState[workOrderId] || {};
-
 			measureItems.forEach((item) => {
 				const tr = document.createElement('tr');
 				const label = document.createElement('th');
-				label.textContent = item;
+				label.textContent = item.label;
 				tr.appendChild(label);
 
-				sizes.forEach((size) => {
+				sizeCodes.forEach((size) => {
 					const td = document.createElement('td');
 					const input = document.createElement('input');
 					input.type = 'number';
-					input.step = '0.1';
+					input.step = '0.01';
 					input.className = 'form-control form-control-sm';
-					input.value = currentState[item]?.[size] ?? '';
+					input.value = measureState[size]?.[item.key] ?? '';
 					input.addEventListener('input', (e) => {
-						if (!measureState[workOrderId]) measureState[workOrderId] = {};
-						if (!measureState[workOrderId][item]) measureState[workOrderId][item] = {};
-						measureState[workOrderId][item][size] = e.target.value;
+						measureState[size] = measureState[size] || {};
+						measureState[size][item.key] = e.target.value;
 					});
 					td.appendChild(input);
 					tr.appendChild(td);
@@ -408,58 +357,119 @@
 			});
 		};
 
-		const renderAttachments = (list, targetId, emptyText) => {
+		const renderAttachment = (path, targetId, emptyText, type) => {
 			const container = document.getElementById(targetId);
 			container.innerHTML = '';
-			if (!list || list.length === 0) {
+			if (!path) {
 				const empty = document.createElement('div');
 				empty.className = 'attachment-card attachment-empty';
 				empty.textContent = emptyText;
 				container.appendChild(empty);
 				return;
 			}
-			list.forEach((item) => {
-				const card = document.createElement('div');
-				card.className = 'attachment-card';
-				card.dataset.src = item.filePath || '';
-				card.innerHTML = item.filePath ? `<img src="${item.filePath}" alt="attachment">` : '<div class="attachment-empty">이미지 없음</div>';
-				card.addEventListener('click', () => openModal(item.filePath));
-				container.appendChild(card);
+			const card = document.createElement('div');
+			card.className = 'attachment-card';
+			card.dataset.src = path;
+			card.innerHTML = `<img src="${path}" alt="attachment">`;
+			card.addEventListener('click', () => openModal(path));
+
+			const deleteBtn = document.createElement('button');
+			deleteBtn.type = 'button';
+			deleteBtn.className = 'attachment-delete';
+			deleteBtn.textContent = '×';
+			deleteBtn.addEventListener('click', (event) => {
+				event.stopPropagation();
+				deleteAttachment(type);
 			});
+			card.appendChild(deleteBtn);
+			container.appendChild(card);
 		};
 
-		const updateSummary = (wo) => {
-			document.getElementById('wo-summary-id').textContent = wo?.workOrderId || '-';
-			document.getElementById('wo-summary-style').textContent = wo?.styleCode || '-';
-			document.getElementById('wo-summary-agreement').textContent = wo?.agreementCode || '-';
-			document.getElementById('wo-summary-due').textContent = wo?.dueDate || '-';
+		const updateAttachments = () => {
+			renderAttachment(attachmentInfo.illustrationPath, 'illustration-grid', '도식화가 없습니다', 'ILLUSTRATION');
+			renderAttachment(attachmentInfo.sewingPath, 'sewing-grid', '봉제 방법이 없습니다', 'SEWING');
 		};
 
-		const selectRow = (row) => {
-			if (!row) return;
-			document.querySelectorAll('[data-wo-row]').forEach((r) => r.classList.remove('wo-row-selected'));
-			row.classList.add('wo-row-selected');
-
-			const cells = row.querySelectorAll('[data-field]');
-			const wo = {};
-			cells.forEach((cell) => {
-				wo[cell.dataset.field] = cell.textContent.trim();
-			});
-
-			const sizes = getSizesByStyle(wo.styleCode);
-			renderMeasureTable(sizes, wo.workOrderId);
-			updateSummary(wo);
+		const getCsrfHeaders = () => {
+			const token = document.querySelector('meta[name="_csrf"]')?.content;
+			const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+			const headers = { 'Content-Type': 'application/json' };
+			if (token && header) {
+				headers[header] = token;
+			}
+			return headers;
 		};
 
-		const bindRowEvents = () => {
-			document.querySelectorAll('[data-wo-row]').forEach((row) => {
-				row.addEventListener('click', () => selectRow(row));
-			});
-			const firstRow = document.querySelector('[data-wo-row]');
-			if (firstRow) {
-				selectRow(firstRow);
-			} else {
-				renderMeasureTable(defaultSizes, 'default');
+		const showSaveMessage = (message, success) => {
+			const messageBox = document.getElementById('save-message');
+			messageBox.textContent = message || '';
+			messageBox.style.color = success ? '#16a34a' : '#ef4444';
+		};
+
+		const buildPayload = () => ({
+			styleCode,
+			specs: sizeCodes.map((size) => {
+				const values = measureState[size] || {};
+				const parseValue = (value) => {
+					if (value === '' || value === null || value === undefined) return null;
+					const parsed = Number(value);
+					return Number.isNaN(parsed) ? null : parsed;
+				};
+				return {
+					sizeCode: size,
+					totalLength: parseValue(values.totalLength),
+					waistWidth: parseValue(values.waistWidth),
+					thighWidth: parseValue(values.thighWidth),
+					hipWidth: parseValue(values.hipWidth),
+					inseamLength: parseValue(values.inseamLength)
+				};
+			})
+		});
+
+		const saveMeasureTable = async () => {
+			if (!styleCode || styleNotFound) {
+				showSaveMessage('검색된 품번이 없습니다.', false);
+				return;
+			}
+			try {
+				const response = await fetch('/work-orders/save', {
+					method: 'POST',
+					headers: getCsrfHeaders(),
+					body: JSON.stringify(buildPayload())
+				});
+				const data = await response.json();
+				showSaveMessage(data.message, data.success);
+			} catch (error) {
+				showSaveMessage('저장에 실패했습니다.', false);
+			}
+		};
+
+		const deleteAttachment = async (type) => {
+			if (!orderId) {
+				return;
+			}
+			const confirmMessage = type === 'ILLUSTRATION'
+				? '도식화를 삭제하시겠습니까?'
+				: '봉제 방법을 삭제하시겠습니까?';
+			if (!confirm(confirmMessage)) {
+				return;
+			}
+			try {
+				const response = await fetch(`/work-orders/attachments?orderId=${orderId}&type=${type}`, {
+					method: 'DELETE',
+					headers: getCsrfHeaders()
+				});
+				const data = await response.json();
+				if (data.success) {
+					if (type === 'ILLUSTRATION') {
+						attachmentInfo.illustrationPath = null;
+					} else {
+						attachmentInfo.sewingPath = null;
+					}
+					updateAttachments();
+				}
+			} catch (error) {
+				alert('삭제에 실패했습니다.');
 			}
 		};
 
@@ -481,9 +491,13 @@
 		});
 
 		document.addEventListener('DOMContentLoaded', () => {
-			bindRowEvents();
-			renderAttachments(attachments.ILLUSTRATION, 'illustration-grid', '도식화가 없습니다.');
-			renderAttachments(attachments.SEWING, 'sewing-grid', '봉제방법이 없습니다.');
+			initMeasureState();
+			renderMeasureTable();
+			updateAttachments();
+			const saveBtn = document.getElementById('save-btn');
+			if (saveBtn) {
+				saveBtn.addEventListener('click', saveMeasureTable);
+			}
 		});
 		/*]]>*/
 	</script>
