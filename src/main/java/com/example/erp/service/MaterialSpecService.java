@@ -165,7 +165,7 @@ public class MaterialSpecService {
             throw new IllegalArgumentException("조회된 컨텍스트가 없습니다.");
         }
         if (!hasTable("material_specs")) {
-            throw new IllegalStateException("material_specs 테이블이 없습니다.");
+            throw new IllegalStateException("material_specs 테이블이 습니다.");
         }
 
         String styleCode = normalize(request.getStyleCode());
@@ -423,32 +423,30 @@ public class MaterialSpecService {
         log.info("findMaterialSpecs by prdAgreeIdColumn={}, prdColumn={}, using={}",
                 prdAgreeIdColumn, prdColumn, usingColumn);
 
+        List<String> selectColumns = List.of(
+                selectOrNull(bomIdColumn, "bom_id"),
+                selectOrNull("category"),
+                selectOrNull("material_name"),
+                selectOrNull("material_usage"),
+                selectOrNull("spec"),
+                selectOrNull("material_color"),
+                selectOrNull("uom"),
+                selectOrNull("qty_per_piece"),
+                selectOrNull("material_code"),
+                selectOrNull("supplier_code"),
+                selectOrNull("loss_rate"),
+                selectOrNull("order_uom"),
+                selectOrNull("unit_price"),
+                selectOrNull("remark"));
+
         String sql = """
-                select %s as bom_id,
-                       %s as category,
-                       %s as material_name,
-                       %s as material_usage,
-                       %s as spec,
-                       %s as material_color,
-                       %s as uom,
-                       %s as qty_per_piece,
-                       %s as material_code,
-                       %s as supplier_code,
-                       %s as loss_rate,
-                       %s as order_uom,
-                       %s as unit_price,
-                       %s as remark
+                select %s
                 from material_specs
                 where %s
                   and %s = :colorCode
                 %s
                 order by %s
-                """.formatted(selectOrNull(bomIdColumn, "bom_id"), selectOrNull("category"),
-                selectOrNull("material_name"), selectOrNull("material_usage"), selectOrNull("spec"),
-                selectOrNull("material_color"), selectOrNull("uom"), selectOrNull("qty_per_piece"),
-                selectOrNull("material_code"), selectOrNull("supplier_code"), selectOrNull("loss_rate"),
-                selectOrNull("order_uom"), selectOrNull("unit_price"), selectOrNull("remark"),
-                agreementCondition, colorColumn,
+                """.formatted(String.join(",\n       ", selectColumns), agreementCondition, colorColumn,
                 StringUtils.hasText(styleCode) && styleCodeColumn != null
                         ? "and " + styleCodeColumn + " = :styleCode"
                         : stylesId != null && styleIdColumn != null ? "and " + styleIdColumn + " = :stylesId" : "",
