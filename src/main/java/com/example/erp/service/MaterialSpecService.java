@@ -50,7 +50,7 @@ public class MaterialSpecService {
         Map<String, Integer> quantities = findAgreementQuantities(normalizedStyleCode, normalizedAgreeCode,
                 normalizedColor);
         List<MaterialSpecItemView> materials = findMaterialSpecs(normalizedStyleCode, normalizedAgreeCode,
-                normalizedColor, stylesId);
+                normalizedColor, prdAgreeId, stylesId);
         return new MaterialSpecContextView(normalizedStyleCode, normalizedColor, normalizedAgreeCode, stylesId,
                 prdAgreeId, sizes, quantities, materials);
     }
@@ -390,20 +390,38 @@ public class MaterialSpecService {
     }
 
     private List<MaterialSpecItemView> findMaterialSpecs(String styleCode, String prdAgreeCode, String colorCode,
-            Long stylesId) {
-        if (!hasTable("material_specs") || !StringUtils.hasText(prdAgreeCode) || !StringUtils.hasText(colorCode)) {
+            Long prdAgreeId, Long stylesId) {
+        if (!hasTable("material_specs") || !StringUtils.hasText(colorCode)) {
             return Collections.emptyList();
         }
         String bomIdColumn = findFirstExistingColumn("material_specs", List.of("bom_id", "id"));
+        String prdAgreeIdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_id"));
         String prdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_code", "agreement_code"));
         String colorColumn = findFirstExistingColumn("material_specs",
                 List.of("color_code", "material_color", "color"));
         String styleCodeColumn = findFirstExistingColumn("material_specs", List.of("style_code"));
         String styleIdColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id"));
 
-        if (prdColumn == null || colorColumn == null) {
+        if (colorColumn == null) {
             return Collections.emptyList();
         }
+        String agreementCondition = null;
+        MapSqlParameterSource params = new MapSqlParameterSource().addValue("colorCode", colorCode);
+        String usingColumn = null;
+        if (prdAgreeIdColumn != null && prdAgreeId != null) {
+            agreementCondition = prdAgreeIdColumn + " = :prdAgreeId";
+            params.addValue("prdAgreeId", prdAgreeId);
+            usingColumn = "prd_agree_id";
+        } else if (prdColumn != null && StringUtils.hasText(prdAgreeCode)) {
+            agreementCondition = prdColumn + " = :prdAgreeCode";
+            params.addValue("prdAgreeCode", prdAgreeCode);
+            usingColumn = prdColumn;
+        }
+        if (agreementCondition == null) {
+            return Collections.emptyList();
+        }
+        log.info("findMaterialSpecs by prdAgreeIdColumn={}, prdColumn={}, using={}",
+                prdAgreeIdColumn, prdColumn, usingColumn);
 
         String sql = """
                 select %s as bom_id,
@@ -421,7 +439,7 @@ public class MaterialSpecService {
                        %s as unit_price,
                        %s as remark
                 from material_specs
-                where %s = :prdAgreeCode
+                where %s
                   and %s = :colorCode
                 %s
                 order by %s
@@ -429,14 +447,12 @@ public class MaterialSpecService {
                 selectOrNull("material_name"), selectOrNull("material_usage"), selectOrNull("spec"),
                 selectOrNull("material_color"), selectOrNull("uom"), selectOrNull("qty_per_piece"),
                 selectOrNull("material_code"), selectOrNull("supplier_code"), selectOrNull("loss_rate"),
-                selectOrNull("order_uom"), selectOrNull("unit_price"), selectOrNull("remark"), prdColumn, colorColumn,
+                selectOrNull("order_uom"), selectOrNull("unit_price"), selectOrNull("remark"),
+                agreementCondition, colorColumn,
                 StringUtils.hasText(styleCode) && styleCodeColumn != null
                         ? "and " + styleCodeColumn + " = :styleCode"
                         : stylesId != null && styleIdColumn != null ? "and " + styleIdColumn + " = :stylesId" : "",
-                bomIdColumn != null ? bomIdColumn : prdColumn);
-
-        MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
-                .addValue("colorCode", colorCode);
+                bomIdColumn != null ? bomIdColumn : prdColumn != null ? prdColumn : prdAgreeIdColumn);
         if (StringUtils.hasText(styleCode) && styleCodeColumn != null) {
             params.addValue("styleCode", styleCode);
         } else if (stylesId != null && styleIdColumn != null) {
