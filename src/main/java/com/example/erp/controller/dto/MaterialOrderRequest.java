@@ -9,6 +9,7 @@ public class MaterialOrderRequest {
     private String orderDate;
     private String dueDate;
     private String deliveryPlace;
+    private String warehouseCode;
     private String remark;
 
     public String getStylesId() {
@@ -73,6 +74,14 @@ public class MaterialOrderRequest {
 
     public void setDeliveryPlace(String deliveryPlace) {
         this.deliveryPlace = deliveryPlace;
+    }
+
+    public String getWarehouseCode() {
+        return warehouseCode;
+    }
+
+    public void setWarehouseCode(String warehouseCode) {
+        this.warehouseCode = warehouseCode;
     }
 
     public String getRemark() {
