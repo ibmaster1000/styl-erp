@@ -185,7 +185,8 @@
 						</select>
 					</div>
 					<div class="actions">
-						<button class="btn btn--primary ms-search-button" type="button" id="ms-search-button" disabled>조회</button>
+						<button class="btn btn--primary ms-search-button" type="button" id="ms-search-button"
+							disabled>조회</button>
 					</div>
 				</div>
 			</div>
@@ -356,8 +357,8 @@
 			}
 			console.warn(`${label} 모달을 초기화할 수 없습니다. Bootstrap JS가 필요합니다.`);
 			return {
-				show: () => {},
-				hide: () => {}
+				show: () => { },
+				hide: () => { }
 			};
 		};
 
@@ -374,8 +375,10 @@
 		let selectedColorCode = null;
 		let selectedSupplierCode = null;
 		let styleVerified = false;
+		let lastSearched = null;
+		let isDirty = false;
 
-		const resetContextState = ({ resetMatrix } = {}) => {
+		const resetContextState = ({resetMatrix} = {}) => {
 			contextLoaded = false;
 			addRowButton.disabled = true;
 			saveButton.disabled = true;
@@ -457,8 +460,8 @@
 		const renderMatrixTable = (colors, sizes, quantities) => {
 			ruleHead.innerHTML = '';
 			ruleBody.innerHTML = '';
-			const safeColors = colors && colors.length > 0 ? colors : [{ code: '-', name: '-' }];
-			const safeSizes = sizes && sizes.length > 0 ? sizes : [{ code: '-', name: '-' }];
+			const safeColors = colors && colors.length > 0 ? colors : [{code: '-', name: '-'}];
+			const safeSizes = sizes && sizes.length > 0 ? sizes : [{code: '-', name: '-'}];
 			const headRow = document.createElement('tr');
 			const colorHead = document.createElement('th');
 			colorHead.textContent = '색상';
@@ -628,24 +631,24 @@
 
 				const nameTd = document.createElement('td');
 				nameTd.classList.add('t-left');
-				nameTd.appendChild(buildInput(item.materialName, '', (value) => { item.materialName = value; }, {
+				nameTd.appendChild(buildInput(item.materialName, '', (value) => {item.materialName = value;}, {
 					alignLeft: true,
 					field: 'material_name'
 				}));
 				tr.appendChild(nameTd);
 
 				const usageTd = document.createElement('td');
-				usageTd.appendChild(buildInput(item.materialUsage, '', (value) => { item.materialUsage = value; }));
+				usageTd.appendChild(buildInput(item.materialUsage, '', (value) => {item.materialUsage = value;}));
 				tr.appendChild(usageTd);
 
 				const specTd = document.createElement('td');
-				specTd.appendChild(buildInput(item.spec, '', (value) => { item.spec = value; }));
+				specTd.appendChild(buildInput(item.spec, '', (value) => {item.spec = value;}));
 				tr.appendChild(specTd);
 
 				const colorTd = document.createElement('td');
 				const colorGroup = document.createElement('div');
 				colorGroup.className = 'input-group';
-				const colorInputField = buildInput(item.materialColor, '', (value) => { item.materialColor = value; });
+				const colorInputField = buildInput(item.materialColor, '', (value) => {item.materialColor = value;});
 				const colorBtn = document.createElement('button');
 				colorBtn.type = 'button';
 				colorBtn.className = 'btn btn--outline';
@@ -664,17 +667,17 @@
 				tr.appendChild(colorTd);
 
 				const uomTd = document.createElement('td');
-				uomTd.appendChild(buildInput(item.uom, '', (value) => { item.uom = value; }, { field: 'uom' }));
+				uomTd.appendChild(buildInput(item.uom, '', (value) => {item.uom = value;}, {field: 'uom'}));
 				tr.appendChild(uomTd);
 
 				const qtyTd = document.createElement('td');
 				qtyTd.appendChild(buildInput(item.qtyPerPiece, '', (value) => {
 					item.qtyPerPiece = value ? parseFloat(value) : null;
-				}, { type: 'number', field: 'qty_per_piece' }));
+				}, {type: 'number', field: 'qty_per_piece'}));
 				tr.appendChild(qtyTd);
 
 				const codeTd = document.createElement('td');
-				codeTd.appendChild(buildInput(item.materialCode, '', (value) => { item.materialCode = value; }, {
+				codeTd.appendChild(buildInput(item.materialCode, '', (value) => {item.materialCode = value;}, {
 					readonly: true,
 					field: 'material_code'
 				}));
@@ -683,7 +686,7 @@
 				const supplierTd = document.createElement('td');
 				const supplierGroup = document.createElement('div');
 				supplierGroup.className = 'input-group';
-				const supplierInput = buildInput(item.supplierCode, '', (value) => { item.supplierCode = value; });
+				const supplierInput = buildInput(item.supplierCode, '', (value) => {item.supplierCode = value;});
 				const supplierBtn = document.createElement('button');
 				supplierBtn.type = 'button';
 				supplierBtn.className = 'btn btn--outline';
@@ -702,19 +705,19 @@
 				tr.appendChild(supplierTd);
 
 				const lossTd = document.createElement('td');
-				lossTd.appendChild(buildInput(item.lossRate, '', (value) => { item.lossRate = value ? parseFloat(value) : null; }, { type: 'number' }));
+				lossTd.appendChild(buildInput(item.lossRate, '', (value) => {item.lossRate = value ? parseFloat(value) : null;}, {type: 'number'}));
 				tr.appendChild(lossTd);
 
 				const orderTd = document.createElement('td');
-				orderTd.appendChild(buildInput(item.orderUom, '', (value) => { item.orderUom = value; }));
+				orderTd.appendChild(buildInput(item.orderUom, '', (value) => {item.orderUom = value;}));
 				tr.appendChild(orderTd);
 
 				const priceTd = document.createElement('td');
-				priceTd.appendChild(buildInput(item.unitPrice, '', (value) => { item.unitPrice = value ? parseFloat(value) : null; }, { type: 'number' }));
+				priceTd.appendChild(buildInput(item.unitPrice, '', (value) => {item.unitPrice = value ? parseFloat(value) : null;}, {type: 'number'}));
 				tr.appendChild(priceTd);
 
 				const remarkTd = document.createElement('td');
-				remarkTd.appendChild(buildInput(item.remark, '', (value) => { item.remark = value; }));
+				remarkTd.appendChild(buildInput(item.remark, '', (value) => {item.remark = value;}));
 				tr.appendChild(remarkTd);
 
 				const deleteTd = document.createElement('td');
@@ -810,6 +813,8 @@
 				})) : [];
 				deletedIds = new Set();
 				currentPage = 1;
+				lastSearched = {styleCode, colorCode, agreementCode: agreeCode};
+				isDirty = false;
 				updateMaterialCodes();
 				renderMaterials();
 				addRowButton.disabled = false;
@@ -909,7 +914,7 @@
 			});
 			const focusTarget = getFieldInput(firstError.rowIndex, firstError.field);
 			if (focusTarget) {
-				focusTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				focusTarget.scrollIntoView({behavior: 'smooth', block: 'center'});
 				focusTarget.focus();
 			}
 		};
@@ -923,22 +928,22 @@
 					return;
 				}
 				if (isBlank(item.category)) {
-					errors.push({ rowIndex: index, field: 'category' });
+					errors.push({rowIndex: index, field: 'category'});
 				}
 				if (isBlank(item.materialName)) {
-					errors.push({ rowIndex: index, field: 'material_name' });
+					errors.push({rowIndex: index, field: 'material_name'});
 				}
 				if (isBlank(item.uom)) {
-					errors.push({ rowIndex: index, field: 'uom' });
+					errors.push({rowIndex: index, field: 'uom'});
 				}
 				if (item.qtyPerPiece == null || Number.isNaN(item.qtyPerPiece)) {
-					errors.push({ rowIndex: index, field: 'qty_per_piece' });
+					errors.push({rowIndex: index, field: 'qty_per_piece'});
 				}
 				if (isBlank(item.materialCode)
 					&& !isBlank(item.category)
 					&& !isBlank(styleInput.value)
 					&& !isBlank(colorInput.value)) {
-					errors.push({ rowIndex: index, field: 'material_code' });
+					errors.push({rowIndex: index, field: 'material_code'});
 				}
 			});
 			return errors;
@@ -996,7 +1001,7 @@
 			}
 			const response = await fetch('/production/material-specs/save', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: {'Content-Type': 'application/json'},
 				body: JSON.stringify(payload)
 			});
 			if (!response.ok) {
@@ -1149,20 +1154,22 @@
 		styleInput.addEventListener('input', () => {
 			clearStatusMessage();
 			resetOptionState();
-			resetContextState({ resetMatrix: true });
+			resetContextState({resetMatrix: true});
+			lastSearched = null;
+			isDirty = false;
 		});
 
 		colorInput.addEventListener('change', () => {
-			resetContextState();
 			updateSearchButtonState();
+			isDirty = true;
 		});
 
 		agreementInput.addEventListener('change', () => {
-			resetContextState();
 			updateSearchButtonState();
+			isDirty = true;
 		});
 
-		resetContextState({ resetMatrix: true });
+		resetContextState({resetMatrix: true});
 		resetOptionState();
 		clearStatusMessage();
 		/*]]>*/

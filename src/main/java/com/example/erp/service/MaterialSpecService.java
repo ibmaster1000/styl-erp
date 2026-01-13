@@ -695,6 +695,10 @@ public class MaterialSpecService {
         if (column == null) {
             return "null as " + alias;
         }
+        String normalized = column.toLowerCase(Locale.ROOT);
+        if (normalized.contains(" as ")) {
+            return column;
+        }
         return column + " as " + alias;
     }
 

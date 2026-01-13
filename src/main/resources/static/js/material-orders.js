@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	let styleVerified = false;
 	let warehouseTargetRow = null;
 	let selectedWarehouse = null;
+	let lastSearched = null;
+	let isDirty = false;
 
 	const createModal = (element, label) => {
 		if (window.bootstrap?.Modal) {
@@ -28,8 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 		console.warn(`${label} 모달을 초기화할 수 없습니다. Bootstrap JS가 필요합니다.`);
 		return {
-			show: () => {},
-			hide: () => {}
+			show: () => { },
+			hide: () => { }
 		};
 	};
 
@@ -310,6 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			renderSuppliers(data.suppliers || []);
 			renderMaterials(data.materials || [], colorCode);
 			materialNote.textContent = `품번 ${styleCode} / 색상 ${colorCode} / 생산합의 ${agreementCode}`;
+			lastSearched = { styleCode, colorCode, agreementCode };
+			isDirty = false;
 			if (data.colorSizeMatrix) {
 				applyMatrix(data.colorSizeMatrix);
 			}
@@ -402,14 +406,18 @@ document.addEventListener('DOMContentLoaded', () => {
 		clearStatusMessage();
 		resetOptionState();
 		resetContextState({ resetMatrix: true });
+		lastSearched = null;
+		isDirty = false;
 	});
 
 	colorInput.addEventListener('change', () => {
 		updateSearchButtonState();
+		isDirty = true;
 	});
 
 	agreementInput.addEventListener('change', () => {
 		updateSearchButtonState();
+		isDirty = true;
 	});
 
 	warehouseSearchBtn.addEventListener('click', () => {

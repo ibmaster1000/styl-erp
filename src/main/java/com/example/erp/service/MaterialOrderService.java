@@ -5,6 +5,10 @@ import com.example.erp.controller.dto.MaterialOrderRequest;
 import com.example.erp.controller.dto.MaterialOrderSelection;
 import com.example.erp.controller.dto.MaterialOrderStyleResult;
 import com.example.erp.controller.dto.MaterialOrderSupplierView;
+import com.example.erp.domain.ProductionAgreement;
+import com.example.erp.repository.ProductionAgreementRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -19,6 +23,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -26,12 +31,18 @@ import java.util.UUID;
 @Service
 public class MaterialOrderService {
 
+	private static final Logger log = LoggerFactory.getLogger(MaterialOrderService.class);
+
 	private final NamedParameterJdbcTemplate jdbcTemplate;
 	private final StyleRuleService styleRuleService;
+	private final ProductionAgreementRepository productionAgreementRepository;
 
-	public MaterialOrderService(NamedParameterJdbcTemplate jdbcTemplate, StyleRuleService styleRuleService) {
+	public MaterialOrderService(NamedParameterJdbcTemplate jdbcTemplate,
+			StyleRuleService styleRuleService,
+			ProductionAgreementRepository productionAgreementRepository) {
 		this.jdbcTemplate = jdbcTemplate;
 		this.styleRuleService = styleRuleService;
+		this.productionAgreementRepository = productionAgreementRepository;
 	}
 
 	public List<MaterialOrderStyleResult> searchStyles(String keyword) {
@@ -85,15 +96,15 @@ public class MaterialOrderService {
 		return new MaterialOrderSelection(stylesId, effectiveStyleCode, colors, agreements, styleRule);
 	}
 
-	public List<MaterialOrderSupplierView> findSuppliers(String stylesId, String prdAgreeCode, String colorCode) {
-		if (!StringUtils.hasText(prdAgreeCode) || !StringUtils.hasText(colorCode) || !hasTable("material_specs")) {
+	public List<MaterialOrderSupplierView> findSuppliers(String stylesId, String agreementCode, String colorCode) {
+		Long prdAgreeId = resolvePrdAgreeId(agreementCode);
+		if (prdAgreeId == null || !StringUtils.hasText(colorCode) || !hasTable("material_specs")) {
 			return Collections.emptyList();
 		}
 
 		String supplierColumn = findFirstExistingColumn("material_specs", List.of("supplier_code"));
-		String prdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_code", "agreement_code"));
-		String colorColumn = findFirstExistingColumn("material_specs",
-				List.of("color_code", "material_color", "color"));
+		String prdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_id"));
+		String colorColumn = findFirstExistingColumn("material_specs", List.of("color_code"));
 		String styleIdColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id"));
 
 		if (supplierColumn == null || prdColumn == null || colorColumn == null) {
@@ -102,8 +113,10 @@ public class MaterialOrderService {
 
 		StringBuilder sql = new StringBuilder().append("select distinct ").append(supplierColumn)
 				.append(" as supplier_code ").append("from material_specs ").append("where ").append(prdColumn)
-				.append(" = :prdAgreeCode ").append("and ").append(colorColumn).append(" = :colorCode ");
-		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
+				.append(" = :prdAgreeId ").append("and ").append(colorColumn).append(" = :colorCode ")
+				.append("and ").append(supplierColumn).append(" is not null ")
+				.append("and ").append(supplierColumn).append(" <> '' ");
+		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeId", prdAgreeId)
 				.addValue("colorCode", colorCode);
 
 		if (StringUtils.hasText(stylesId) && styleIdColumn != null) {
@@ -120,21 +133,21 @@ public class MaterialOrderService {
 		Map<String, String> supplierNames = findSupplierNames(new LinkedHashSet<>(supplierCodes));
 		List<MaterialOrderSupplierView> result = new ArrayList<>();
 		for (String code : supplierCodes) {
-			boolean ordered = isSupplierAlreadyOrdered(stylesId, prdAgreeCode, colorCode, code);
+			boolean ordered = isSupplierAlreadyOrdered(stylesId, prdAgreeId, colorCode, code);
 			result.add(new MaterialOrderSupplierView(code, supplierNames.getOrDefault(code, "-"), ordered));
 		}
 		return result;
 	}
 
-	public List<MaterialOrderItemView> findMaterials(String stylesId, String prdAgreeCode, String colorCode,
+	public List<MaterialOrderItemView> findMaterials(String stylesId, String agreementCode, String colorCode,
 			String supplierCode) {
-		if (!hasTable("material_specs")) {
+		Long prdAgreeId = resolvePrdAgreeId(agreementCode);
+		if (prdAgreeId == null || !hasTable("material_specs")) {
 			return Collections.emptyList();
 		}
 
-		String prdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_code", "agreement_code"));
-		String colorColumn = findFirstExistingColumn("material_specs",
-				List.of("color_code", "material_color", "color"));
+		String prdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_id"));
+		String colorColumn = findFirstExistingColumn("material_specs", List.of("color_code"));
 		String supplierColumn = findFirstExistingColumn("material_specs", List.of("supplier_code"));
 		String styleIdColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id"));
 		String bomIdColumn = findFirstExistingColumn("material_specs", List.of("bom_id"));
@@ -159,7 +172,7 @@ public class MaterialOrderService {
 				       %s as unit_price,
 				       %s as remark
 				from material_specs
-				where %s = :prdAgreeCode
+				where %s = :prdAgreeId
 				  and %s = :colorCode
 				  and %s = :supplierCode
 				%s
@@ -173,7 +186,7 @@ public class MaterialOrderService {
 				StringUtils.hasText(stylesId) && styleIdColumn != null ? "and " + styleIdColumn + " = :stylesId" : "",
 				bomIdColumn != null ? bomIdColumn : prdColumn);
 
-		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
+		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeId", prdAgreeId)
 				.addValue("colorCode", colorCode).addValue("supplierCode", supplierCode);
 		if (StringUtils.hasText(stylesId) && styleIdColumn != null) {
 			params.addValue("stylesId", stylesId);
@@ -194,8 +207,13 @@ public class MaterialOrderService {
 			return Map.of("success", true, "created", 0, "skipped", 0, "message", "발주 요청이 접수되었습니다.");
 		}
 
+		Long prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode());
+		if (prdAgreeId == null) {
+			throw new IllegalArgumentException("생산합의코드가 올바르지 않습니다.");
+		}
+
 		String orderCodeColumn = findFirstExistingColumn("material_orders", List.of("m_order_code", "order_code"));
-		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_code", "agreement_code"));
+		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_id"));
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
 		String bomIdColumn = findFirstExistingColumn("material_orders", List.of("bom_id"));
 		String supplierColumn = findFirstExistingColumn("material_orders", List.of("supplier_code"));
@@ -228,7 +246,7 @@ public class MaterialOrderService {
 				skipped++;
 				continue;
 			}
-			if (isOrderExists(request.getStylesId(), request.getPrdAgreeCode(), request.getColorCode(),
+			if (isOrderExists(request.getStylesId(), prdAgreeId, request.getColorCode(),
 					request.getSupplierCode(), spec.getBomId())) {
 				skipped++;
 				continue;
@@ -236,7 +254,7 @@ public class MaterialOrderService {
 
 			MapSqlParameterSource params = new MapSqlParameterSource()
 					.addValue("mOrderCode", UUID.randomUUID().toString()).addValue("stylesId", request.getStylesId())
-					.addValue("styleCode", request.getStyleCode()).addValue("prdAgreeCode", request.getPrdAgreeCode())
+					.addValue("styleCode", request.getStyleCode()).addValue("prdAgreeId", prdAgreeId)
 					.addValue("colorCode", request.getColorCode()).addValue("bomId", spec.getBomId())
 					.addValue("supplierCode", request.getSupplierCode()).addValue("orderAmount", BigDecimal.ZERO)
 					.addValue("orderPrice", BigDecimal.ZERO).addValue("orderedBy", orderedBy)
@@ -254,7 +272,7 @@ public class MaterialOrderService {
 				values.add(":stylesId");
 			}
 			columns.add(prdColumn);
-			values.add(":prdAgreeCode");
+			values.add(":prdAgreeId");
 			columns.add(colorColumn);
 			values.add(":colorCode");
 			columns.add(bomIdColumn);
@@ -294,16 +312,35 @@ public class MaterialOrderService {
 		return Map.of("success", created > 0 || skipped == specs.size(), "created", created, "skipped", skipped);
 	}
 
-	public List<MaterialOrderSupplierView> findSuppliersByStyleCode(String styleCode, String prdAgreeCode,
+	public List<MaterialOrderSupplierView> findSuppliersByStyleCode(String styleCode, String agreementCode,
 			String colorCode) {
-		if (!StringUtils.hasText(styleCode) || !StringUtils.hasText(prdAgreeCode) || !StringUtils.hasText(colorCode)
+		Long prdAgreeId = resolvePrdAgreeId(agreementCode);
+		if (!StringUtils.hasText(styleCode) || prdAgreeId == null || !StringUtils.hasText(colorCode)
 				|| !hasTable("material_specs")) {
 			return Collections.emptyList();
 		}
+		return findSuppliersByStyleCode(styleCode, prdAgreeId, colorCode);
+	}
+
+	public MaterialOrderSearchResult searchOrders(String styleCode, String agreementCode, String colorCode) {
+		Long prdAgreeId = resolvePrdAgreeId(agreementCode);
+		log.info("Material order search agreementCode={} -> prdAgreeId={}", agreementCode, prdAgreeId);
+		log.info("Material order search params prdAgreeId={}, colorCode={}", prdAgreeId, colorCode);
+		if (prdAgreeId == null) {
+			log.info("Material order search result suppliers=0 materials=0");
+			return new MaterialOrderSearchResult(Collections.emptyList(), Collections.emptyList());
+		}
+		List<MaterialOrderSupplierView> suppliers = findSuppliersByStyleCode(styleCode, prdAgreeId, colorCode);
+		List<MaterialOrderItemView> materials = findMaterialsByStyleCode(styleCode, prdAgreeId, colorCode);
+		log.info("Material order search result suppliers={} materials={}", suppliers.size(), materials.size());
+		return new MaterialOrderSearchResult(suppliers, materials);
+	}
+
+	private List<MaterialOrderSupplierView> findSuppliersByStyleCode(String styleCode, Long prdAgreeId,
+			String colorCode) {
 		String supplierColumn = findFirstExistingColumn("material_specs", List.of("supplier_code"));
-		String prdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_code", "agreement_code"));
-		String colorColumn = findFirstExistingColumn("material_specs",
-				List.of("color_code", "material_color", "color"));
+		String prdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_id"));
+		String colorColumn = findFirstExistingColumn("material_specs", List.of("color_code"));
 		String styleCodeColumn = findFirstExistingColumn("material_specs", List.of("style_code"));
 		String styleIdColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id"));
 		if (supplierColumn == null || prdColumn == null || colorColumn == null) {
@@ -315,9 +352,10 @@ public class MaterialOrderService {
 		}
 		StringBuilder sql = new StringBuilder().append("select distinct ").append(supplierColumn)
 				.append(" as supplier_code ").append("from material_specs ").append("where ")
-				.append(prdColumn).append(" = :prdAgreeCode ").append("and ").append(colorColumn)
-				.append(" = :colorCode ");
-		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
+				.append(prdColumn).append(" = :prdAgreeId ").append("and ").append(colorColumn)
+				.append(" = :colorCode ").append("and ").append(supplierColumn).append(" is not null ")
+				.append("and ").append(supplierColumn).append(" <> '' ");
+		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeId", prdAgreeId)
 				.addValue("colorCode", colorCode);
 		if (styleCodeColumn != null) {
 			sql.append("and ").append(styleCodeColumn).append(" = :styleCode ");
@@ -342,13 +380,17 @@ public class MaterialOrderService {
 	}
 
 	public List<MaterialOrderItemView> findMaterialsByStyleCode(String styleCode, String prdAgreeCode, String colorCode) {
-		if (!StringUtils.hasText(styleCode) || !StringUtils.hasText(prdAgreeCode) || !StringUtils.hasText(colorCode)
+		Long prdAgreeId = resolvePrdAgreeId(prdAgreeCode);
+		if (!StringUtils.hasText(styleCode) || prdAgreeId == null || !StringUtils.hasText(colorCode)
 				|| !hasTable("material_specs")) {
 			return Collections.emptyList();
 		}
-		String prdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_code", "agreement_code"));
-		String colorColumn = findFirstExistingColumn("material_specs",
-				List.of("color_code", "material_color", "color"));
+		return findMaterialsByStyleCode(styleCode, prdAgreeId, colorCode);
+	}
+
+	private List<MaterialOrderItemView> findMaterialsByStyleCode(String styleCode, Long prdAgreeId, String colorCode) {
+		String prdColumn = findFirstExistingColumn("material_specs", List.of("prd_agree_id"));
+		String colorColumn = findFirstExistingColumn("material_specs", List.of("color_code"));
 		String supplierColumn = findFirstExistingColumn("material_specs", List.of("supplier_code"));
 		String styleCodeColumn = findFirstExistingColumn("material_specs", List.of("style_code"));
 		String styleIdColumn = findFirstExistingColumn("material_specs", List.of("styles_id", "style_id"));
@@ -376,7 +418,7 @@ public class MaterialOrderService {
 				       %s as unit_price,
 				       %s as remark
 				from material_specs
-				where %s = :prdAgreeCode
+				where %s = :prdAgreeId
 				  and %s = :colorCode
 				  %s
 				order by coalesce(%s, 0) asc
@@ -388,7 +430,7 @@ public class MaterialOrderService {
 				buildStyleFilter(styleCodeColumn, styleIdColumn, stylesId),
 				bomIdColumn != null ? bomIdColumn : prdColumn);
 
-		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
+		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeId", prdAgreeId)
 				.addValue("colorCode", colorCode);
 		if (styleCodeColumn != null) {
 			params.addValue("styleCode", styleCode);
@@ -405,12 +447,12 @@ public class MaterialOrderService {
 						rs.getString("remark")));
 	}
 
-	private boolean isSupplierAlreadyOrdered(String stylesId, String prdAgreeCode, String colorCode,
+	private boolean isSupplierAlreadyOrdered(String stylesId, Long prdAgreeId, String colorCode,
 			String supplierCode) {
 		if (!hasTable("material_orders")) {
 			return false;
 		}
-		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_code", "agreement_code"));
+		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_id"));
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
 		String supplierColumn = findFirstExistingColumn("material_orders", List.of("supplier_code"));
 		String styleIdColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id"));
@@ -420,10 +462,10 @@ public class MaterialOrderService {
 		}
 
 		StringBuilder sql = new StringBuilder().append("select count(*) from material_orders ").append("where ")
-				.append(prdColumn).append(" = :prdAgreeCode ").append("and ").append(colorColumn)
+				.append(prdColumn).append(" = :prdAgreeId ").append("and ").append(colorColumn)
 				.append(" = :colorCode ").append("and ").append(supplierColumn).append(" = :supplierCode ");
 
-		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
+		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeId", prdAgreeId)
 				.addValue("colorCode", colorCode).addValue("supplierCode", supplierCode);
 
 		if (StringUtils.hasText(stylesId) && styleIdColumn != null) {
@@ -435,13 +477,13 @@ public class MaterialOrderService {
 		return count != null && count > 0;
 	}
 
-	private boolean isOrderExists(String stylesId, String prdAgreeCode, String colorCode, String supplierCode,
+	private boolean isOrderExists(String stylesId, Long prdAgreeId, String colorCode, String supplierCode,
 			Long bomId) {
 		if (!hasTable("material_orders")) {
 			return false;
 		}
 
-		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_code", "agreement_code"));
+		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_id"));
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
 		String supplierColumn = findFirstExistingColumn("material_orders", List.of("supplier_code"));
 		String styleIdColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id"));
@@ -452,11 +494,11 @@ public class MaterialOrderService {
 		}
 
 		StringBuilder sql = new StringBuilder().append("select count(*) from material_orders ").append("where ")
-				.append(prdColumn).append(" = :prdAgreeCode ").append("and ").append(colorColumn)
+				.append(prdColumn).append(" = :prdAgreeId ").append("and ").append(colorColumn)
 				.append(" = :colorCode ").append("and ").append(supplierColumn).append(" = :supplierCode ")
 				.append("and ").append(bomIdColumn).append(" = :bomId ");
 
-		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
+		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeId", prdAgreeId)
 				.addValue("colorCode", colorCode).addValue("supplierCode", supplierCode).addValue("bomId", bomId);
 
 		if (StringUtils.hasText(stylesId) && styleIdColumn != null) {
@@ -635,7 +677,39 @@ public class MaterialOrderService {
 		if (column == null) {
 			return "null as " + alias;
 		}
+		String normalized = column.toLowerCase(Locale.ROOT);
+		if (normalized.contains(" as ")) {
+			return column;
+		}
 		return column + " as " + alias;
+	}
+
+	private Long resolvePrdAgreeId(String agreementCode) {
+		if (!StringUtils.hasText(agreementCode) || !hasTable("production_agreements")) {
+			return null;
+		}
+		return productionAgreementRepository.findByAgreementCode(agreementCode.trim())
+				.map(ProductionAgreement::getPrdAgreeId)
+				.orElse(null);
+	}
+
+	public static class MaterialOrderSearchResult {
+		private final List<MaterialOrderSupplierView> suppliers;
+		private final List<MaterialOrderItemView> materials;
+
+		public MaterialOrderSearchResult(List<MaterialOrderSupplierView> suppliers,
+				List<MaterialOrderItemView> materials) {
+			this.suppliers = suppliers;
+			this.materials = materials;
+		}
+
+		public List<MaterialOrderSupplierView> getSuppliers() {
+			return suppliers;
+		}
+
+		public List<MaterialOrderItemView> getMaterials() {
+			return materials;
+		}
 	}
 
 	private Date toSqlDate(String value) {

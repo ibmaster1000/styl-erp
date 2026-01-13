@@ -60,9 +60,11 @@ public class MaterialOrderApiController {
             @RequestParam("agreementCode") String agreementCode,
             @RequestParam("colorCode") String colorCode) {
         MaterialSpecMatrixResponse matrix = materialSpecService.loadMatrix(styleCode);
+        MaterialOrderService.MaterialOrderSearchResult result =
+                materialOrderService.searchOrders(styleCode, agreementCode, colorCode);
         return new MaterialOrderSearchResponse(
-                materialOrderService.findSuppliersByStyleCode(styleCode, agreementCode, colorCode),
-                materialOrderService.findMaterialsByStyleCode(styleCode, agreementCode, colorCode),
+                result.getSuppliers(),
+                result.getMaterials(),
                 matrix);
     }
 
