@@ -572,9 +572,15 @@
 				input.readOnly = true;
 				input.classList.add('ms-readonly');
 			}
+			if (options.field) {
+				input.dataset.field = options.field;
+			}
 			input.value = value ?? '';
 			input.placeholder = placeholder || '';
-			input.addEventListener('input', (event) => onChange(event.target.value));
+			input.addEventListener('input', (event) => {
+				onChange(event.target.value);
+				input.classList.remove('is-invalid');
+			});
 			return input;
 		};
 
@@ -594,11 +600,13 @@
 			pageItems.forEach((item, index) => {
 				const tr = document.createElement('tr');
 				const rowIndex = start + index;
+				tr.dataset.rowIndex = rowIndex;
 
 				const categoryTd = document.createElement('td');
 				categoryTd.classList.add('t-left');
 				const select = document.createElement('select');
 				select.className = 'form-select text-start';
+				select.dataset.field = 'category';
 				['원자재', '부자재'].forEach((optionValue) => {
 					const option = document.createElement('option');
 					option.value = optionValue;
@@ -611,6 +619,7 @@
 				select.addEventListener('change', (event) => {
 					item.category = event.target.value;
 					item.materialCode = '';
+					select.classList.remove('is-invalid');
 					updateMaterialCodes();
 					renderMaterials();
 				});
@@ -619,7 +628,10 @@
 
 				const nameTd = document.createElement('td');
 				nameTd.classList.add('t-left');
-				nameTd.appendChild(buildInput(item.materialName, '', (value) => { item.materialName = value; }, { alignLeft: true }));
+				nameTd.appendChild(buildInput(item.materialName, '', (value) => { item.materialName = value; }, {
+					alignLeft: true,
+					field: 'material_name'
+				}));
 				tr.appendChild(nameTd);
 
 				const usageTd = document.createElement('td');
@@ -652,15 +664,20 @@
 				tr.appendChild(colorTd);
 
 				const uomTd = document.createElement('td');
-				uomTd.appendChild(buildInput(item.uom, '', (value) => { item.uom = value; }));
+				uomTd.appendChild(buildInput(item.uom, '', (value) => { item.uom = value; }, { field: 'uom' }));
 				tr.appendChild(uomTd);
 
 				const qtyTd = document.createElement('td');
-				qtyTd.appendChild(buildInput(item.qtyPerPiece, '', (value) => { item.qtyPerPiece = value ? parseFloat(value) : null; }, { type: 'number' }));
+				qtyTd.appendChild(buildInput(item.qtyPerPiece, '', (value) => {
+					item.qtyPerPiece = value ? parseFloat(value) : null;
+				}, { type: 'number', field: 'qty_per_piece' }));
 				tr.appendChild(qtyTd);
 
 				const codeTd = document.createElement('td');
-				codeTd.appendChild(buildInput(item.materialCode, '', (value) => { item.materialCode = value; }, { readonly: true }));
+				codeTd.appendChild(buildInput(item.materialCode, '', (value) => { item.materialCode = value; }, {
+					readonly: true,
+					field: 'material_code'
+				}));
 				tr.appendChild(codeTd);
 
 				const supplierTd = document.createElement('td');
@@ -852,6 +869,87 @@
 			}
 		};
 
+		const clearValidationState = () => {
+			specBody.querySelectorAll('.is-invalid').forEach((element) => {
+				element.classList.remove('is-invalid');
+			});
+		};
+
+		const fieldLabelMap = {
+			material_name: '자재명',
+			category: '구분',
+			uom: '소요량 단위',
+			qty_per_piece: '1매 소요량',
+			material_code: '자재코드'
+		};
+
+		const getFieldInput = (rowIndex, field) => {
+			const row = specBody.querySelector(`tr[data-row-index="${rowIndex}"]`);
+			if (!row) {
+				return null;
+			}
+			return row.querySelector(`[data-field="${field}"]`);
+		};
+
+		const applyValidationErrors = (errors) => {
+			if (!errors.length) {
+				return;
+			}
+			const firstError = errors[0];
+			const targetPage = Math.floor(firstError.rowIndex / pageSize) + 1;
+			if (currentPage !== targetPage) {
+				currentPage = targetPage;
+				renderMaterials();
+			}
+			errors.forEach((error) => {
+				const fieldInput = getFieldInput(error.rowIndex, error.field);
+				if (fieldInput) {
+					fieldInput.classList.add('is-invalid');
+				}
+			});
+			const focusTarget = getFieldInput(firstError.rowIndex, firstError.field);
+			if (focusTarget) {
+				focusTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				focusTarget.focus();
+			}
+		};
+
+		const isBlank = (value) => value == null || String(value).trim().length === 0;
+
+		const validateMaterials = (items) => {
+			const errors = [];
+			items.forEach((item, index) => {
+				if (!item) {
+					return;
+				}
+				if (isBlank(item.category)) {
+					errors.push({ rowIndex: index, field: 'category' });
+				}
+				if (isBlank(item.materialName)) {
+					errors.push({ rowIndex: index, field: 'material_name' });
+				}
+				if (isBlank(item.uom)) {
+					errors.push({ rowIndex: index, field: 'uom' });
+				}
+				if (item.qtyPerPiece == null || Number.isNaN(item.qtyPerPiece)) {
+					errors.push({ rowIndex: index, field: 'qty_per_piece' });
+				}
+				if (isBlank(item.materialCode)
+					&& !isBlank(item.category)
+					&& !isBlank(styleInput.value)
+					&& !isBlank(colorInput.value)) {
+					errors.push({ rowIndex: index, field: 'material_code' });
+				}
+			});
+			return errors;
+		};
+
+		const buildValidationAlertMessage = (error) => {
+			const rowNumber = error.rowIndex + 1;
+			const label = fieldLabelMap[error.field] || error.field;
+			return `저장 실패: ${rowNumber}행 ${label}(${error.field})을 입력하세요`;
+		};
+
 		const submitSave = async () => {
 			if (!contextLoaded) {
 				alert('조회 후 저장할 수 있습니다.');
@@ -884,14 +982,17 @@
 				items,
 				deletedIds: Array.from(deletedIds)
 			};
-			if (!submitSave.loggedPayload) {
-				console.info('[material-specs] save payload', {
-					itemCount: payload.items.length,
-					styleCode: payload.styleCode,
-					colorCode: payload.colorCode,
-					prdAgreeCode: payload.prdAgreeCode
-				});
-				submitSave.loggedPayload = true;
+			console.log('save payload', payload);
+			if (payload.items.length === 0 && payload.deletedIds.length === 0) {
+				alert('저장할 데이터가 없습니다.');
+				return;
+			}
+			clearValidationState();
+			const validationErrors = validateMaterials(payload.items);
+			if (validationErrors.length > 0) {
+				applyValidationErrors(validationErrors);
+				alert(buildValidationAlertMessage(validationErrors[0]));
+				return;
 			}
 			const response = await fetch('/production/material-specs/save', {
 				method: 'POST',
@@ -902,7 +1003,15 @@
 				let errorMessage = '저장 중 오류가 발생했습니다.';
 				try {
 					const error = await response.json();
-					if (error && error.message) {
+					if (error && Array.isArray(error.errors) && error.errors.length > 0) {
+						const errors = error.errors.map((entry) => ({
+							rowIndex: Math.max(0, (entry.row || 1) - 1),
+							field: entry.field
+						}));
+						clearValidationState();
+						applyValidationErrors(errors);
+						errorMessage = buildValidationAlertMessage(errors[0]);
+					} else if (error && error.message) {
 						errorMessage = error.message;
 					}
 				} catch (error) {
@@ -916,6 +1025,16 @@
 				alert('저장되었습니다.');
 				await doSearch();
 			} else {
+				if (Array.isArray(result.errors) && result.errors.length > 0) {
+					const errors = result.errors.map((entry) => ({
+						rowIndex: Math.max(0, (entry.row || 1) - 1),
+						field: entry.field
+					}));
+					clearValidationState();
+					applyValidationErrors(errors);
+					alert(buildValidationAlertMessage(errors[0]));
+					return;
+				}
 				alert(result.message || '저장에 실패했습니다.');
 			}
 		};
