@@ -17,7 +17,8 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 
 	boolean existsByStylesId(Long stylesId);
 	
-	Optional<ProductionAgreement> findByAgreementCode(String agreementCode);
+	Optional<ProductionAgreement> findTopByAgreementCodeAndColorCodeOrderByPrdAgreeIdAsc(String agreementCode,
+			String colorCode);
 
 	@Query(value = """
 			select s.style_code as styleCode,

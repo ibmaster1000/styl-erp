@@ -99,7 +99,7 @@ public class MaterialOrderService {
 	}
 
 	public List<MaterialOrderSupplierView> findSuppliers(String stylesId, String agreementCode, String colorCode) {
-		Long prdAgreeId = resolvePrdAgreeId(agreementCode);
+		Long prdAgreeId = resolvePrdAgreeId(agreementCode, colorCode);
 		if (prdAgreeId == null || !StringUtils.hasText(colorCode) || !hasTable("material_specs")) {
 			return Collections.emptyList();
 		}
@@ -143,7 +143,7 @@ public class MaterialOrderService {
 
 	public List<MaterialOrderItemView> findMaterials(String stylesId, String agreementCode, String colorCode,
 			String supplierCode) {
-		Long prdAgreeId = resolvePrdAgreeId(agreementCode);
+		Long prdAgreeId = resolvePrdAgreeId(agreementCode, colorCode);
 		if (prdAgreeId == null || !hasTable("material_specs")) {
 			return Collections.emptyList();
 		}
@@ -209,7 +209,7 @@ public class MaterialOrderService {
 			return Map.of("success", true, "created", 0, "skipped", 0, "message", "발주 요청이 접수되었습니다.");
 		}
 
-		Long prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode());
+		Long prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode());
 		if (prdAgreeId == null) {
 			throw new IllegalArgumentException("생산합의코드가 올바르지 않습니다.");
 		}
@@ -316,7 +316,7 @@ public class MaterialOrderService {
 
 	public List<MaterialOrderSupplierView> findSuppliersByStyleCode(String styleCode, String agreementCode,
 			String colorCode) {
-		Long prdAgreeId = resolvePrdAgreeId(agreementCode);
+		Long prdAgreeId = resolvePrdAgreeId(agreementCode, colorCode);
 		if (!StringUtils.hasText(styleCode) || prdAgreeId == null || !StringUtils.hasText(colorCode)
 				|| !hasTable("material_specs")) {
 			return Collections.emptyList();
@@ -325,9 +325,9 @@ public class MaterialOrderService {
 	}
 
 	public MaterialOrderSearchResult searchOrders(String styleCode, String agreementCode, String colorCode) {
-		Long prdAgreeId = resolvePrdAgreeId(agreementCode);
-		log.info("Material order search agreementCode={} -> prdAgreeId={}", agreementCode, prdAgreeId);
-		log.info("Material order search params prdAgreeId={}, colorCode={}", prdAgreeId, colorCode);
+		Long prdAgreeId = resolvePrdAgreeId(agreementCode, colorCode);
+		log.info("Material order search agreementCode={}, colorCode={}, resolvedPrdAgreeId={}",
+				agreementCode, colorCode, prdAgreeId);
 		if (prdAgreeId == null) {
 			log.info("Material order search result suppliers=0 materials=0");
 			return new MaterialOrderSearchResult(Collections.emptyList(), Collections.emptyList());
@@ -336,8 +336,8 @@ public class MaterialOrderService {
 		List<MaterialOrderSupplierView> suppliers = findSuppliersByStyleCode(styleCode, prdAgreeId, colorCode);
 		List<MaterialOrderItemView> materials = findMaterialsByStyleCode(styleCode, prdAgreeId, colorCode);
 		List<MaterialOrderLineRow> materialsToOrder = buildMaterialsToOrder(materials, colorCode, productionQty);
-		log.info("Material order search result productionQty={}", productionQty);
-		log.info("Material order search result material_specs rows={}", materials.size());
+		log.info("Material order search productionQty sum={}, material_specs rows={}",
+				productionQty, materials.size());
 		logMaterialOrderSample(materialsToOrder);
 		log.info("Material order search result suppliers={} materials={}", suppliers.size(), materialsToOrder.size());
 		return new MaterialOrderSearchResult(suppliers, materialsToOrder);
@@ -387,7 +387,7 @@ public class MaterialOrderService {
 	}
 
 	public List<MaterialOrderItemView> findMaterialsByStyleCode(String styleCode, String prdAgreeCode, String colorCode) {
-		Long prdAgreeId = resolvePrdAgreeId(prdAgreeCode);
+		Long prdAgreeId = resolvePrdAgreeId(prdAgreeCode, colorCode);
 		if (!StringUtils.hasText(styleCode) || prdAgreeId == null || !StringUtils.hasText(colorCode)
 				|| !hasTable("material_specs")) {
 			return Collections.emptyList();
@@ -691,13 +691,17 @@ public class MaterialOrderService {
 		return column + " as " + alias;
 	}
 
-	private Long resolvePrdAgreeId(String agreementCode) {
-		if (!StringUtils.hasText(agreementCode) || !hasTable("production_agreements")) {
+	private Long resolvePrdAgreeId(String agreementCode, String colorCode) {
+		if (!StringUtils.hasText(agreementCode) || !StringUtils.hasText(colorCode)
+				|| !hasTable("production_agreements")) {
 			return null;
 		}
-		return productionAgreementRepository.findByAgreementCode(agreementCode.trim())
+		return productionAgreementRepository
+				.findTopByAgreementCodeAndColorCodeOrderByPrdAgreeIdAsc(agreementCode.trim(), colorCode.trim())
 				.map(ProductionAgreement::getPrdAgreeId)
-				.orElse(null);
+				.orElseThrow(() -> new IllegalArgumentException(
+						"생산합의 정보를 찾을 수 없습니다. agreementCode=%s, colorCode=%s"
+								.formatted(agreementCode, colorCode)));
 	}
 
 	public static class MaterialOrderSearchResult {
