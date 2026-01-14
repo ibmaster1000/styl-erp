@@ -389,15 +389,15 @@
 						<td>${item.spec || '-'}</td>
 						<td>${item.materialColor || '-'}</td>
 						<td>${item.uom || '-'}</td>
-						<td class="text-end">${formatDecimal(item.qtyPerPiece)}</td>
+						<td>${formatDecimal(item.qtyPerPiece)}</td>
 						<td>${item.supplierName || item.supplierCode || '-'}</td>
 						<td>${item.productionManager || '-'}</td>
 						<td>${item.orderUom || '-'}</td>
-						<td class="text-end">${formatDecimal(item.unitPrice)}</td>
-						<td class="text-end">${formatDecimal(item.orderQuantity)}</td>
-						<td class="text-end">${formatDecimal(item.inboundQuantity)}</td>
-						<td class="text-end">${formatDecimal(item.outboundQuantity)}</td>
-						<td><input type="number" class="form-control form-control-sm text-end mout-qty-input" min="0" step="0.01" value="0"></td>
+						<td>${formatDecimal(item.unitPrice)}</td>
+						<td>${formatDecimal(item.orderQuantity)}</td>
+						<td>${formatDecimal(item.inboundQuantity)}</td>
+						<td>${formatDecimal(item.outboundQuantity)}</td>
+						<td><input type="number" class="form-control form-control-sm mout-qty-input" min="0" step="0.01" value="0"></td>
 						<td>${renderFactorySelect()}</td>
 					`;
 					const qtyInput = row.querySelector('.mout-qty-input');

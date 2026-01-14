@@ -238,6 +238,7 @@ public class MaterialOrderService {
 
 		List<MaterialOrderItemView> specs = findMaterials(request.getStylesId(), request.getPrdAgreeCode(),
 				request.getColorCode(), request.getSupplierCode());
+		BigDecimal productionQty = findProductionQty(request.getPrdAgreeCode(), request.getColorCode());
 
 		int created = 0;
 		int skipped = 0;
@@ -256,12 +257,21 @@ public class MaterialOrderService {
 				continue;
 			}
 
+			BigDecimal qtyPerPiece = safeDecimal(spec.getQtyPerPiece());
+			BigDecimal lossRatePercent = safeDecimal(spec.getLossRate());
+			BigDecimal normalizedLossRate = normalizeLossRatePercent(lossRatePercent);
+			BigDecimal multiplier = BigDecimal.ONE.add(normalizedLossRate);
+			BigDecimal rawOrderQty = productionQty.multiply(qtyPerPiece).multiply(multiplier);
+			BigDecimal orderQty = applyOrderQtyRounding(spec.getOrderUom(), spec.getUom(), rawOrderQty);
+			BigDecimal unitPrice = safeDecimal(spec.getUnitPrice());
+			BigDecimal orderPrice = orderQty.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+
 			MapSqlParameterSource params = new MapSqlParameterSource()
 					.addValue("mOrderCode", UUID.randomUUID().toString()).addValue("stylesId", request.getStylesId())
 					.addValue("styleCode", request.getStyleCode()).addValue("prdAgreeId", prdAgreeId)
 					.addValue("colorCode", request.getColorCode()).addValue("bomId", spec.getBomId())
-					.addValue("supplierCode", request.getSupplierCode()).addValue("orderAmount", BigDecimal.ZERO)
-					.addValue("orderPrice", BigDecimal.ZERO).addValue("orderedBy", orderedBy)
+					.addValue("supplierCode", request.getSupplierCode()).addValue("orderAmount", orderQty)
+					.addValue("orderPrice", orderPrice).addValue("orderedBy", orderedBy)
 					.addValue("orderDate", toSqlDate(request.getOrderDate()))
 					.addValue("dueDate", toSqlDate(request.getDueDate()))
 					.addValue("deliveryPlace", deliveryPlace)
@@ -752,7 +762,7 @@ public class MaterialOrderService {
 			BigDecimal unitPrice = safeDecimal(item.getUnitPrice());
 			BigDecimal multiplier = BigDecimal.ONE.add(normalizedLossRate);
 			BigDecimal rawOrderQty = productionQty.multiply(qtyPerPiece).multiply(multiplier);
-			BigDecimal orderQty = applyOrderQtyRounding(item.getUom(), rawOrderQty);
+			BigDecimal orderQty = applyOrderQtyRounding(item.getOrderUom(), item.getUom(), rawOrderQty);
 			BigDecimal orderPrice = orderQty.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
 			// TODO: remove debug log after verification
 			log.info(
@@ -800,9 +810,14 @@ public class MaterialOrderService {
 		return lossRatePercent.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP);
 	}
 
-	private BigDecimal applyOrderQtyRounding(String uom, BigDecimal rawOrderQty) {
+	private BigDecimal applyOrderQtyRounding(String orderUom, String uom, BigDecimal rawOrderQty) {
 		if (rawOrderQty == null) {
 			return BigDecimal.ZERO;
+		}
+		BigDecimal orderUnit = parseNumericOrderUnit(orderUom);
+		if (orderUnit != null && orderUnit.compareTo(BigDecimal.ZERO) > 0) {
+			BigDecimal multiples = rawOrderQty.divide(orderUnit, 0, RoundingMode.CEILING);
+			return multiples.multiply(orderUnit);
 		}
 		if (isEachUnit(uom)) {
 			return rawOrderQty.setScale(0, RoundingMode.CEILING);
@@ -815,6 +830,21 @@ public class MaterialOrderService {
 			return false;
 		}
 		return uom.trim().toUpperCase().contains("EA");
+	}
+
+	private BigDecimal parseNumericOrderUnit(String orderUom) {
+		if (!StringUtils.hasText(orderUom)) {
+			return null;
+		}
+		String trimmed = orderUom.trim();
+		if (!trimmed.matches("\\d+(\\.\\d+)?")) {
+			return null;
+		}
+		try {
+			return new BigDecimal(trimmed);
+		} catch (NumberFormatException ex) {
+			return null;
+		}
 	}
 	
 	private void logMaterialOrderSample(List<MaterialOrderLineRow> rows) {

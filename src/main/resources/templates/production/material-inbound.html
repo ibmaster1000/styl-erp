@@ -151,7 +151,7 @@
 					<thead class="table-light">
 						<tr>
 							<th class="t-left">품번</th>
-							<th class="t-left">합의월</th>
+							<th class="t-left">생산합의코드</th>
 							<th>색상</th>
 							<th class="t-left">원부자재구분</th>
 							<th class="t-left">자재명칭</th>
@@ -352,7 +352,8 @@
 				const styleCode = styleCodeInput.value;
 				const colorCode = colorSelect.value;
 				const prdAgreeCode = agreeSelect.value;
-				const url = `/production/material-inbound/list?stylesId=${encodeURIComponent(stylesId)}&styleCode=${encodeURIComponent(styleCode)}&prdAgreeCode=${encodeURIComponent(prdAgreeCode)}&colorCode=${encodeURIComponent(colorCode)}`;
+				const tranDate = dateInput.value;
+				const url = `/production/material-inbound/list?stylesId=${encodeURIComponent(stylesId)}&styleCode=${encodeURIComponent(styleCode)}&prdAgreeCode=${encodeURIComponent(prdAgreeCode)}&colorCode=${encodeURIComponent(colorCode)}&tranDate=${encodeURIComponent(tranDate)}`;
 				fetch(url)
 					.then(res => res.json())
 					.then(renderTable)
@@ -381,14 +382,14 @@
 						<td>${item.spec || '-'}</td>
 						<td>${item.materialColor || '-'}</td>
 						<td>${item.uom || '-'}</td>
-						<td class="text-end">${formatDecimal(item.qtyPerPiece)}</td>
+						<td>${formatDecimal(item.qtyPerPiece)}</td>
 						<td>${item.supplierName || item.supplierCode || '-'}</td>
 						<td>${item.productionManager || '-'}</td>
 						<td>${item.orderUom || '-'}</td>
-						<td class="text-end">${formatDecimal(item.unitPrice)}</td>
-						<td class="text-end">${formatDecimal(item.orderQuantity)}</td>
-						<td class="text-end">${inboundQty}</td>
-						<td><input type="number" class="form-control form-control-sm text-end mi-qty-input" min="0" step="0.01" value="0"></td>
+						<td>${formatDecimal(item.unitPrice)}</td>
+						<td>${formatDecimal(item.orderQuantity)}</td>
+						<td>${inboundQty}</td>
+						<td><input type="number" class="form-control form-control-sm mi-qty-input" min="0" step="0.01" value="0"></td>
 					`;
 					tableBody.appendChild(row);
 				});

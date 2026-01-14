@@ -66,8 +66,9 @@ public class MaterialInboundController extends PageViewSupport {
     public List<MaterialTransactionLineView> fetchList(@RequestParam(name = "stylesId", required = false) String stylesId,
             @RequestParam(name = "styleCode", required = false) String styleCode,
             @RequestParam(name = "prdAgreeCode") String prdAgreeCode,
-            @RequestParam(name = "colorCode") String colorCode) {
-        return materialTransactionService.findMaterials(stylesId, styleCode, prdAgreeCode, colorCode);
+            @RequestParam(name = "colorCode") String colorCode,
+            @RequestParam(name = "tranDate") String tranDate) {
+        return materialTransactionService.findInboundMaterials(stylesId, styleCode, prdAgreeCode, colorCode, tranDate);
     }
 
     @PostMapping("/save")
