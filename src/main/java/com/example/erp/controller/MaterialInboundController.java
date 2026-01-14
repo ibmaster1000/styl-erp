@@ -61,15 +61,22 @@ public class MaterialInboundController extends PageViewSupport {
         return materialOrderService.loadSelection(stylesId, styleCode);
     }
 
-    @GetMapping("/list")
-    @ResponseBody
-    public List<MaterialTransactionLineView> fetchList(@RequestParam(name = "stylesId", required = false) String stylesId,
-            @RequestParam(name = "styleCode", required = false) String styleCode,
-            @RequestParam(name = "prdAgreeCode") String prdAgreeCode,
-            @RequestParam(name = "colorCode") String colorCode,
-            @RequestParam(name = "tranDate") String tranDate) {
-        return materialTransactionService.findInboundMaterials(stylesId, styleCode, prdAgreeCode, colorCode, tranDate);
-    }
+	@GetMapping("/list")
+	@ResponseBody
+	public List<MaterialTransactionLineView> fetchList(@RequestParam(name = "stylesId", required = false) String stylesId,
+			@RequestParam(name = "styleCode", required = false) String styleCode,
+			@RequestParam(name = "prdAgreeCode", required = false) String prdAgreeCode,
+			@RequestParam(name = "colorCode", required = false) String colorCode,
+			@RequestParam(name = "tranDate", required = false) String tranDate) {
+		return materialTransactionService.findInboundMaterials(stylesId, styleCode, prdAgreeCode, colorCode, tranDate);
+	}
+
+	@GetMapping("/tx-list")
+	@ResponseBody
+	public List<MaterialTransactionLineView> fetchTransactions(@RequestParam(name = "styleCode", required = false) String styleCode,
+			@RequestParam(name = "tranDate", required = false) String tranDate) {
+		return materialTransactionService.findTransactionsByType("IN", styleCode, tranDate);
+	}
 
     @PostMapping("/save")
     @ResponseBody

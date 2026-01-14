@@ -205,12 +205,10 @@ public class MaterialTransactionService {
 				.append(selectOrNull(qualifyColumn("ms.", supplierColumn), "supplier_code")).append(", ")
 				.append(selectOrNull(qualifyColumn("ms.", orderUomColumn), "order_uom")).append(", ")
 				.append(selectOrNull(qualifyColumn("ms.", unitPriceColumn), "unit_price")).append(", ")
-				.append(selectOrNull(qualifyColumn("ms.", remarkColumn), "remark")).append(", ")
-				.append("sum(mo.").append(orderAmountColumn).append(") as order_amount ")
-				.append(join)
-				.append("where mo.").append(orderPrdColumn).append(" = :prdAgreeId ")
-				.append("and mo.").append(orderColorColumn).append(" = :colorCode ")
-				.append("and mo.").append(dueDateColumn).append(" = :tranDate ");
+				.append(selectOrNull(qualifyColumn("ms.", remarkColumn), "remark")).append(", ").append("sum(mo.")
+				.append(orderAmountColumn).append(") as order_amount ").append(join).append("where mo.")
+				.append(orderPrdColumn).append(" = :prdAgreeId ").append("and mo.").append(orderColorColumn)
+				.append(" = :colorCode ").append("and mo.").append(dueDateColumn).append(" = :tranDate ");
 
 		String resolvedStyleId = resolveStyleId(stylesId, styleCode);
 		String styleFilterColumn = resolveStyleFilterColumn(orderStyleIdColumn, specStyleIdColumn, specStyleCodeColumn,
@@ -237,8 +235,8 @@ public class MaterialTransactionService {
 		addGroupByColumn(groupByColumns, qualifyColumn("ms.", unitPriceColumn));
 		addGroupByColumn(groupByColumns, qualifyColumn("ms.", remarkColumn));
 
-		sql.append("group by ").append(String.join(", ", groupByColumns)).append(" ")
-				.append("order by mo.").append(orderBomIdColumn).append(" asc");
+		sql.append("group by ").append(String.join(", ", groupByColumns)).append(" ").append("order by mo.")
+				.append(orderBomIdColumn).append(" asc");
 
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeId", prdAgreeId)
 				.addValue("colorCode", colorCode).addValue("tranDate", tranDateValue)
@@ -252,28 +250,17 @@ public class MaterialTransactionService {
 			if (StringUtils.hasText(supCode)) {
 				supplierCodes.add(supCode);
 			}
-			MaterialTransactionLineView view = new MaterialTransactionLineView()
-					.setBomId(bomId)
+			MaterialTransactionLineView view = new MaterialTransactionLineView().setBomId(bomId)
 					.setStylesId(rs.getString("styles_id"))
 					.setStyleCode(StringUtils.hasText(styleCode) ? styleCode : rs.getString("style_code"))
-					.setPrdAgreeCode(prdAgreeCode)
-					.setAgreementMonth(prdAgreeCode)
-					.setColorCode(colorCode)
-					.setCategory(rs.getString("category"))
-					.setMaterialName(rs.getString("material_name"))
-					.setMaterialUsage(rs.getString("material_usage"))
-					.setSpec(rs.getString("spec"))
-					.setMaterialColor(rs.getString("material_color"))
-					.setUom(rs.getString("uom"))
-					.setQtyPerPiece(rs.getBigDecimal("qty_per_piece"))
-					.setSupplierCode(supCode)
-					.setSupplierName(null)
-					.setProductionManager(null)
-					.setOrderUom(rs.getString("order_uom"))
-					.setUnitPrice(rs.getBigDecimal("unit_price"))
-					.setOrderQuantity(rs.getBigDecimal("order_amount"))
-					.setInboundQuantity(BigDecimal.ZERO)
-					.setOutboundQuantity(BigDecimal.ZERO)
+					.setPrdAgreeCode(prdAgreeCode).setAgreementMonth(prdAgreeCode).setColorCode(colorCode)
+					.setCategory(rs.getString("category")).setMaterialName(rs.getString("material_name"))
+					.setMaterialUsage(rs.getString("material_usage")).setSpec(rs.getString("spec"))
+					.setMaterialColor(rs.getString("material_color")).setUom(rs.getString("uom"))
+					.setQtyPerPiece(rs.getBigDecimal("qty_per_piece")).setSupplierCode(supCode).setSupplierName(null)
+					.setProductionManager(null).setOrderUom(rs.getString("order_uom"))
+					.setUnitPrice(rs.getBigDecimal("unit_price")).setOrderQuantity(rs.getBigDecimal("order_amount"))
+					.setInboundQuantity(BigDecimal.ZERO).setOutboundQuantity(BigDecimal.ZERO)
 					.setRemark(rs.getString("remark"));
 			rows.add(view);
 		});
@@ -282,8 +269,190 @@ public class MaterialTransactionService {
 		for (MaterialTransactionLineView view : rows) {
 			BigDecimal inbound = sumTransaction(view, "IN");
 			BigDecimal outbound = sumTransaction(view, "OUT");
-			view.setSupplierName(supplierNames.getOrDefault(view.getSupplierCode(), null))
-					.setInboundQuantity(inbound).setOutboundQuantity(outbound);
+			view.setSupplierName(supplierNames.getOrDefault(view.getSupplierCode(), null)).setInboundQuantity(inbound)
+					.setOutboundQuantity(outbound);
+		}
+		return rows;
+	}
+
+	public List<MaterialTransactionLineView> findTransactionsByType(String tranType, String styleCode,
+			String tranDate) {
+		if (!hasTable("material_transactions")) {
+			return Collections.emptyList();
+		}
+		if (!StringUtils.hasText(styleCode) && !StringUtils.hasText(tranDate)) {
+			return Collections.emptyList();
+		}
+
+		String tranTypeColumn = findFirstExistingColumn("material_transactions", List.of("tran_type", "type"));
+		String quantityColumn = findFirstExistingColumn("material_transactions", List.of("quantity", "qty"));
+		String tranDatetimeColumn = findFirstExistingColumn("material_transactions",
+				List.of("tran_datetime", "tran_date", "transaction_date", "datetime"));
+		String idColumn = findFirstExistingColumn("material_transactions", List.of("id", "tran_id", "transaction_id"));
+		String styleIdColumn = findFirstExistingColumn("material_transactions", List.of("styles_id", "style_id"));
+		String styleCodeColumn = findFirstExistingColumn("material_transactions", List.of("style_code", "styles_code"));
+		String prdColumn = findFirstExistingColumn("material_transactions",
+				List.of("prd_agree_code", "agreement_code"));
+		String colorColumn = findFirstExistingColumn("material_transactions", List.of("color_code"));
+		String specColumn = findFirstExistingColumn("material_transactions", List.of("material_spec_id", "bom_id"));
+		String orderUomColumn = findFirstExistingColumn("material_transactions", List.of("order_uom"));
+		String unitPriceColumn = findFirstExistingColumn("material_transactions", List.of("unit_price"));
+		String remarkColumn = findFirstExistingColumn("material_transactions",
+				List.of("remark", "memo", "description"));
+
+		if (tranTypeColumn == null || quantityColumn == null) {
+			return Collections.emptyList();
+		}
+
+		String specBomIdColumn = null;
+		String specStyleCodeColumn = null;
+		String categoryColumn = null;
+		String materialNameColumn = null;
+		String materialUsageColumn = null;
+		String specColumnName = null;
+		String materialColorColumn = null;
+		String uomColumn = null;
+		String qtyPerPieceColumn = null;
+		String supplierColumn = null;
+		String specOrderUomColumn = null;
+		String specUnitPriceColumn = null;
+		String remarkSpecColumn = null;
+		if (hasTable("material_specs")) {
+			specBomIdColumn = findFirstExistingColumn("material_specs", List.of("bom_id", "material_spec_id"));
+			specStyleCodeColumn = findFirstExistingColumn("material_specs", List.of("style_code"));
+			categoryColumn = findFirstExistingColumn("material_specs", List.of("category"));
+			materialNameColumn = findFirstExistingColumn("material_specs", List.of("material_name"));
+			materialUsageColumn = findFirstExistingColumn("material_specs", List.of("material_usage"));
+			specColumnName = findFirstExistingColumn("material_specs", List.of("spec"));
+			materialColorColumn = findFirstExistingColumn("material_specs", List.of("material_color"));
+			uomColumn = findFirstExistingColumn("material_specs", List.of("uom"));
+			qtyPerPieceColumn = findFirstExistingColumn("material_specs", List.of("qty_per_piece"));
+			supplierColumn = findFirstExistingColumn("material_specs", List.of("supplier_code"));
+			specOrderUomColumn = findFirstExistingColumn("material_specs", List.of("order_uom"));
+			specUnitPriceColumn = findFirstExistingColumn("material_specs", List.of("unit_price"));
+			remarkSpecColumn = findFirstExistingColumn("material_specs", List.of("remark"));
+		}
+
+		boolean canJoinSpecs = specColumn != null && specBomIdColumn != null;
+		if (!canJoinSpecs) {
+			specStyleCodeColumn = null;
+			categoryColumn = null;
+			materialNameColumn = null;
+			materialUsageColumn = null;
+			specColumnName = null;
+			materialColorColumn = null;
+			uomColumn = null;
+			qtyPerPieceColumn = null;
+			supplierColumn = null;
+			specOrderUomColumn = null;
+			specUnitPriceColumn = null;
+			remarkSpecColumn = null;
+		}
+
+		String stylesIdColumn = null;
+		String stylesCodeColumn = null;
+		if (hasTable("styles")) {
+			stylesIdColumn = findFirstExistingColumn("styles", List.of("styles_id", "style_id", "id"));
+			stylesCodeColumn = findFirstExistingColumn("styles", List.of("style_code", "styles_code"));
+		}
+		if (stylesIdColumn == null || styleIdColumn == null) {
+			stylesCodeColumn = null;
+		}
+
+		StringBuilder sql = new StringBuilder().append("select ")
+				.append(specColumn != null ? "mt." + specColumn + " as bom_id, " : "null as bom_id, ")
+				.append(styleIdColumn != null ? "mt." + styleIdColumn + " as styles_id, " : "null as styles_id, ")
+				.append(resolveStyleCodeSelect(stylesCodeColumn, styleCodeColumn, specStyleCodeColumn))
+				.append(selectOrNull(qualifyColumn("mt.", prdColumn), "prd_agree_code")).append(", ")
+				.append(selectOrNull(qualifyColumn("mt.", colorColumn), "color_code")).append(", ")
+				.append(selectOrNull(qualifyColumn("ms.", categoryColumn), "category")).append(", ")
+				.append(selectOrNull(qualifyColumn("ms.", materialNameColumn), "material_name")).append(", ")
+				.append(selectOrNull(qualifyColumn("ms.", materialUsageColumn), "material_usage")).append(", ")
+				.append(selectOrNull(qualifyColumn("ms.", specColumnName), "spec")).append(", ")
+				.append(selectOrNull(qualifyColumn("ms.", materialColorColumn), "material_color")).append(", ")
+				.append(selectOrNull(qualifyColumn("ms.", uomColumn), "uom")).append(", ")
+				.append(selectOrNull(qualifyColumn("ms.", qtyPerPieceColumn), "qty_per_piece")).append(", ")
+				.append(selectOrNull(qualifyColumn("ms.", supplierColumn), "supplier_code")).append(", ")
+				.append(selectCoalesce("mt.", orderUomColumn, "ms.", specOrderUomColumn, "order_uom")).append(", ")
+				.append(selectCoalesce("mt.", unitPriceColumn, "ms.", specUnitPriceColumn, "unit_price")).append(", ")
+				.append("mt.").append(quantityColumn).append(" as quantity, ")
+				.append(selectCoalesce("mt.", remarkColumn, "ms.", remarkSpecColumn, "remark"))
+				.append("from material_transactions mt ");
+
+		if (specColumn != null && specBomIdColumn != null) {
+			sql.append("left join material_specs ms on mt.").append(specColumn).append(" = ms.").append(specBomIdColumn)
+					.append(" ");
+		}
+
+		if (stylesIdColumn != null && stylesCodeColumn != null && styleIdColumn != null) {
+			sql.append("left join styles st on mt.").append(styleIdColumn).append(" = st.").append(stylesIdColumn)
+					.append(" ");
+		}
+
+		sql.append("where mt.").append(tranTypeColumn).append(" = :tranType ");
+
+		MapSqlParameterSource params = new MapSqlParameterSource().addValue("tranType", tranType);
+		String resolvedStyleId = resolveStyleId(null, styleCode);
+		if (StringUtils.hasText(styleCode)) {
+			if (styleCodeColumn != null) {
+				sql.append("and mt.").append(styleCodeColumn).append(" = :styleCode ");
+				params.addValue("styleCode", styleCode);
+			} else if (stylesIdColumn != null && stylesCodeColumn != null && styleIdColumn != null) {
+				sql.append("and st.").append(stylesCodeColumn).append(" = :styleCode ");
+				params.addValue("styleCode", styleCode);
+			} else if (resolvedStyleId != null && styleIdColumn != null) {
+				sql.append("and mt.").append(styleIdColumn).append(" = :stylesId ");
+				params.addValue("stylesId", resolvedStyleId);
+			} else if (specStyleCodeColumn != null) {
+				sql.append("and ms.").append(specStyleCodeColumn).append(" = :styleCode ");
+				params.addValue("styleCode", styleCode);
+			}
+		}
+
+		if (StringUtils.hasText(tranDate) && tranDatetimeColumn != null) {
+			Date tranDateValue = toSqlDate(tranDate);
+			if (tranDateValue != null) {
+				sql.append("and date(mt.").append(tranDatetimeColumn).append(") = :tranDate ");
+				params.addValue("tranDate", tranDateValue);
+			}
+		}
+
+		if (tranDatetimeColumn != null) {
+			sql.append("order by mt.").append(tranDatetimeColumn).append(" desc");
+		}
+		if (idColumn != null) {
+			sql.append(tranDatetimeColumn != null ? ", " : "order by ").append("mt.").append(idColumn).append(" desc");
+		}
+
+		List<MaterialTransactionLineView> rows = new ArrayList<>();
+		List<String> supplierCodes = new ArrayList<>();
+		jdbcTemplate.query(sql.toString(), params, rs -> {
+			BigDecimal quantity = rs.getBigDecimal("quantity");
+			String supCode = rs.getString("supplier_code");
+			if (StringUtils.hasText(supCode)) {
+				supplierCodes.add(supCode);
+			}
+			MaterialTransactionLineView view = new MaterialTransactionLineView()
+					.setBomId(rs.getObject("bom_id") != null ? rs.getLong("bom_id") : null)
+					.setStylesId(rs.getString("styles_id"))
+					.setStyleCode(resolveStyleCodeValue(rs.getString("style_code"), styleCode))
+					.setPrdAgreeCode(rs.getString("prd_agree_code")).setAgreementMonth(rs.getString("prd_agree_code"))
+					.setColorCode(rs.getString("color_code")).setCategory(rs.getString("category"))
+					.setMaterialName(rs.getString("material_name")).setMaterialUsage(rs.getString("material_usage"))
+					.setSpec(rs.getString("spec")).setMaterialColor(rs.getString("material_color"))
+					.setUom(rs.getString("uom")).setQtyPerPiece(rs.getBigDecimal("qty_per_piece"))
+					.setSupplierCode(supCode).setSupplierName(null).setProductionManager(null)
+					.setOrderUom(rs.getString("order_uom")).setUnitPrice(rs.getBigDecimal("unit_price"))
+					.setOrderQuantity(null)
+					.setInboundQuantity("IN".equalsIgnoreCase(tranType) ? quantity : BigDecimal.ZERO)
+					.setOutboundQuantity("OUT".equalsIgnoreCase(tranType) ? quantity : BigDecimal.ZERO)
+					.setRemark(rs.getString("remark"));
+			rows.add(view);
+		});
+
+		Map<String, String> supplierNames = findSupplierNames(new LinkedHashSet<>(supplierCodes));
+		for (MaterialTransactionLineView view : rows) {
+			view.setSupplierName(supplierNames.getOrDefault(view.getSupplierCode(), null));
 		}
 		return rows;
 	}
@@ -560,16 +729,54 @@ public class MaterialTransactionService {
 
 		MapSqlParameterSource params = new MapSqlParameterSource("codes", supplierCodes);
 		return jdbcTemplate.query(sql.toString(), params, rs -> {
-            Map<String, String> result = new LinkedHashMap<>();
-            while (rs.next()) {
-                result.put(rs.getString("code_value"), rs.getString("code_name"));
-            }
-            return result;
-        });
+			Map<String, String> result = new LinkedHashMap<>();
+			while (rs.next()) {
+				result.put(rs.getString("code_value"), rs.getString("code_name"));
+			}
+			return result;
+		});
 	}
 
 	private String selectOrNull(String column, String alias) {
 		return column != null ? column + " as " + alias : "null as " + alias;
+	}
+	
+	private String selectCoalesce(String primaryPrefix, String primaryColumn, String fallbackPrefix,
+			String fallbackColumn, String alias) {
+		if (primaryColumn == null && fallbackColumn == null) {
+			return "null as " + alias;
+		}
+		if (primaryColumn != null && fallbackColumn != null) {
+			return "coalesce(" + primaryPrefix + primaryColumn + ", " + fallbackPrefix + fallbackColumn + ") as " + alias;
+		}
+		if (primaryColumn != null) {
+			return primaryPrefix + primaryColumn + " as " + alias;
+		}
+		return fallbackPrefix + fallbackColumn + " as " + alias;
+	}
+
+	private String resolveStyleCodeSelect(String stylesCodeColumn, String styleCodeColumn, String specStyleCodeColumn) {
+		List<String> candidates = new ArrayList<>();
+		if (stylesCodeColumn != null) {
+			candidates.add("st." + stylesCodeColumn);
+		}
+		if (styleCodeColumn != null) {
+			candidates.add("mt." + styleCodeColumn);
+		}
+		if (specStyleCodeColumn != null) {
+			candidates.add("ms." + specStyleCodeColumn);
+		}
+		if (candidates.isEmpty()) {
+			return "null as style_code, ";
+		}
+		return "coalesce(" + String.join(", ", candidates) + ") as style_code, ";
+	}
+
+	private String resolveStyleCodeValue(String resolved, String fallback) {
+		if (StringUtils.hasText(resolved)) {
+			return resolved;
+		}
+		return StringUtils.hasText(fallback) ? fallback : null;
 	}
 
 	private String selectStyleIdExpression(String orderStyleIdColumn, String specStyleIdColumn) {
@@ -660,8 +867,7 @@ public class MaterialTransactionService {
 		}
 		return productionAgreementRepository
 				.findTopByAgreementCodeAndColorCodeOrderByPrdAgreeIdDesc(agreementCode.trim(), colorCode.trim())
-				.map(ProductionAgreement::getPrdAgreeId)
-				.orElse(null);
+				.map(ProductionAgreement::getPrdAgreeId).orElse(null);
 	}
 
 	private boolean hasTable(String tableName) {

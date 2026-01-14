@@ -37,10 +37,6 @@
 			min-width: 0;
 		}
 
-		.material-style-input .btn {
-			white-space: nowrap;
-		}
-
 		.material-meta-item {
 			display: flex;
 			align-items: center;
@@ -92,25 +88,43 @@
 			text-align: center;
 			color: #6b7280;
 		}
+
+		.data-table th,
+		.data-table td {
+			text-align: center;
+			vertical-align: middle;
+		}
+
+		.data-table input,
+		.data-table select {
+			text-align: center;
+		}
 	</style>
 
 	<div class="mb-3">
 		<h4 class="fw-bold mb-1">원부자재 출고 등록</h4>
-		<p class="text-muted mb-0">입고 대비 출고량을 입력하고 생산처를 지정하세요.</p>
+		<p class="text-muted mb-0">품번 또는 출고일 기준으로 DB 목록을 조회하세요.</p>
 	</div>
 
 	<div class="moout-layout">
 		<div class="material-panel">
 			<div class="d-flex justify-content-between align-items-center mb-2">
 				<h6 class="fw-bold mb-0">검색/선택</h6>
-				<small class="text-muted">품번 선택 전에는 색상/합의/출고일/검색이 비활성화됩니다.</small>
+				<small class="text-muted">품번 또는 날짜 중 하나만 입력해도 조회할 수 있습니다.</small>
 			</div>
 			<div class="material-row form-row mb-2">
 				<label class="form-label fw-bold mb-0">품번</label>
 				<input type="hidden" id="mout-styles-id">
-				<div class="input-group material-style-input">
-					<input type="text" id="mout-style-input" class="form-control" placeholder="품번을 선택하세요" readonly>
-					<button type="button" class="btn btn--primary" id="mout-style-search">품번 검색</button>
+				<div class="material-style-input">
+					<input type="text" id="mout-style-input" class="form-control" placeholder="품번을 입력하세요">
+				</div>
+				<span class="fw-bold text-muted">또는</span>
+				<div class="material-meta-item">
+					<label class="form-label fw-bold mb-0">출고일</label>
+					<input type="date" id="mout-date-input" class="form-control moout-date-input">
+				</div>
+				<div class="actions">
+					<button type="button" class="btn btn--primary material-search-button" id="mout-search-button">조회</button>
 				</div>
 			</div>
 			<div class="material-row form-row">
@@ -126,14 +140,8 @@
 						<option value="">생산합의 코드를 선택하세요</option>
 					</select>
 				</div>
-				<div class="material-meta-item">
-					<label class="form-label fw-bold mb-0">출고일</label>
-					<input type="date" id="mout-date-input" class="form-control moout-date-input" disabled>
-				</div>
-				<div class="actions">
-					<button type="button" class="btn btn--primary material-search-button" id="mout-search-button" disabled>검색</button>
-				</div>
 			</div>
+			<div id="mout-search-message" class="mt-2"></div>
 		</div>
 
 		<div class="material-panel">
@@ -150,18 +158,18 @@
 				<table class="table table-bordered align-middle moout-table data-table">
 					<thead class="table-light">
 						<tr>
-							<th class="t-left">품번</th>
+							<th>품번</th>
 							<th>색상</th>
-							<th class="t-left">합의월</th>
-							<th class="t-left">원부자재구분</th>
-							<th class="t-left">자재명칭</th>
-							<th class="t-left">용도</th>
-							<th class="t-left">자재규격</th>
-							<th class="t-left">자재색상</th>
+							<th>합의월</th>
+							<th>원부자재구분</th>
+							<th>자재명칭</th>
+							<th>용도</th>
+							<th>자재규격</th>
+							<th>자재색상</th>
 							<th>소요량단위</th>
 							<th>1매소요량</th>
-							<th class="t-left">자재처</th>
-							<th class="t-left">생산담당</th>
+							<th>자재처</th>
+							<th>생산담당</th>
 							<th>발주단위</th>
 							<th>단가</th>
 							<th>발주량</th>
@@ -173,7 +181,7 @@
 					</thead>
 					<tbody id="mout-table-body">
 						<tr>
-							<td colspan="19" class="moout-placeholder">품번/색상/생산합의/출고일을 선택한 뒤 검색하세요.</td>
+							<td colspan="19" class="moout-placeholder">품번 또는 출고일을 입력한 뒤 조회하세요.</td>
 						</tr>
 					</tbody>
 				</table>
@@ -181,54 +189,11 @@
 		</div>
 	</div>
 
-	<div class="modal fade" id="moutStyleSearchModal" tabindex="-1" aria-hidden="true">
-		<div class="modal-dialog modal-lg modal-dialog-scrollable">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title fw-bold">품번 검색</h5>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-				</div>
-			<div class="modal-body">
-				<div class="input-group mb-3">
-					<input type="text" class="form-control" id="mout-style-search-keyword" placeholder="품번 또는 아이템명 검색">
-					<button class="btn btn--primary" type="button" id="mout-style-search-btn">검색</button>
-				</div>
-				<div class="table-responsive">
-					<table class="table table-hover align-middle data-table">
-						<thead class="table-light">
-							<tr>
-								<th class="t-left">품번</th>
-								<th class="t-left">아이템</th>
-								<th>상태</th>
-							</tr>
-						</thead>
-						<tbody id="mout-style-search-results">
-							<tr>
-								<td colspan="3" class="moout-placeholder">검색어를 입력하세요.</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-		</div>
-		<div class="modal-footer">
-			<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
-			<button type="button" class="btn btn--primary" id="mout-style-select-btn">선택</button>
-		</div>
-	</div>
-</div>
-	</div>
-
 	<script th:inline="javascript">
 		/*<![CDATA[*/
 		const factoryOptions = /*[[${factories}]]*/ [];
 
 		document.addEventListener('DOMContentLoaded', () => {
-			const styleModal = new bootstrap.Modal(document.getElementById('moutStyleSearchModal'));
-			const styleSearchBtn = document.getElementById('mout-style-search-btn');
-			const styleSearchKeyword = document.getElementById('mout-style-search-keyword');
-			const styleSearchResults = document.getElementById('mout-style-search-results');
-			const styleSelectBtn = document.getElementById('mout-style-select-btn');
-			const styleSearchTrigger = document.getElementById('mout-style-search');
 			const styleIdInput = document.getElementById('mout-styles-id');
 			const styleCodeInput = document.getElementById('mout-style-input');
 			const colorSelect = document.getElementById('mout-color-select');
@@ -237,84 +202,33 @@
 			const searchButton = document.getElementById('mout-search-button');
 			const saveButton = document.getElementById('mout-save-button');
 			const tableBody = document.getElementById('mout-table-body');
+			const messageBox = document.getElementById('mout-search-message');
 
-			let selectedStyleRow = null;
-
-			styleSearchTrigger.addEventListener('click', () => {
-				styleModal.show();
-				styleSearchKeyword.focus();
-			});
-
-			styleSearchBtn.addEventListener('click', fetchStyles);
-			styleSearchKeyword.addEventListener('keydown', (e) => {
-				if (e.key === 'Enter') {
-					e.preventDefault();
-					fetchStyles();
-				}
-			});
-
-			function fetchStyles() {
-				const keyword = styleSearchKeyword.value || '';
-				fetch(`/production/material-outbound/styles?keyword=${encodeURIComponent(keyword)}`)
-					.then(res => res.json())
-					.then(renderStyleResults)
-					.catch(() => renderStyleResults([]));
-			}
-
-			function renderStyleResults(list) {
-				styleSearchResults.innerHTML = '';
-				if (!list || list.length === 0) {
-					styleSearchResults.innerHTML = `<tr><td colspan="3" class="moout-placeholder">조건에 맞는 품번이 없습니다.</td></tr>`;
+			styleCodeInput.addEventListener('change', () => {
+				const styleCode = styleCodeInput.value.trim();
+				styleIdInput.value = '';
+				if (styleCode) {
+					colorSelect.disabled = false;
+					agreeSelect.disabled = false;
+					loadSelectionOptions(styleCode);
 					return;
 				}
-				list.forEach(item => {
-					const tr = document.createElement('tr');
-					tr.classList.add('mout-style-row');
-					tr.dataset.stylesId = item.stylesId;
-					tr.dataset.styleCode = item.styleCode;
-					tr.innerHTML = `
-						<td>${item.styleCode || '-'}</td>
-						<td>${item.item || '-'}</td>
-						<td>${item.active ? '사용' : '중지'}</td>
-					`;
-					tr.addEventListener('click', () => {
-						document.querySelectorAll('.mout-style-row').forEach(r => r.classList.remove('table-primary'));
-						tr.classList.add('table-primary');
-						selectedStyleRow = tr;
-					});
-					styleSearchResults.appendChild(tr);
-				});
-			}
-
-			styleSelectBtn.addEventListener('click', () => {
-				if (!selectedStyleRow) {
-					alert('품번을 선택하세요.');
-					return;
-				}
-				styleIdInput.value = selectedStyleRow.dataset.stylesId || '';
-				styleCodeInput.value = selectedStyleRow.dataset.styleCode || '';
-				colorSelect.disabled = false;
-				agreeSelect.disabled = false;
-				dateInput.disabled = false;
-				searchButton.disabled = false;
-				styleModal.hide();
-				loadSelectionOptions();
+				renderSelectOptions(colorSelect, [], '색상 선택');
+				renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
+				colorSelect.disabled = true;
+				agreeSelect.disabled = true;
 			});
 
-			function loadSelectionOptions() {
-				const stylesId = styleIdInput.value;
-				const styleCode = styleCodeInput.value;
-				fetch(`/production/material-outbound/options?stylesId=${encodeURIComponent(stylesId)}&styleCode=${encodeURIComponent(styleCode)}`)
+			function loadSelectionOptions(styleCode) {
+				fetch(`/production/material-outbound/options?styleCode=${encodeURIComponent(styleCode)}`)
 					.then(res => res.json())
 					.then(data => {
 						renderSelectOptions(colorSelect, data.colors, '색상 선택');
 						renderSelectOptions(agreeSelect, data.agreements, '생산합의코드 선택');
-						resetTable();
 					})
 					.catch(() => {
 						renderSelectOptions(colorSelect, [], '색상 선택');
 						renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
-						resetTable();
 					});
 			}
 
@@ -332,48 +246,77 @@
 				});
 			}
 
-			function resetTable() {
-				tableBody.innerHTML = `<tr><td colspan="19" class="moout-placeholder">조건을 선택한 뒤 검색하세요.</td></tr>`;
+			function resetTable(message) {
+				tableBody.innerHTML = `<tr><td colspan="19" class="moout-placeholder">${message}</td></tr>`;
 			}
 
-			searchButton.addEventListener('click', () => {
-				if (!styleCodeInput.value) {
-					alert('품번을 먼저 선택하세요.');
+			function setMessage(type, text) {
+				messageBox.innerHTML = `<div class="alert alert-${type} py-2 mb-0">${text}</div>`;
+			}
+
+			function clearMessage() {
+				messageBox.innerHTML = '';
+			}
+
+			async function checkStyleExists(styleCode) {
+				try {
+					const res = await fetch(`/production/material-outbound/styles?keyword=${encodeURIComponent(styleCode)}`);
+					if (!res.ok) {
+						return true;
+					}
+					const list = await res.json();
+					return (list || []).some(item => (item.styleCode || '').toLowerCase() === styleCode.toLowerCase());
+				} catch (e) {
+					return true;
+				}
+			}
+
+			searchButton.addEventListener('click', async () => {
+				clearMessage();
+				const styleCode = styleCodeInput.value.trim();
+				const tranDate = dateInput.value;
+				if (!styleCode && !tranDate) {
+					setMessage('danger', '품번 또는 날짜 중 하나는 반드시 입력하세요.');
+					resetTable('품번 또는 출고일을 입력한 뒤 조회하세요.');
 					return;
 				}
-				if (!colorSelect.value || !agreeSelect.value) {
-					alert('색상과 생산합의코드를 선택하세요.');
-					return;
-				}
-				if (!dateInput.value) {
-					alert('출고일을 선택하세요.');
-					return;
-				}
-				loadMaterials();
+				await loadMaterials(styleCode, tranDate);
 			});
 
-			function loadMaterials() {
-				const stylesId = styleIdInput.value;
-				const styleCode = styleCodeInput.value;
-				const colorCode = colorSelect.value;
-				const prdAgreeCode = agreeSelect.value;
-				const url = `/production/material-outbound/list?stylesId=${encodeURIComponent(stylesId)}&styleCode=${encodeURIComponent(styleCode)}&prdAgreeCode=${encodeURIComponent(prdAgreeCode)}&colorCode=${encodeURIComponent(colorCode)}`;
-				fetch(url)
-					.then(res => res.json())
-					.then(renderTable)
-					.catch(() => renderTable([]));
+			async function loadMaterials(styleCode, tranDate) {
+				const url = `/production/material-outbound/tx-list?styleCode=${encodeURIComponent(styleCode)}&tranDate=${encodeURIComponent(tranDate)}`;
+				try {
+					const res = await fetch(url);
+					const list = await res.json();
+					renderTable(list);
+					if (list && list.length > 0) {
+						setMessage('success', `총 ${list.length}건 조회되었습니다.`);
+						return;
+					}
+					if (styleCode) {
+						const exists = await checkStyleExists(styleCode);
+						if (!exists) {
+							setMessage('danger', '존재하지 않는 품번입니다.');
+							return;
+						}
+					}
+					setMessage('warning', '조회된 데이터가 없습니다.');
+				} catch (e) {
+					renderTable([]);
+					setMessage('danger', '조회 중 오류가 발생했습니다.');
+				}
 			}
 
 			function renderTable(list) {
 				tableBody.innerHTML = '';
 				if (!list || list.length === 0) {
-					tableBody.innerHTML = `<tr><td colspan="19" class="moout-placeholder">조회된 사양이 없습니다.</td></tr>`;
+					resetTable('조회된 데이터가 없습니다.');
 					return;
 				}
 				list.forEach(item => {
 					const inbound = safeNumber(item.inboundQuantity);
 					const outbound = safeNumber(item.outboundQuantity);
-					const available = inbound - outbound;
+					const available = Math.max(inbound - outbound, 0);
 					const row = document.createElement('tr');
 					row.dataset.bomId = item.bomId || '';
 					row.dataset.orderUom = item.orderUom || '';
@@ -476,7 +419,7 @@
 					.then(data => {
 						if (data.success) {
 							alert('출고 저장이 완료되었습니다.');
-							loadMaterials();
+							loadMaterials(styleCodeInput.value.trim(), dateInput.value);
 						} else {
 							alert('출고 저장에 실패했습니다.');
 						}
