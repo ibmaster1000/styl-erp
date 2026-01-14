@@ -359,24 +359,26 @@ public class MaterialTransactionService {
 			stylesCodeColumn = null;
 		}
 
-		StringBuilder sql = new StringBuilder().append("select ")
-				.append(specColumn != null ? "mt." + specColumn + " as bom_id, " : "null as bom_id, ")
-				.append(styleIdColumn != null ? "mt." + styleIdColumn + " as styles_id, " : "null as styles_id, ")
-				.append(resolveStyleCodeSelect(stylesCodeColumn, styleCodeColumn, specStyleCodeColumn))
-				.append(selectOrNull(qualifyColumn("mt.", prdColumn), "prd_agree_code")).append(", ")
-				.append(selectOrNull(qualifyColumn("mt.", colorColumn), "color_code")).append(", ")
-				.append(selectOrNull(qualifyColumn("ms.", categoryColumn), "category")).append(", ")
-				.append(selectOrNull(qualifyColumn("ms.", materialNameColumn), "material_name")).append(", ")
-				.append(selectOrNull(qualifyColumn("ms.", materialUsageColumn), "material_usage")).append(", ")
-				.append(selectOrNull(qualifyColumn("ms.", specColumnName), "spec")).append(", ")
-				.append(selectOrNull(qualifyColumn("ms.", materialColorColumn), "material_color")).append(", ")
-				.append(selectOrNull(qualifyColumn("ms.", uomColumn), "uom")).append(", ")
-				.append(selectOrNull(qualifyColumn("ms.", qtyPerPieceColumn), "qty_per_piece")).append(", ")
-				.append(selectOrNull(qualifyColumn("ms.", supplierColumn), "supplier_code")).append(", ")
-				.append(selectCoalesce("mt.", orderUomColumn, "ms.", specOrderUomColumn, "order_uom")).append(", ")
-				.append(selectCoalesce("mt.", unitPriceColumn, "ms.", specUnitPriceColumn, "unit_price")).append(", ")
-				.append("mt.").append(quantityColumn).append(" as quantity, ")
-				.append(selectCoalesce("mt.", remarkColumn, "ms.", remarkSpecColumn, "remark"))
+		List<String> selectColumns = new ArrayList<>();
+		selectColumns.add(specColumn != null ? "mt." + specColumn + " as bom_id" : "null as bom_id");
+		selectColumns.add(styleIdColumn != null ? "mt." + styleIdColumn + " as styles_id" : "null as styles_id");
+		selectColumns.add(resolveStyleCodeSelect(stylesCodeColumn, styleCodeColumn, specStyleCodeColumn));
+		selectColumns.add(selectOrNull(qualifyColumn("mt.", prdColumn), "prd_agree_code"));
+		selectColumns.add(selectOrNull(qualifyColumn("mt.", colorColumn), "color_code"));
+		selectColumns.add(selectOrNull(qualifyColumn("ms.", categoryColumn), "category"));
+		selectColumns.add(selectOrNull(qualifyColumn("ms.", materialNameColumn), "material_name"));
+		selectColumns.add(selectOrNull(qualifyColumn("ms.", materialUsageColumn), "material_usage"));
+		selectColumns.add(selectOrNull(qualifyColumn("ms.", specColumnName), "spec"));
+		selectColumns.add(selectOrNull(qualifyColumn("ms.", materialColorColumn), "material_color"));
+		selectColumns.add(selectOrNull(qualifyColumn("ms.", uomColumn), "uom"));
+		selectColumns.add(selectOrNull(qualifyColumn("ms.", qtyPerPieceColumn), "qty_per_piece"));
+		selectColumns.add(selectOrNull(qualifyColumn("ms.", supplierColumn), "supplier_code"));
+		selectColumns.add(selectCoalesce("mt.", orderUomColumn, "ms.", specOrderUomColumn, "order_uom"));
+		selectColumns.add(selectCoalesce("mt.", unitPriceColumn, "ms.", specUnitPriceColumn, "unit_price"));
+		selectColumns.add("mt." + quantityColumn + " as quantity");
+		selectColumns.add(selectCoalesce("mt.", remarkColumn, "ms.", remarkSpecColumn, "remark"));
+
+		StringBuilder sql = new StringBuilder().append("select ").append(String.join(", ", selectColumns)).append(" ")
 				.append("from material_transactions mt ");
 
 		if (specColumn != null && specBomIdColumn != null) {
@@ -767,9 +769,12 @@ public class MaterialTransactionService {
 			candidates.add("ms." + specStyleCodeColumn);
 		}
 		if (candidates.isEmpty()) {
-			return "null as style_code, ";
+			return "null as style_code";
 		}
-		return "coalesce(" + String.join(", ", candidates) + ") as style_code, ";
+		if (candidates.size() == 1) {
+			return candidates.get(0) + " as style_code";
+		}
+		return "coalesce(" + String.join(", ", candidates) + ") as style_code";
 	}
 
 	private String resolveStyleCodeValue(String resolved, String fallback) {
