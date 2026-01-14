@@ -13,6 +13,7 @@ public class MaterialSpecContextView {
     private final List<String> sizes;
     private final Map<String, Integer> quantities;
     private final List<MaterialSpecItemView> materials;
+    private final List<AgreementQuantitySummary> agreementSummaryRows;
 
     public MaterialSpecContextView(String styleCode,
             String colorCode,
@@ -21,7 +22,8 @@ public class MaterialSpecContextView {
             Long prdAgreeId,
             List<String> sizes,
             Map<String, Integer> quantities,
-            List<MaterialSpecItemView> materials) {
+            List<MaterialSpecItemView> materials,
+            List<AgreementQuantitySummary> agreementSummaryRows) {
         this.styleCode = styleCode;
         this.colorCode = colorCode;
         this.prdAgreeCode = prdAgreeCode;
@@ -30,6 +32,7 @@ public class MaterialSpecContextView {
         this.sizes = sizes != null ? sizes : Collections.emptyList();
         this.quantities = quantities != null ? quantities : Collections.emptyMap();
         this.materials = materials != null ? materials : Collections.emptyList();
+        this.agreementSummaryRows = agreementSummaryRows != null ? agreementSummaryRows : Collections.emptyList();
     }
 
     public String getStyleCode() {
@@ -62,5 +65,9 @@ public class MaterialSpecContextView {
 
     public List<MaterialSpecItemView> getMaterials() {
         return materials;
+    }
+
+    public List<AgreementQuantitySummary> getAgreementSummaryRows() {
+        return agreementSummaryRows;
     }
 }

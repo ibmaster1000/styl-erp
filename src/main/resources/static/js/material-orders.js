@@ -92,15 +92,15 @@ document.addEventListener('DOMContentLoaded', () => {
 		materialNote.textContent = '조회 전에는 목록이 표시되지 않습니다.';
 		queryState = null;
 		if (resetMatrix) {
-			renderMatrixStatus('품번을 확인하세요.');
+			renderAgreementSummaryStatus('조회 후 표시됩니다.');
 		}
 	};
 
-	const renderMatrixStatus = (message) => {
+	const renderAgreementSummaryStatus = (message) => {
 		ruleHead.innerHTML = '';
 		ruleBody.innerHTML = '';
 		const headRow = document.createElement('tr');
-		headRow.innerHTML = '<th class="text-start">색상</th><th class="text-muted">-</th>';
+		headRow.innerHTML = '<th class="text-start">색상</th><th>생산수량</th>';
 		ruleHead.appendChild(headRow);
 
 		const emptyRow = document.createElement('tr');
@@ -112,51 +112,36 @@ document.addEventListener('DOMContentLoaded', () => {
 		ruleBody.appendChild(emptyRow);
 	};
 
-	const renderMatrixTable = (colors, sizes, quantities) => {
+	const renderAgreementSummaryRows = (rows) => {
 		ruleHead.innerHTML = '';
 		ruleBody.innerHTML = '';
-		const safeColors = colors && colors.length > 0 ? colors : [{ code: '-', name: '-' }];
-		const safeSizes = sizes && sizes.length > 0 ? sizes : [{ code: '-', name: '-' }];
 		const headRow = document.createElement('tr');
 		const colorHead = document.createElement('th');
 		colorHead.textContent = '색상';
 		colorHead.classList.add('text-start');
 		headRow.appendChild(colorHead);
-		safeSizes.forEach((size) => {
-			const th = document.createElement('th');
-			th.textContent = size.name || size.code || '-';
-			headRow.appendChild(th);
-		});
+		const qtyHead = document.createElement('th');
+		qtyHead.textContent = '생산수량';
+		headRow.appendChild(qtyHead);
 		ruleHead.appendChild(headRow);
 
-		safeColors.forEach((color) => {
+		const safeRows = Array.isArray(rows) && rows.length > 0 ? rows : null;
+		if (!safeRows) {
+			renderAgreementSummaryStatus('조회된 생산수량이 없습니다.');
+			return;
+		}
+
+		safeRows.forEach((rowData) => {
 			const row = document.createElement('tr');
 			const colorCell = document.createElement('td');
 			colorCell.classList.add('text-start');
-			colorCell.textContent = color.name || color.code || '-';
+			colorCell.textContent = rowData.colorCode || '-';
 			row.appendChild(colorCell);
-			safeSizes.forEach((size) => {
-				const td = document.createElement('td');
-				const key = `${color.code || ''}|${size.code || ''}`;
-				const qty = quantities && Object.prototype.hasOwnProperty.call(quantities, key)
-					? quantities[key]
-					: '-';
-				td.textContent = qty;
-				row.appendChild(td);
-			});
+			const qtyCell = document.createElement('td');
+			qtyCell.textContent = rowData.quantity ?? '-';
+			row.appendChild(qtyCell);
 			ruleBody.appendChild(row);
 		});
-	};
-
-	const applyMatrix = (matrix) => {
-		if (!matrix) {
-			renderMatrixStatus('색상/사이즈 정보를 불러오지 못했습니다.');
-			return;
-		}
-		const colors = Array.isArray(matrix.colors) ? matrix.colors : [];
-		const sizes = Array.isArray(matrix.sizes) ? matrix.sizes : [];
-		const quantities = matrix.quantities && typeof matrix.quantities === 'object' ? matrix.quantities : {};
-		renderMatrixTable(colors, sizes, quantities);
 	};
 
 	const verifyStyleCode = async () => {
@@ -180,17 +165,15 @@ document.addEventListener('DOMContentLoaded', () => {
 				updateSelectOptions(agreementInput, data.agreements || [], '생산합의코드 선택');
 				colorInput.disabled = false;
 				agreementInput.disabled = false;
-				applyMatrix(data.colorSizeMatrix);
 				updateSearchButtonState();
 			} else {
 				resetOptionState();
 				setStatusMessage(data.message || '없는 품번입니다.', false);
-				applyMatrix(data.colorSizeMatrix);
 			}
 		} catch (error) {
 			resetOptionState();
 			setStatusMessage('품번 확인 중 오류가 발생했습니다.', false);
-			renderMatrixStatus('색상/사이즈 정보를 불러오지 못했습니다.');
+			renderAgreementSummaryStatus('조회 후 표시됩니다.');
 		}
 	};
 
@@ -327,15 +310,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			styleChip.textContent = queryState.styleCode || '-';
 			renderSuppliers(data.suppliers || []);
 			renderMaterials(data.materialsToOrder || [], queryState.colorCode);
+			renderAgreementSummaryRows(data.agreementSummaryRows);
 			materialNote.textContent = `품번 ${queryState.styleCode} / 색상 ${queryState.colorCode} / 생산합의 ${queryState.agreementCode}`;
-			if (data.colorSizeMatrix) {
-				applyMatrix(data.colorSizeMatrix);
-			}
 		} catch (error) {
 			resetSupplierTable('조건에 맞는 자재처가 없습니다.');
 			resetMaterialTable('조회된 원부자재가 없습니다.');
 			supplierSummary.textContent = '조회 중 오류가 발생했습니다.';
 			materialNote.textContent = '조회 중 오류가 발생했습니다.';
+			renderAgreementSummaryStatus('조회 중 오류가 발생했습니다.');
 		}
 	};
 

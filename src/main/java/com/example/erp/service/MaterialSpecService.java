@@ -1,5 +1,6 @@
 package com.example.erp.service;
 
+import com.example.erp.controller.dto.AgreementQuantitySummary;
 import com.example.erp.controller.dto.MaterialSpecCodeView;
 import com.example.erp.controller.dto.MaterialSpecContextView;
 import com.example.erp.controller.dto.MaterialSpecItemView;
@@ -34,10 +35,13 @@ public class MaterialSpecService {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final StyleRuleService styleRuleService;
+    private final AgreementQueryService agreementQueryService;
 
-    public MaterialSpecService(NamedParameterJdbcTemplate jdbcTemplate, StyleRuleService styleRuleService) {
+    public MaterialSpecService(NamedParameterJdbcTemplate jdbcTemplate, StyleRuleService styleRuleService,
+            AgreementQueryService agreementQueryService) {
         this.jdbcTemplate = jdbcTemplate;
         this.styleRuleService = styleRuleService;
+        this.agreementQueryService = agreementQueryService;
     }
 
     public MaterialSpecContextView loadContext(String styleCode, String prdAgreeCode, String colorCode) {
@@ -49,10 +53,12 @@ public class MaterialSpecService {
         List<String> sizes = findSizes(normalizedStyleCode, normalizedColor);
         Map<String, Integer> quantities = findAgreementQuantities(normalizedStyleCode, normalizedAgreeCode,
                 normalizedColor);
+        List<AgreementQuantitySummary> agreementSummaryRows =
+                agreementQueryService.findAgreementQuantities(normalizedAgreeCode);
         List<MaterialSpecItemView> materials = findMaterialSpecs(normalizedStyleCode, normalizedAgreeCode,
                 normalizedColor, prdAgreeId, stylesId);
         return new MaterialSpecContextView(normalizedStyleCode, normalizedColor, normalizedAgreeCode, stylesId,
-                prdAgreeId, sizes, quantities, materials);
+                prdAgreeId, sizes, quantities, materials, agreementSummaryRows);
     }
 
     public List<MaterialSpecCodeView> filterCodes(List<Code> codes, String keyword) {

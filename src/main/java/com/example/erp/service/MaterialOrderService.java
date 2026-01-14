@@ -37,13 +37,16 @@ public class MaterialOrderService {
 	private final NamedParameterJdbcTemplate jdbcTemplate;
 	private final StyleRuleService styleRuleService;
 	private final ProductionAgreementRepository productionAgreementRepository;
+	private final AgreementQueryService agreementQueryService;
 
 	public MaterialOrderService(NamedParameterJdbcTemplate jdbcTemplate,
 			StyleRuleService styleRuleService,
-			ProductionAgreementRepository productionAgreementRepository) {
+			ProductionAgreementRepository productionAgreementRepository,
+			AgreementQueryService agreementQueryService) {
 		this.jdbcTemplate = jdbcTemplate;
 		this.styleRuleService = styleRuleService;
 		this.productionAgreementRepository = productionAgreementRepository;
+		this.agreementQueryService = agreementQueryService;
 	}
 
 	public List<MaterialOrderStyleResult> searchStyles(String keyword) {
@@ -724,24 +727,7 @@ public class MaterialOrderService {
 				|| !hasTable("production_agreements")) {
 			return BigDecimal.ZERO;
 		}
-		String agreementColumn = findFirstExistingColumn("production_agreements",
-				List.of("agreement_code", "prd_agree_code"));
-		String colorColumn = findFirstExistingColumn("production_agreements", List.of("color_code"));
-		String quantityColumn = findFirstExistingColumn("production_agreements", List.of("quantity"));
-		if (agreementColumn == null || colorColumn == null || quantityColumn == null) {
-			return BigDecimal.ZERO;
-		}
-		String sql = """
-				select coalesce(sum(%s), 0) as production_qty
-				from production_agreements
-				where %s = :agreementCode
-				  and %s = :colorCode
-				""".formatted(quantityColumn, agreementColumn, colorColumn);
-		MapSqlParameterSource params = new MapSqlParameterSource()
-				.addValue("agreementCode", agreementCode)
-				.addValue("colorCode", colorCode);
-		BigDecimal result = jdbcTemplate.queryForObject(sql, params, BigDecimal.class);
-		return result != null ? result : BigDecimal.ZERO;
+		return agreementQueryService.sumQuantityByAgreementAndColor(agreementCode, colorCode);
 	}
 
 	private List<MaterialOrderLineRow> buildMaterialsToOrder(List<MaterialOrderItemView> materials,

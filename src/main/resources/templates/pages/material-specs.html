@@ -194,8 +194,8 @@
 			<div class="material-panel ms-rule-card ms-card">
 				<div class="d-flex justify-content-between align-items-center">
 					<div>
-						<div class="fw-bold">색상 × 사이즈 규칙</div>
-						<div class="text-muted small">생산합의 수량이 함께 표시됩니다.</div>
+						<div class="fw-bold">생산합의 수량</div>
+						<div class="text-muted small">조회 조건 기준으로 색상별 생산수량이 표시됩니다.</div>
 					</div>
 					<span class="badge text-bg-light" id="ms-style-chip">-</span>
 				</div>
@@ -204,12 +204,12 @@
 						<thead id="ms-rule-head">
 							<tr>
 								<th class="t-left">색상</th>
-								<th class="text-muted">-</th>
+								<th>생산수량</th>
 							</tr>
 						</thead>
 						<tbody id="ms-rule-body">
 							<tr>
-								<td colspan="2" class="text-center text-muted">품번을 확인하세요.</td>
+								<td colspan="2" class="text-center text-muted">조회 후 표시됩니다.</td>
 							</tr>
 						</tbody>
 					</table>
@@ -390,7 +390,7 @@
 			currentPage = 1;
 			renderMaterials();
 			if (resetMatrix) {
-				renderMatrixStatus('품번을 확인하세요.');
+				renderAgreementSummaryStatus('조회 후 표시됩니다.');
 			}
 		};
 
@@ -450,11 +450,11 @@
 			}
 		};
 
-		const renderMatrixStatus = (message) => {
+		const renderAgreementSummaryStatus = (message) => {
 			ruleHead.innerHTML = '';
 			ruleBody.innerHTML = '';
 			const headRow = document.createElement('tr');
-			headRow.innerHTML = '<th class="t-left">색상</th><th class="text-muted">-</th>';
+			headRow.innerHTML = '<th class="t-left">색상</th><th>생산수량</th>';
 			ruleHead.appendChild(headRow);
 
 			const emptyRow = document.createElement('tr');
@@ -466,60 +466,36 @@
 			ruleBody.appendChild(emptyRow);
 		};
 
-		const renderMatrixTable = (colors, sizes, quantities) => {
+		const renderAgreementSummaryRows = (rows) => {
 			ruleHead.innerHTML = '';
 			ruleBody.innerHTML = '';
-			const safeColors = colors && colors.length > 0 ? colors : [{code: '-', name: '-'}];
-			const safeSizes = sizes && sizes.length > 0 ? sizes : [{code: '-', name: '-'}];
 			const headRow = document.createElement('tr');
 			const colorHead = document.createElement('th');
 			colorHead.textContent = '색상';
 			colorHead.classList.add('t-left');
 			headRow.appendChild(colorHead);
-			safeSizes.forEach((size) => {
-				const th = document.createElement('th');
-				th.textContent = size.name || size.code || '-';
-				headRow.appendChild(th);
-			});
+			const qtyHead = document.createElement('th');
+			qtyHead.textContent = '생산수량';
+			headRow.appendChild(qtyHead);
 			ruleHead.appendChild(headRow);
 
-			safeColors.forEach((color) => {
+			const safeRows = Array.isArray(rows) && rows.length > 0 ? rows : null;
+			if (!safeRows) {
+				renderAgreementSummaryStatus('조회된 생산수량이 없습니다.');
+				return;
+			}
+
+			safeRows.forEach((rowData) => {
 				const row = document.createElement('tr');
 				const colorCell = document.createElement('td');
 				colorCell.classList.add('t-left');
-				colorCell.textContent = color.name || color.code || '-';
+				colorCell.textContent = rowData.colorCode || '-';
 				row.appendChild(colorCell);
-				safeSizes.forEach((size) => {
-					const td = document.createElement('td');
-					const key = `${color.code || ''}|${size.code || ''}`;
-					const qty = quantities && Object.prototype.hasOwnProperty.call(quantities, key)
-						? quantities[key]
-						: '-';
-					td.textContent = qty;
-					row.appendChild(td);
-				});
+				const qtyCell = document.createElement('td');
+				qtyCell.textContent = rowData.quantity ?? '-';
+				row.appendChild(qtyCell);
 				ruleBody.appendChild(row);
 			});
-		};
-
-		const loadMatrix = async (styleCode) => {
-			if (!styleCode) {
-				renderMatrixStatus('품번을 확인하세요.');
-				return;
-			}
-			try {
-				const response = await fetch(`/materials/spec/matrix?styleCode=${encodeURIComponent(styleCode)}`);
-				if (!response.ok) {
-					throw new Error('matrix');
-				}
-				const data = await response.json();
-				const colors = Array.isArray(data.colors) ? data.colors : [];
-				const sizes = Array.isArray(data.sizes) ? data.sizes : [];
-				const quantities = data.quantities && typeof data.quantities === 'object' ? data.quantities : {};
-				renderMatrixTable(colors, sizes, quantities);
-			} catch (error) {
-				renderMatrixStatus('색상/사이즈 정보를 불러오지 못했습니다.');
-			}
 		};
 
 		const toCategoryCode = (category) => {
@@ -825,10 +801,12 @@
 				currentPage = 1;
 				updateMaterialCodes();
 				renderMaterials();
+				renderAgreementSummaryRows(data.agreementSummaryRows);
 				addRowButton.disabled = false;
 				saveButton.disabled = false;
 				updateSummary();
 			} catch (error) {
+				renderAgreementSummaryStatus('조회 중 오류가 발생했습니다.');
 				alert('조회 중 오류가 발생했습니다.');
 			}
 		};
@@ -848,7 +826,6 @@
 			const hasColor = selectFirstOption(colorInput);
 			const hasAgreement = selectFirstOption(agreementInput);
 			updateSearchButtonState();
-			await loadMatrix(styleCode);
 			if (hasColor && hasAgreement) {
 				await doSearch();
 			}

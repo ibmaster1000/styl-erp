@@ -5,6 +5,7 @@ import com.example.erp.controller.dto.MaterialOrderRequest;
 import com.example.erp.controller.dto.MaterialOrderSearchResponse;
 import com.example.erp.controller.dto.MaterialSpecMatrixResponse;
 import com.example.erp.controller.dto.MaterialSpecOptionsResponse;
+import com.example.erp.service.AgreementQueryService;
 import com.example.erp.service.MaterialOrderService;
 import com.example.erp.service.MaterialSpecService;
 import com.example.erp.service.StyleService;
@@ -26,13 +27,16 @@ public class MaterialOrderApiController {
     private final MaterialOrderService materialOrderService;
     private final MaterialSpecService materialSpecService;
     private final StyleService styleService;
+    private final AgreementQueryService agreementQueryService;
 
     public MaterialOrderApiController(MaterialOrderService materialOrderService,
             MaterialSpecService materialSpecService,
-            StyleService styleService) {
+            StyleService styleService,
+            AgreementQueryService agreementQueryService) {
         this.materialOrderService = materialOrderService;
         this.materialSpecService = materialSpecService;
         this.styleService = styleService;
+        this.agreementQueryService = agreementQueryService;
     }
 
     @GetMapping("/context")
@@ -50,22 +54,22 @@ public class MaterialOrderApiController {
                     new MaterialSpecMatrixResponse(java.util.List.of(), java.util.List.of(), java.util.Map.of()));
         }
         MaterialSpecOptionsResponse options = materialSpecService.loadOptions(trimmed);
-        MaterialSpecMatrixResponse matrix = materialSpecService.loadMatrix(trimmed);
         return new MaterialOrderContextResponse(true, "품번이 확인되었습니다.",
-                options.colors(), options.agreements(), matrix);
+                options.colors(), options.agreements(),
+                new MaterialSpecMatrixResponse(java.util.List.of(), java.util.List.of(), java.util.Map.of()));
     }
 
     @GetMapping("/search")
     public MaterialOrderSearchResponse search(@RequestParam("styleCode") String styleCode,
             @RequestParam("agreementCode") String agreementCode,
             @RequestParam("colorCode") String colorCode) {
-        MaterialSpecMatrixResponse matrix = materialSpecService.loadMatrix(styleCode);
         MaterialOrderService.MaterialOrderSearchResult result =
                 materialOrderService.searchOrders(styleCode, agreementCode, colorCode);
         return new MaterialOrderSearchResponse(
                 result.getSuppliers(),
                 result.getMaterialsToOrder(),
-                matrix);
+                new MaterialSpecMatrixResponse(java.util.List.of(), java.util.List.of(), java.util.Map.of()),
+                agreementQueryService.findAgreementQuantities(agreementCode));
     }
 
     @PostMapping("/request")

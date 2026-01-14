@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +23,26 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 
 	Optional<ProductionAgreement> findTopByAgreementCodeAndColorCodeOrderByPrdAgreeIdDesc(String agreementCode,
 			String colorCode);
+
+	@Query(value = """
+			select coalesce(sum(quantity), 0) as qty
+			from production_agreements
+			where agreement_code = :agreementCode
+			  and color_code = :colorCode
+			""", nativeQuery = true)
+	BigDecimal sumQuantityByAgreementAndColor(@Param("agreementCode") String agreementCode,
+			@Param("colorCode") String colorCode);
+
+	@Query(value = """
+			select color_code as colorCode,
+			       coalesce(sum(quantity), 0) as quantity
+			from production_agreements
+			where agreement_code = :agreementCode
+			group by color_code
+			order by color_code asc
+			""", nativeQuery = true)
+	List<AgreementQuantitySummaryView> findAgreementQuantitySummariesByAgreementCode(
+			@Param("agreementCode") String agreementCode);
 
 	@Query(value = """
 			select s.style_code as styleCode,
