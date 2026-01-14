@@ -334,7 +334,8 @@ public class MaterialOrderService {
 		BigDecimal productionQty = findProductionQty(agreementCode, colorCode);
 		List<MaterialOrderSupplierView> suppliers = findSuppliersByStyleCode(styleCode, prdAgreeId, colorCode);
 		List<MaterialOrderItemView> materials = findMaterialsByStyleCode(styleCode, prdAgreeId, colorCode);
-		List<MaterialOrderLineRow> materialsToOrder = buildMaterialsToOrder(materials, colorCode, productionQty);
+		List<MaterialOrderLineRow> materialsToOrder = buildMaterialsToOrder(materials, agreementCode, colorCode,
+				productionQty);
 		log.info("Material order search productionQty sum={}, material_specs rows={}",
 				productionQty, materials.size());
 		logMaterialOrderSample(materialsToOrder);
@@ -744,6 +745,7 @@ public class MaterialOrderService {
 	}
 
 	private List<MaterialOrderLineRow> buildMaterialsToOrder(List<MaterialOrderItemView> materials,
+			String agreementCode,
 			String colorCode,
 			BigDecimal productionQty) {
 		if (materials == null || materials.isEmpty()) {
@@ -759,13 +761,25 @@ public class MaterialOrderService {
 		List<MaterialOrderLineRow> rows = new ArrayList<>();
 		for (MaterialOrderItemView item : materials) {
 			BigDecimal qtyPerPiece = safeDecimal(item.getQtyPerPiece());
-			BigDecimal lossRate = safeDecimal(item.getLossRate());
-			BigDecimal normalizedLossRate = normalizeLossRate(lossRate);
+			BigDecimal lossRatePercent = safeDecimal(item.getLossRate());
+			BigDecimal normalizedLossRate = normalizeLossRatePercent(lossRatePercent);
 			BigDecimal unitPrice = safeDecimal(item.getUnitPrice());
-			BigDecimal orderAmount = productionQty.multiply(qtyPerPiece)
-					.multiply(BigDecimal.ONE.add(normalizedLossRate))
-					.setScale(3, RoundingMode.HALF_UP);
-			BigDecimal orderPrice = orderAmount.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+			BigDecimal multiplier = BigDecimal.ONE.add(normalizedLossRate);
+			BigDecimal rawOrderQty = productionQty.multiply(qtyPerPiece).multiply(multiplier);
+			BigDecimal orderQty = applyOrderQtyRounding(item.getUom(), rawOrderQty);
+			BigDecimal orderPrice = orderQty.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+			// TODO: remove debug log after verification
+			log.info(
+					"Material order calc agreementCode={} colorCode={} totalQty={} qtyPerPiece={} lossRatePercent={} multiplier={} computedOrderQty={} unitPrice={} computedAmount={}",
+					agreementCode,
+					colorCode,
+					productionQty,
+					qtyPerPiece,
+					lossRatePercent,
+					multiplier,
+					orderQty,
+					unitPrice,
+					orderPrice);
 			String supplierCode = item.getSupplierCode();
 			rows.add(new MaterialOrderLineRow(
 					colorCode,
@@ -778,12 +792,12 @@ public class MaterialOrderService {
 					qtyPerPiece,
 					supplierCode,
 					supplierNames.getOrDefault(supplierCode, "-"),
-					lossRate,
+					lossRatePercent,
 					item.getOrderUom(),
 					unitPrice,
 					item.getRemark(),
 					productionQty,
-					orderAmount,
+					orderQty,
 					orderPrice));
 		}
 		return rows;
@@ -793,13 +807,28 @@ public class MaterialOrderService {
 		return value != null ? value : BigDecimal.ZERO;
 	}
 
-	private BigDecimal normalizeLossRate(BigDecimal lossRate) {
-		if (lossRate == null) {
+	private BigDecimal normalizeLossRatePercent(BigDecimal lossRatePercent) {
+		if (lossRatePercent == null) {
 			return BigDecimal.ZERO;
 		}
-		return lossRate.compareTo(BigDecimal.ONE) > 0
-				? lossRate.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)
-				: lossRate;
+		return lossRatePercent.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP);
+	}
+
+	private BigDecimal applyOrderQtyRounding(String uom, BigDecimal rawOrderQty) {
+		if (rawOrderQty == null) {
+			return BigDecimal.ZERO;
+		}
+		if (isEachUnit(uom)) {
+			return rawOrderQty.setScale(0, RoundingMode.CEILING);
+		}
+		return rawOrderQty.setScale(3, RoundingMode.HALF_UP);
+	}
+
+	private boolean isEachUnit(String uom) {
+		if (!StringUtils.hasText(uom)) {
+			return false;
+		}
+		return uom.trim().toUpperCase().contains("EA");
 	}
 	
 	private void logMaterialOrderSample(List<MaterialOrderLineRow> rows) {

@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	let styleVerified = false;
 	let warehouseTargetRow = null;
 	let selectedWarehouse = null;
-	let appliedCondition = null;
-	let isDirty = false;
+	let inputState = { styleCode: '', colorCode: '', agreementCode: '' };
+	let queryState = null;
 
 	const createModal = (element, label) => {
 		if (window.bootstrap?.Modal) {
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		resetMaterialTable('조회 후 원부자재 목록이 표시됩니다.');
 		supplierSummary.textContent = '조건을 선택 후 조회하세요.';
 		materialNote.textContent = '조회 전에는 목록이 표시되지 않습니다.';
-		appliedCondition = null;
+		queryState = null;
 		if (resetMatrix) {
 			renderMatrixStatus('품번을 확인하세요.');
 		}
@@ -251,11 +251,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	};
 
-	const getAppliedCondition = () => {
-		if (appliedCondition) {
-			return appliedCondition;
-		}
-		return {
+	const updateInputState = () => {
+		inputState = {
 			styleCode: styleInput.value.trim(),
 			colorCode: colorInput.value.trim(),
 			agreementCode: agreementInput.value.trim()
@@ -269,7 +266,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (!confirm('발주하시겠습니까?')) {
 			return;
 		}
-		const applied = getAppliedCondition();
+		const applied = queryState || {
+			styleCode: styleInput.value.trim(),
+			colorCode: colorInput.value.trim(),
+			agreementCode: agreementInput.value.trim()
+		};
 		const payload = {
 			styleCode: applied.styleCode || null,
 			prdAgreeCode: applied.agreementCode || null,
@@ -305,9 +306,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	};
 
 	const doSearch = async () => {
-		const styleCode = styleInput.value.trim();
-		const colorCode = colorInput.value.trim();
-		const agreementCode = agreementInput.value.trim();
+		updateInputState();
+		const { styleCode, colorCode, agreementCode } = inputState;
 		if (!styleVerified) {
 			alert('품번 확인 후 조회할 수 있습니다.');
 			return;
@@ -316,18 +316,18 @@ document.addEventListener('DOMContentLoaded', () => {
 			alert('색상과 생산합의코드를 선택하세요.');
 			return;
 		}
+		const requestedState = { styleCode, colorCode, agreementCode };
 		try {
 			const response = await fetch(`/api/material-orders/search?styleCode=${encodeURIComponent(styleCode)}&agreementCode=${encodeURIComponent(agreementCode)}&colorCode=${encodeURIComponent(colorCode)}`);
 			if (!response.ok) {
 				throw new Error('search');
 			}
 			const data = await response.json();
-			styleChip.textContent = styleCode || '-';
+			queryState = requestedState;
+			styleChip.textContent = queryState.styleCode || '-';
 			renderSuppliers(data.suppliers || []);
-			renderMaterials(data.materialsToOrder || [], colorCode);
-			materialNote.textContent = `품번 ${styleCode} / 색상 ${colorCode} / 생산합의 ${agreementCode}`;
-			appliedCondition = { styleCode, colorCode, agreementCode };
-			isDirty = false;
+			renderMaterials(data.materialsToOrder || [], queryState.colorCode);
+			materialNote.textContent = `품번 ${queryState.styleCode} / 색상 ${queryState.colorCode} / 생산합의 ${queryState.agreementCode}`;
 			if (data.colorSizeMatrix) {
 				applyMatrix(data.colorSizeMatrix);
 			}
@@ -426,22 +426,21 @@ document.addEventListener('DOMContentLoaded', () => {
 		clearStatusMessage();
 		resetOptionState();
 		resetContextState({ resetMatrix: true });
-		appliedCondition = null;
-		isDirty = false;
+		updateInputState();
 	});
 
 	colorInput.addEventListener('change', () => {
 		updateSearchButtonState();
-		isDirty = true;
-		if (appliedCondition) {
+		updateInputState();
+		if (queryState) {
 			materialNote.textContent = '조건이 변경되었습니다. 조회를 눌러 반영하세요.';
 		}
 	});
 
 	agreementInput.addEventListener('change', () => {
 		updateSearchButtonState();
-		isDirty = true;
-		if (appliedCondition) {
+		updateInputState();
+		if (queryState) {
 			materialNote.textContent = '조건이 변경되었습니다. 조회를 눌러 반영하세요.';
 		}
 	});
