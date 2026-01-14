@@ -375,7 +375,7 @@
 		let selectedColorCode = null;
 		let selectedSupplierCode = null;
 		let styleVerified = false;
-		let lastSearched = null;
+		let appliedCondition = null;
 		let isDirty = false;
 
 		const resetContextState = ({resetMatrix} = {}) => {
@@ -384,6 +384,7 @@
 			saveButton.disabled = true;
 			contextSummary.textContent = '조회 전에는 저장할 수 없습니다.';
 			styleChip.textContent = '-';
+			appliedCondition = null;
 			materials = [];
 			deletedIds = new Set();
 			currentPage = 1;
@@ -433,9 +434,9 @@
 		};
 
 		const updateSummary = () => {
-			const styleCode = styleInput.value.trim();
-			const colorCode = colorInput.value.trim();
-			const agreeCode = agreementInput.value.trim();
+			const styleCode = appliedCondition?.styleCode || styleInput.value.trim();
+			const colorCode = appliedCondition?.colorCode || colorInput.value.trim();
+			const agreeCode = appliedCondition?.agreementCode || agreementInput.value.trim();
 			if (contextLoaded) {
 				contextSummary.textContent = `품번 ${styleCode} / 색상 ${colorCode} / 생산합의 ${agreeCode}`;
 			}
@@ -813,7 +814,7 @@
 				})) : [];
 				deletedIds = new Set();
 				currentPage = 1;
-				lastSearched = {styleCode, colorCode, agreementCode: agreeCode};
+				appliedCondition = {styleCode, colorCode, agreementCode: agreeCode};
 				isDirty = false;
 				updateMaterialCodes();
 				renderMaterials();
@@ -922,6 +923,10 @@
 		const isBlank = (value) => value == null || String(value).trim().length === 0;
 
 		const validateMaterials = (items) => {
+			const applied = appliedCondition || {
+				styleCode: styleInput.value.trim(),
+				colorCode: colorInput.value.trim()
+			};
 			const errors = [];
 			items.forEach((item, index) => {
 				if (!item) {
@@ -941,8 +946,8 @@
 				}
 				if (isBlank(item.materialCode)
 					&& !isBlank(item.category)
-					&& !isBlank(styleInput.value)
-					&& !isBlank(colorInput.value)) {
+					&& !isBlank(applied.styleCode)
+					&& !isBlank(applied.colorCode)) {
 					errors.push({rowIndex: index, field: 'material_code'});
 				}
 			});
@@ -960,6 +965,11 @@
 				alert('조회 후 저장할 수 있습니다.');
 				return;
 			}
+			const applied = appliedCondition || {
+				styleCode: styleInput.value.trim(),
+				colorCode: colorInput.value.trim(),
+				agreementCode: agreementInput.value.trim()
+			};
 			const normalizeValue = (value) => {
 				if (typeof value !== 'string') {
 					return value;
@@ -981,9 +991,9 @@
 				remark: normalizeValue(item.remark)
 			}));
 			const payload = {
-				styleCode: styleInput.value.trim() || null,
-				colorCode: colorInput.value.trim() || null,
-				prdAgreeCode: agreementInput.value.trim() || null,
+				styleCode: applied.styleCode || null,
+				colorCode: applied.colorCode || null,
+				prdAgreeCode: applied.agreementCode || null,
 				items,
 				deletedIds: Array.from(deletedIds)
 			};
@@ -1155,18 +1165,24 @@
 			clearStatusMessage();
 			resetOptionState();
 			resetContextState({resetMatrix: true});
-			lastSearched = null;
+			appliedCondition = null;
 			isDirty = false;
 		});
 
 		colorInput.addEventListener('change', () => {
 			updateSearchButtonState();
 			isDirty = true;
+			if (appliedCondition) {
+				contextSummary.textContent = '조건이 변경되었습니다. 조회를 눌러 반영하세요.';
+			}
 		});
 
 		agreementInput.addEventListener('change', () => {
 			updateSearchButtonState();
 			isDirty = true;
+			if (appliedCondition) {
+				contextSummary.textContent = '조건이 변경되었습니다. 조회를 눌러 반영하세요.';
+			}
 		});
 
 		resetContextState({resetMatrix: true});

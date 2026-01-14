@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	let styleVerified = false;
 	let warehouseTargetRow = null;
 	let selectedWarehouse = null;
-	let lastSearched = null;
+	let appliedCondition = null;
 	let isDirty = false;
 
 	const createModal = (element, label) => {
@@ -90,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		resetMaterialTable('조회 후 원부자재 목록이 표시됩니다.');
 		supplierSummary.textContent = '조건을 선택 후 조회하세요.';
 		materialNote.textContent = '조회 전에는 목록이 표시되지 않습니다.';
+		appliedCondition = null;
 		if (resetMatrix) {
 			renderMatrixStatus('품번을 확인하세요.');
 		}
@@ -245,9 +246,20 @@ document.addEventListener('DOMContentLoaded', () => {
 		list.forEach((item) => {
 			const tr = document.createElement('tr');
 			const supplierLabel = [item.supplierCode, item.supplierName].filter(Boolean).join(' / ');
-			tr.innerHTML = `\n\t\t<td>${selectedColor || item.colorCode || '-'}</td>\n\t\t<td>${item.category || '-'}</td>\n\t\t<td>${item.materialName || '-'}</td>\n\t\t<td>${item.materialUsage || '-'}</td>\n\t\t<td>${item.spec || '-'}</td>\n\t\t<td>${item.materialColor || '-'}</td>\n\t\t<td>${item.uom || '-'}</td>\n\t\t<td>${formatNumber(item.qtyPerPiece)}</td>\n\t\t<td>${supplierLabel || '-'}</td>\n\t\t<td>${formatNumber(item.lossRate)}</td>\n\t\t<td>${formatDecimal(item.orderQty, 3)}</td>\n\t\t<td>${formatDecimal(item.orderAmount, 2)}</td>\n\t\t<td>${item.orderUom || '-'}</td>\n\t\t<td>${formatDecimal(item.unitPrice, 2)}</td>\n\t\t<td>${item.remark || '-'}</td>\t\n\t`;
+			tr.innerHTML = `\n\t\t<td>${selectedColor || item.colorCode || '-'}</td>\n\t\t<td>${item.category || '-'}</td>\n\t\t<td>${item.materialName || '-'}</td>\n\t\t<td>${item.materialUsage || '-'}</td>\n\t\t<td>${item.spec || '-'}</td>\n\t\t<td>${item.materialColor || '-'}</td>\n\t\t<td>${item.uom || '-'}</td>\n\t\t<td>${formatNumber(item.qtyPerPiece)}</td>\n\t\t<td>${supplierLabel || '-'}</td>\n\t\t<td>${formatNumber(item.lossRate)}</td>\n\t\t<td>${formatDecimal(item.orderAmount, 3)}</td>\n\t\t<td>${formatDecimal(item.orderPrice, 2)}</td>\n\t\t<td>${item.orderUom || '-'}</td>\n\t\t<td>${formatDecimal(item.unitPrice, 2)}</td>\n\t\t<td>${item.remark || '-'}</td>\t\n\t`;
 			materialBody.appendChild(tr);
 		});
+	};
+
+	const getAppliedCondition = () => {
+		if (appliedCondition) {
+			return appliedCondition;
+		}
+		return {
+			styleCode: styleInput.value.trim(),
+			colorCode: colorInput.value.trim(),
+			agreementCode: agreementInput.value.trim()
+		};
 	};
 
 	const handleOrderAction = async (row, supplier) => {
@@ -257,10 +269,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (!confirm('발주하시겠습니까?')) {
 			return;
 		}
+		const applied = getAppliedCondition();
 		const payload = {
-			styleCode: styleInput.value.trim() || null,
-			prdAgreeCode: agreementInput.value.trim() || null,
-			colorCode: colorInput.value.trim() || null,
+			styleCode: applied.styleCode || null,
+			prdAgreeCode: applied.agreementCode || null,
+			colorCode: applied.colorCode || null,
 			supplierCode: supplier.supplierCode || null,
 			orderDate: row.querySelector('.order-date')?.value || null,
 			dueDate: row.querySelector('.due-date')?.value || null,
@@ -313,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			renderSuppliers(data.suppliers || []);
 			renderMaterials(data.materialsToOrder || [], colorCode);
 			materialNote.textContent = `품번 ${styleCode} / 색상 ${colorCode} / 생산합의 ${agreementCode}`;
-			lastSearched = { styleCode, colorCode, agreementCode };
+			appliedCondition = { styleCode, colorCode, agreementCode };
 			isDirty = false;
 			if (data.colorSizeMatrix) {
 				applyMatrix(data.colorSizeMatrix);
@@ -413,18 +426,24 @@ document.addEventListener('DOMContentLoaded', () => {
 		clearStatusMessage();
 		resetOptionState();
 		resetContextState({ resetMatrix: true });
-		lastSearched = null;
+		appliedCondition = null;
 		isDirty = false;
 	});
 
 	colorInput.addEventListener('change', () => {
 		updateSearchButtonState();
 		isDirty = true;
+		if (appliedCondition) {
+			materialNote.textContent = '조건이 변경되었습니다. 조회를 눌러 반영하세요.';
+		}
 	});
 
 	agreementInput.addEventListener('change', () => {
 		updateSearchButtonState();
 		isDirty = true;
+		if (appliedCondition) {
+			materialNote.textContent = '조건이 변경되었습니다. 조회를 눌러 반영하세요.';
+		}
 	});
 
 	warehouseSearchBtn.addEventListener('click', () => {

@@ -20,6 +20,9 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 	Optional<ProductionAgreement> findTopByAgreementCodeAndColorCodeOrderByPrdAgreeIdAsc(String agreementCode,
 			String colorCode);
 
+	Optional<ProductionAgreement> findTopByAgreementCodeAndColorCodeOrderByPrdAgreeIdDesc(String agreementCode,
+			String colorCode);
+
 	@Query(value = """
 			select s.style_code as styleCode,
 			       pa.agreement_code as agreementCode,

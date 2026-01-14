@@ -18,8 +18,8 @@ public class MaterialOrderLineRow {
     private final BigDecimal unitPrice;
     private final String remark;
     private final BigDecimal productionQty;
-    private final BigDecimal orderQty;
     private final BigDecimal orderAmount;
+    private final BigDecimal orderPrice;
 
     public MaterialOrderLineRow(String colorCode,
             String category,
@@ -36,8 +36,8 @@ public class MaterialOrderLineRow {
             BigDecimal unitPrice,
             String remark,
             BigDecimal productionQty,
-            BigDecimal orderQty,
-            BigDecimal orderAmount) {
+            BigDecimal orderAmount,
+            BigDecimal orderPrice) {
         this.colorCode = colorCode;
         this.category = category;
         this.materialName = materialName;
@@ -53,8 +53,8 @@ public class MaterialOrderLineRow {
         this.unitPrice = unitPrice;
         this.remark = remark;
         this.productionQty = productionQty;
-        this.orderQty = orderQty;
         this.orderAmount = orderAmount;
+        this.orderPrice = orderPrice;
     }
 
     public String getColorCode() {
@@ -117,11 +117,11 @@ public class MaterialOrderLineRow {
         return productionQty;
     }
 
-    public BigDecimal getOrderQty() {
-        return orderQty;
-    }
-
     public BigDecimal getOrderAmount() {
         return orderAmount;
+    }
+
+    public BigDecimal getOrderPrice() {
+        return orderPrice;
     }
 }

@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -677,18 +676,14 @@ public class MaterialOrderService {
 	}
 
 	private String selectOrNull(String column) {
-		return selectOrNull(column, column);
+		return selectOrNull(column, null);
 	}
 
 	private String selectOrNull(String column, String alias) {
 		if (column == null) {
-			return "null as " + alias;
+			return "null";
 		}
-		String normalized = column.toLowerCase(Locale.ROOT);
-		if (normalized.contains(" as ")) {
-			return column;
-		}
-		return column + " as " + alias;
+		return column;
 	}
 
 	private Long resolvePrdAgreeId(String agreementCode, String colorCode) {
@@ -697,7 +692,7 @@ public class MaterialOrderService {
 			return null;
 		}
 		return productionAgreementRepository
-				.findTopByAgreementCodeAndColorCodeOrderByPrdAgreeIdAsc(agreementCode.trim(), colorCode.trim())
+				.findTopByAgreementCodeAndColorCodeOrderByPrdAgreeIdDesc(agreementCode.trim(), colorCode.trim())	
 				.map(ProductionAgreement::getPrdAgreeId)
 				.orElseThrow(() -> new IllegalArgumentException(
 						"생산합의 정보를 찾을 수 없습니다. agreementCode=%s, colorCode=%s"
@@ -765,11 +760,12 @@ public class MaterialOrderService {
 		for (MaterialOrderItemView item : materials) {
 			BigDecimal qtyPerPiece = safeDecimal(item.getQtyPerPiece());
 			BigDecimal lossRate = safeDecimal(item.getLossRate());
+			BigDecimal normalizedLossRate = normalizeLossRate(lossRate);
 			BigDecimal unitPrice = safeDecimal(item.getUnitPrice());
-			BigDecimal orderQty = productionQty.multiply(qtyPerPiece)
-					.multiply(BigDecimal.ONE.add(lossRate))
+			BigDecimal orderAmount = productionQty.multiply(qtyPerPiece)
+					.multiply(BigDecimal.ONE.add(normalizedLossRate))
 					.setScale(3, RoundingMode.HALF_UP);
-			BigDecimal orderAmount = orderQty.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+			BigDecimal orderPrice = orderAmount.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
 			String supplierCode = item.getSupplierCode();
 			rows.add(new MaterialOrderLineRow(
 					colorCode,
@@ -787,8 +783,8 @@ public class MaterialOrderService {
 					unitPrice,
 					item.getRemark(),
 					productionQty,
-					orderQty,
-					orderAmount));
+					orderAmount,
+					orderPrice));
 		}
 		return rows;
 	}
@@ -797,18 +793,27 @@ public class MaterialOrderService {
 		return value != null ? value : BigDecimal.ZERO;
 	}
 
+	private BigDecimal normalizeLossRate(BigDecimal lossRate) {
+		if (lossRate == null) {
+			return BigDecimal.ZERO;
+		}
+		return lossRate.compareTo(BigDecimal.ONE) > 0
+				? lossRate.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)
+				: lossRate;
+	}
+	
 	private void logMaterialOrderSample(List<MaterialOrderLineRow> rows) {
 		if (rows == null || rows.isEmpty()) {
 			log.info("Material order search sample row not available");
 			return;
 		}
 		MaterialOrderLineRow sample = rows.get(0);
-		log.info("Material order sample qtyPerPiece={} lossRate={} unitPrice={} orderQty={} orderAmount={}",
+		log.info("Material order sample qtyPerPiece={} lossRate={} unitPrice={} orderAmount={} orderPrice={}",
 				sample.getQtyPerPiece(),
 				sample.getLossRate(),
 				sample.getUnitPrice(),
-				sample.getOrderQty(),
-				sample.getOrderAmount());
+				sample.getOrderAmount(),
+				sample.getOrderPrice());
 	}
 
 	private Date toSqlDate(String value) {

@@ -333,54 +333,48 @@ public class MaterialSpecService {
             }
         }
 
-        int savedCount = created + updated + deleted;
-        log.info("Material spec save result savedCount={} created={} updated={} deleted={} prdAgreeId={} prdAgreeCode={} "
-                        + "colorCode={} styleCode={}", savedCount, created, updated, deleted, prdAgreeId, prdAgreeCode,
-                colorCode, styleCode);
-        if (savedCount == 0) {
-            throw new IllegalStateException("저장된 데이터가 없습니다.");
-        }
-        return Map.of("success", true, "savedCount", savedCount, "created", created, "updated", updated,
-                "deleted", deleted, "message", "저장되었습니다.");
+        return Map.of("success", true, "created", created, "updated", updated, "deleted", deleted);
     }
 
     private List<String> findSizes(String styleCode, String colorCode) {
-        if (!StringUtils.hasText(styleCode) || !StringUtils.hasText(colorCode)) {
+        if (!hasTable("production_agreements") || !StringUtils.hasText(styleCode) || !StringUtils.hasText(colorCode)) {
             return Collections.emptyList();
         }
-        Map<String, Map<String, List<String>>> rules = styleRuleService
-                .findRulesByStyleCodes(Set.of(styleCode));
-        Map<String, List<String>> styleRule = rules.getOrDefault(styleCode, Collections.emptyMap());
-        return styleRule.getOrDefault(colorCode, Collections.emptyList());
+        String styleCodeColumn = findFirstExistingColumn("production_agreements", List.of("style_code"));
+        String colorColumn = findFirstExistingColumn("production_agreements", List.of("color_code"));
+        String sizeColumn = findFirstExistingColumn("production_agreements", List.of("size_code"));
+        if (styleCodeColumn == null || colorColumn == null || sizeColumn == null) {
+            return Collections.emptyList();
+        }
+        String sql = "select distinct " + sizeColumn + " as size_code from production_agreements where "
+                + styleCodeColumn + " = :styleCode and " + colorColumn + " = :colorCode order by " + sizeColumn;
+        MapSqlParameterSource params = new MapSqlParameterSource().addValue("styleCode", styleCode)
+                .addValue("colorCode", colorCode);
+        return jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("size_code"));
     }
 
     private Map<String, Integer> findAgreementQuantities(String styleCode, String prdAgreeCode, String colorCode) {
-        if (!StringUtils.hasText(prdAgreeCode) || !StringUtils.hasText(colorCode) || !hasTable("production_agreements")) {
+        if (!hasTable("production_agreements") || !StringUtils.hasText(styleCode) || !StringUtils.hasText(prdAgreeCode)
+                || !StringUtils.hasText(colorCode)) {
             return Collections.emptyMap();
         }
+        String styleCodeColumn = findFirstExistingColumn("production_agreements", List.of("style_code"));
         String prdColumn = findFirstExistingColumn("production_agreements",
                 List.of("prd_agree_code", "agreement_code"));
         String colorColumn = findFirstExistingColumn("production_agreements", List.of("color_code"));
         String sizeColumn = findFirstExistingColumn("production_agreements", List.of("size_code"));
         String qtyColumn = findFirstExistingColumn("production_agreements", List.of("quantity"));
-        String styleCodeColumn = findFirstExistingColumn("production_agreements", List.of("style_code"));
-
-        if (prdColumn == null || colorColumn == null || sizeColumn == null || qtyColumn == null) {
+        if (styleCodeColumn == null || prdColumn == null || colorColumn == null || sizeColumn == null
+                || qtyColumn == null) {
             return Collections.emptyMap();
         }
+        String sql = "select " + sizeColumn + " as size_code, sum(" + qtyColumn + ") as quantity from production_agreements where "
+                + styleCodeColumn + " = :styleCode and " + prdColumn + " = :prdAgreeCode and " + colorColumn
+                + " = :colorCode group by " + sizeColumn;
+        MapSqlParameterSource params = new MapSqlParameterSource().addValue("styleCode", styleCode)
+                .addValue("prdAgreeCode", prdAgreeCode).addValue("colorCode", colorCode);
 
-        StringBuilder sql = new StringBuilder().append("select ").append(sizeColumn).append(" as size_code, ")
-                .append(qtyColumn).append(" as quantity ").append("from production_agreements where ")
-                .append(prdColumn).append(" = :prdAgreeCode and ").append(colorColumn).append(" = :colorCode ");
-
-        MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeCode", prdAgreeCode)
-                .addValue("colorCode", colorCode);
-        if (StringUtils.hasText(styleCode) && styleCodeColumn != null) {
-            sql.append("and ").append(styleCodeColumn).append(" = :styleCode ");
-            params.addValue("styleCode", styleCode);
-        }
-
-        return jdbcTemplate.query(sql.toString(), params, rs -> {
+        return jdbcTemplate.query(sql, params, rs -> {
             Map<String, Integer> result = new LinkedHashMap<>();
             while (rs.next()) {
                 result.put(rs.getString("size_code"), rs.getInt("quantity"));
@@ -424,20 +418,20 @@ public class MaterialSpecService {
                 prdAgreeIdColumn, prdColumn, usingColumn);
 
         List<String> selectColumns = List.of(
-                selectOrNull(bomIdColumn, "bom_id"),
-                selectOrNull("category"),
-                selectOrNull("material_name"),
-                selectOrNull("material_usage"),
-                selectOrNull("spec"),
-                selectOrNull("material_color"),
-                selectOrNull("uom"),
-                selectOrNull("qty_per_piece"),
-                selectOrNull("material_code"),
-                selectOrNull("supplier_code"),
-                selectOrNull("loss_rate"),
-                selectOrNull("order_uom"),
-                selectOrNull("unit_price"),
-                selectOrNull("remark"));
+                "%s as bom_id".formatted(selectOrNull(bomIdColumn, "bom_id")),
+                "%s as category".formatted(selectOrNull("category")),
+                "%s as material_name".formatted(selectOrNull("material_name")),
+                "%s as material_usage".formatted(selectOrNull("material_usage")),
+                "%s as spec".formatted(selectOrNull("spec")),
+                "%s as material_color".formatted(selectOrNull("material_color")),
+                "%s as uom".formatted(selectOrNull("uom")),
+                "%s as qty_per_piece".formatted(selectOrNull("qty_per_piece")),
+                "%s as material_code".formatted(selectOrNull("material_code")),
+                "%s as supplier_code".formatted(selectOrNull("supplier_code")),
+                "%s as loss_rate".formatted(selectOrNull("loss_rate")),
+                "%s as order_uom".formatted(selectOrNull("order_uom")),
+                "%s as unit_price".formatted(selectOrNull("unit_price")),
+                "%s as remark".formatted(selectOrNull("remark")));
 
         String sql = """
                 select %s
@@ -688,18 +682,14 @@ public class MaterialSpecService {
     }
 
     private String selectOrNull(String column) {
-        return selectOrNull(column, column);
+        return selectOrNull(column, null);
     }
 
     private String selectOrNull(String column, String alias) {
         if (column == null) {
-            return "null as " + alias;
+            return "null";
         }
-        String normalized = column.toLowerCase(Locale.ROOT);
-        if (normalized.contains(" as ")) {
-            return column;
-        }
-        return column + " as " + alias;
+        return column;
     }
 
     private String normalize(String value) {
