@@ -1,6 +1,7 @@
 package com.example.erp.service;
 
 import com.example.erp.controller.dto.MaterialOrderItemView;
+import com.example.erp.controller.dto.MaterialOrderLineRow;
 import com.example.erp.controller.dto.MaterialOrderRequest;
 import com.example.erp.controller.dto.MaterialOrderSelection;
 import com.example.erp.controller.dto.MaterialOrderStyleResult;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -330,10 +332,15 @@ public class MaterialOrderService {
 			log.info("Material order search result suppliers=0 materials=0");
 			return new MaterialOrderSearchResult(Collections.emptyList(), Collections.emptyList());
 		}
+		BigDecimal productionQty = findProductionQty(agreementCode, colorCode);
 		List<MaterialOrderSupplierView> suppliers = findSuppliersByStyleCode(styleCode, prdAgreeId, colorCode);
 		List<MaterialOrderItemView> materials = findMaterialsByStyleCode(styleCode, prdAgreeId, colorCode);
-		log.info("Material order search result suppliers={} materials={}", suppliers.size(), materials.size());
-		return new MaterialOrderSearchResult(suppliers, materials);
+		List<MaterialOrderLineRow> materialsToOrder = buildMaterialsToOrder(materials, colorCode, productionQty);
+		log.info("Material order search result productionQty={}", productionQty);
+		log.info("Material order search result material_specs rows={}", materials.size());
+		logMaterialOrderSample(materialsToOrder);
+		log.info("Material order search result suppliers={} materials={}", suppliers.size(), materialsToOrder.size());
+		return new MaterialOrderSearchResult(suppliers, materialsToOrder);
 	}
 
 	private List<MaterialOrderSupplierView> findSuppliersByStyleCode(String styleCode, Long prdAgreeId,
@@ -695,21 +702,109 @@ public class MaterialOrderService {
 
 	public static class MaterialOrderSearchResult {
 		private final List<MaterialOrderSupplierView> suppliers;
-		private final List<MaterialOrderItemView> materials;
+		private final List<MaterialOrderLineRow> materialsToOrder;
 
 		public MaterialOrderSearchResult(List<MaterialOrderSupplierView> suppliers,
-				List<MaterialOrderItemView> materials) {
+				List<MaterialOrderLineRow> materialsToOrder) {
 			this.suppliers = suppliers;
-			this.materials = materials;
+			this.materialsToOrder = materialsToOrder;
 		}
 
 		public List<MaterialOrderSupplierView> getSuppliers() {
 			return suppliers;
 		}
 
-		public List<MaterialOrderItemView> getMaterials() {
-			return materials;
+		public List<MaterialOrderLineRow> getMaterialsToOrder() {
+			return materialsToOrder;
 		}
+	}
+
+	private BigDecimal findProductionQty(String agreementCode, String colorCode) {
+		if (!StringUtils.hasText(agreementCode) || !StringUtils.hasText(colorCode)
+				|| !hasTable("production_agreements")) {
+			return BigDecimal.ZERO;
+		}
+		String agreementColumn = findFirstExistingColumn("production_agreements",
+				List.of("agreement_code", "prd_agree_code"));
+		String colorColumn = findFirstExistingColumn("production_agreements", List.of("color_code"));
+		String quantityColumn = findFirstExistingColumn("production_agreements", List.of("quantity"));
+		if (agreementColumn == null || colorColumn == null || quantityColumn == null) {
+			return BigDecimal.ZERO;
+		}
+		String sql = """
+				select coalesce(sum(%s), 0) as production_qty
+				from production_agreements
+				where %s = :agreementCode
+				  and %s = :colorCode
+				""".formatted(quantityColumn, agreementColumn, colorColumn);
+		MapSqlParameterSource params = new MapSqlParameterSource()
+				.addValue("agreementCode", agreementCode)
+				.addValue("colorCode", colorCode);
+		BigDecimal result = jdbcTemplate.queryForObject(sql, params, BigDecimal.class);
+		return result != null ? result : BigDecimal.ZERO;
+	}
+
+	private List<MaterialOrderLineRow> buildMaterialsToOrder(List<MaterialOrderItemView> materials,
+			String colorCode,
+			BigDecimal productionQty) {
+		if (materials == null || materials.isEmpty()) {
+			return Collections.emptyList();
+		}
+		Set<String> supplierCodes = new LinkedHashSet<>();
+		for (MaterialOrderItemView item : materials) {
+			if (StringUtils.hasText(item.getSupplierCode())) {
+				supplierCodes.add(item.getSupplierCode());
+			}
+		}
+		Map<String, String> supplierNames = findSupplierNames(supplierCodes);
+		List<MaterialOrderLineRow> rows = new ArrayList<>();
+		for (MaterialOrderItemView item : materials) {
+			BigDecimal qtyPerPiece = safeDecimal(item.getQtyPerPiece());
+			BigDecimal lossRate = safeDecimal(item.getLossRate());
+			BigDecimal unitPrice = safeDecimal(item.getUnitPrice());
+			BigDecimal orderQty = productionQty.multiply(qtyPerPiece)
+					.multiply(BigDecimal.ONE.add(lossRate))
+					.setScale(3, RoundingMode.HALF_UP);
+			BigDecimal orderAmount = orderQty.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+			String supplierCode = item.getSupplierCode();
+			rows.add(new MaterialOrderLineRow(
+					colorCode,
+					item.getCategory(),
+					item.getMaterialName(),
+					item.getMaterialUsage(),
+					item.getSpec(),
+					item.getMaterialColor(),
+					item.getUom(),
+					qtyPerPiece,
+					supplierCode,
+					supplierNames.getOrDefault(supplierCode, "-"),
+					lossRate,
+					item.getOrderUom(),
+					unitPrice,
+					item.getRemark(),
+					productionQty,
+					orderQty,
+					orderAmount));
+		}
+		return rows;
+	}
+
+	private BigDecimal safeDecimal(BigDecimal value) {
+		return value != null ? value : BigDecimal.ZERO;
+	}
+
+	private void logMaterialOrderSample(List<MaterialOrderLineRow> rows) {
+		if (rows == null || rows.isEmpty()) {
+			log.info("Material order search sample row not available");
+			return;
+		}
+		MaterialOrderLineRow sample = rows.get(0);
+		log.info("Material order sample qtyPerPiece={} lossRate={} unitPrice={} orderQty={} orderAmount={}",
+				sample.getQtyPerPiece(),
+				sample.getLossRate(),
+				sample.getUnitPrice(),
+				sample.getOrderQty(),
+				sample.getOrderAmount());
 	}
 
 	private Date toSqlDate(String value) {

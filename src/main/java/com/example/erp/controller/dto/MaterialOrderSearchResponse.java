@@ -4,14 +4,14 @@ import java.util.List;
 
 public class MaterialOrderSearchResponse {
     private final List<MaterialOrderSupplierView> suppliers;
-    private final List<MaterialOrderItemView> materials;
+    private final List<MaterialOrderLineRow> materialsToOrder;
     private final MaterialSpecMatrixResponse colorSizeMatrix;
 
     public MaterialOrderSearchResponse(List<MaterialOrderSupplierView> suppliers,
-            List<MaterialOrderItemView> materials,
+            List<MaterialOrderLineRow> materialsToOrder,
             MaterialSpecMatrixResponse colorSizeMatrix) {
         this.suppliers = suppliers;
-        this.materials = materials;
+        this.materialsToOrder = materialsToOrder;
         this.colorSizeMatrix = colorSizeMatrix;
     }
 
@@ -19,8 +19,8 @@ public class MaterialOrderSearchResponse {
         return suppliers;
     }
 
-    public List<MaterialOrderItemView> getMaterials() {
-        return materials;
+    public List<MaterialOrderLineRow> getMaterialsToOrder() {
+        return materialsToOrder;
     }
 
     public MaterialSpecMatrixResponse getColorSizeMatrix() {

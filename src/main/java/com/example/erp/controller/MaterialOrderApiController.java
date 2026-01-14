@@ -64,7 +64,7 @@ public class MaterialOrderApiController {
                 materialOrderService.searchOrders(styleCode, agreementCode, colorCode);
         return new MaterialOrderSearchResponse(
                 result.getSuppliers(),
-                result.getMaterials(),
+                result.getMaterialsToOrder(),
                 matrix);
     }
 

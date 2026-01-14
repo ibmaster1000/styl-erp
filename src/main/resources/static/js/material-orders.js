@@ -244,7 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 		list.forEach((item) => {
 			const tr = document.createElement('tr');
-			tr.innerHTML = `\n\t\t<td>${selectedColor || item.colorCode || '-'}</td>\n\t\t<td>${item.category || '-'}</td>\n\t\t<td>${item.materialName || '-'}</td>\n\t\t<td>${item.materialUsage || '-'}</td>\n\t\t<td>${item.spec || '-'}</td>\n\t\t<td>${item.materialColor || '-'}</td>\n\t\t<td>${item.uom || '-'}</td>\n\t\t<td>${formatNumber(item.qtyPerPiece)}</td>\n\t\t<td>${item.supplierCode || '-'}</td>\n\t\t<td>${formatNumber(item.lossRate)}</td>\n\t\t<td>${item.orderUom || '-'}</td>\n\t\t<td>${formatCurrency(item.unitPrice)}</td>\n\t\t<td><input type="number" class="form-control form-control-sm text-end material-qty" value="0" min="0" step="0.01"></td>\n\t\t<td class="material-amount text-end">0</td>\n\t\t<td><input type="text" class="form-control form-control-sm material-remark" placeholder=""></td>\t\n\t`;
+			const supplierLabel = [item.supplierCode, item.supplierName].filter(Boolean).join(' / ');
+			tr.innerHTML = `\n\t\t<td>${selectedColor || item.colorCode || '-'}</td>\n\t\t<td>${item.category || '-'}</td>\n\t\t<td>${item.materialName || '-'}</td>\n\t\t<td>${item.materialUsage || '-'}</td>\n\t\t<td>${item.spec || '-'}</td>\n\t\t<td>${item.materialColor || '-'}</td>\n\t\t<td>${item.uom || '-'}</td>\n\t\t<td>${formatNumber(item.qtyPerPiece)}</td>\n\t\t<td>${supplierLabel || '-'}</td>\n\t\t<td>${formatNumber(item.lossRate)}</td>\n\t\t<td>${formatDecimal(item.orderQty, 3)}</td>\n\t\t<td>${formatDecimal(item.orderAmount, 2)}</td>\n\t\t<td>${item.orderUom || '-'}</td>\n\t\t<td>${formatDecimal(item.unitPrice, 2)}</td>\n\t\t<td>${item.remark || '-'}</td>\t\n\t`;
 			materialBody.appendChild(tr);
 		});
 	};
@@ -310,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			const data = await response.json();
 			styleChip.textContent = styleCode || '-';
 			renderSuppliers(data.suppliers || []);
-			renderMaterials(data.materials || [], colorCode);
+			renderMaterials(data.materialsToOrder || [], colorCode);
 			materialNote.textContent = `품번 ${styleCode} / 색상 ${colorCode} / 생산합의 ${agreementCode}`;
 			lastSearched = { styleCode, colorCode, agreementCode };
 			isDirty = false;
@@ -391,12 +392,18 @@ document.addEventListener('DOMContentLoaded', () => {
 		return Number.isNaN(num) ? '-' : num.toLocaleString();
 	};
 
-	const formatCurrency = (value) => {
+	const formatDecimal = (value, digits) => {
 		if (value === null || value === undefined) {
-			return '0';
+			return '-';
 		}
 		const num = Number(value);
-		return Number.isNaN(num) ? '0' : num.toLocaleString();
+		if (Number.isNaN(num)) {
+			return '-';
+		}
+		return num.toLocaleString(undefined, {
+			minimumFractionDigits: digits,
+			maximumFractionDigits: digits
+		});
 	};
 
 	verifyButton.addEventListener('click', verifyStyleCode);
