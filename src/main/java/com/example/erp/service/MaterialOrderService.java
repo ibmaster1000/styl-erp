@@ -208,7 +208,7 @@ public class MaterialOrderService {
 	@Transactional
 	public Map<String, Object> submitOrders(MaterialOrderRequest request, String orderedBy) {
 		if (!hasTable("material_orders")) {
-			return Map.of("success", true, "created", 0, "skipped", 0, "message", "발주 요청이 접수되었습니다.");
+			return Map.of("success", false, "created", 0, "skipped", 0, "message", "발주 테이블이 없습니다.");
 		}
 
 		Long prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode());
@@ -219,21 +219,24 @@ public class MaterialOrderService {
 		String orderCodeColumn = findFirstExistingColumn("material_orders", List.of("m_order_code", "order_code"));
 		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_id"));
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
+		String colorTypeColumn = findFirstExistingColumn("material_orders", List.of("color_type"));
 		String bomIdColumn = findFirstExistingColumn("material_orders", List.of("bom_id"));
-		String supplierColumn = findFirstExistingColumn("material_orders", List.of("supplier_code"));
+		String vendorTypeColumn = findFirstExistingColumn("material_orders", List.of("vendor_type"));
+		String vendorCodeColumn = findFirstExistingColumn("material_orders", List.of("vendor_code", "supplier_code"));
+		String warehouseTypeColumn = findFirstExistingColumn("material_orders", List.of("warehouse_type"));
+		String warehouseCodeColumn = findFirstExistingColumn("material_orders", List.of("warehouse_code"));
 		String styleIdColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id"));
 		String orderAmountColumn = findFirstExistingColumn("material_orders", List.of("order_amount"));
-		String orderPriceColumn = findFirstExistingColumn("material_orders", List.of("order_price"));
+		String unitPriceColumn = findFirstExistingColumn("material_orders", List.of("unit_price", "order_price"));
 		String orderedByColumn = findFirstExistingColumn("material_orders", List.of("ordered_by", "created_by"));
 		String orderDateColumn = findFirstExistingColumn("material_orders", List.of("order_date"));
 		String dueDateColumn = findFirstExistingColumn("material_orders", List.of("due_date"));
-		String deliveryColumn = findFirstExistingColumn("material_orders", List.of("delivery_place"));
 		String remarkColumn = findFirstExistingColumn("material_orders", List.of("remark"));
 
 		if (orderCodeColumn == null || prdColumn == null || colorColumn == null || bomIdColumn == null
-				|| supplierColumn == null || orderAmountColumn == null || orderPriceColumn == null
+				|| vendorCodeColumn == null || orderAmountColumn == null || unitPriceColumn == null
 				|| orderedByColumn == null) {
-			return Map.of("success", false, "created", 0, "skipped", 0);
+			return Map.of("success", false, "created", 0, "skipped", 0, "message", "발주 정보 컬럼이 부족합니다.");
 		}
 
 		List<MaterialOrderItemView> specs = findMaterials(request.getStylesId(), request.getPrdAgreeCode(),
@@ -242,9 +245,6 @@ public class MaterialOrderService {
 
 		int created = 0;
 		int skipped = 0;
-		String deliveryPlace = StringUtils.hasText(request.getWarehouseCode())
-				? request.getWarehouseCode()
-				: request.getDeliveryPlace();
 
 		for (MaterialOrderItemView spec : specs) {
 			if (spec.getBomId() == null) {
@@ -264,17 +264,20 @@ public class MaterialOrderService {
 			BigDecimal rawOrderQty = productionQty.multiply(qtyPerPiece).multiply(multiplier);
 			BigDecimal orderQty = applyOrderQtyRounding(spec.getOrderUom(), spec.getUom(), rawOrderQty);
 			BigDecimal unitPrice = safeDecimal(spec.getUnitPrice());
-			BigDecimal orderPrice = orderQty.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
 
 			MapSqlParameterSource params = new MapSqlParameterSource()
 					.addValue("mOrderCode", UUID.randomUUID().toString()).addValue("stylesId", request.getStylesId())
 					.addValue("styleCode", request.getStyleCode()).addValue("prdAgreeId", prdAgreeId)
 					.addValue("colorCode", request.getColorCode()).addValue("bomId", spec.getBomId())
-					.addValue("supplierCode", request.getSupplierCode()).addValue("orderAmount", orderQty)
-					.addValue("orderPrice", orderPrice).addValue("orderedBy", orderedBy)
+					.addValue("vendorType", "CUSTOMER")
+					.addValue("vendorCode", request.getSupplierCode())
+					.addValue("warehouseType", "WAREHOUSE")
+					.addValue("warehouseCode", request.getWarehouseCode())
+					.addValue("colorType", "COLOR")
+					.addValue("orderAmount", orderQty)
+					.addValue("unitPrice", unitPrice).addValue("orderedBy", orderedBy)
 					.addValue("orderDate", toSqlDate(request.getOrderDate()))
 					.addValue("dueDate", toSqlDate(request.getDueDate()))
-					.addValue("deliveryPlace", deliveryPlace)
 					.addValue("remark", request.getRemark());
 
 			List<String> columns = new ArrayList<>();
@@ -289,14 +292,30 @@ public class MaterialOrderService {
 			values.add(":prdAgreeId");
 			columns.add(colorColumn);
 			values.add(":colorCode");
+			if (colorTypeColumn != null) {
+				columns.add(colorTypeColumn);
+				values.add(":colorType");
+			}
 			columns.add(bomIdColumn);
 			values.add(":bomId");
-			columns.add(supplierColumn);
-			values.add(":supplierCode");
+			if (vendorTypeColumn != null) {
+				columns.add(vendorTypeColumn);
+				values.add(":vendorType");
+			}
+			columns.add(vendorCodeColumn);
+			values.add(":vendorCode");
+			if (warehouseTypeColumn != null) {
+				columns.add(warehouseTypeColumn);
+				values.add(":warehouseType");
+			}
+			if (warehouseCodeColumn != null) {
+				columns.add(warehouseCodeColumn);
+				values.add(":warehouseCode");
+			}
 			columns.add(orderAmountColumn);
 			values.add(":orderAmount");
-			columns.add(orderPriceColumn);
-			values.add(":orderPrice");
+			columns.add(unitPriceColumn);
+			values.add(":unitPrice");
 			columns.add(orderedByColumn);
 			values.add(":orderedBy");
 			if (orderDateColumn != null) {
@@ -306,10 +325,6 @@ public class MaterialOrderService {
 			if (dueDateColumn != null) {
 				columns.add(dueDateColumn);
 				values.add(":dueDate");
-			}
-			if (deliveryColumn != null) {
-				columns.add(deliveryColumn);
-				values.add(":deliveryPlace");
 			}
 			if (remarkColumn != null) {
 				columns.add(remarkColumn);
@@ -323,7 +338,8 @@ public class MaterialOrderService {
 			created++;
 		}
 
-		return Map.of("success", created > 0 || skipped == specs.size(), "created", created, "skipped", skipped);
+		return Map.of("success", created > 0, "created", created, "skipped", skipped,
+				"message", created > 0 ? "발주 신청이 완료되었습니다." : "발주 대상이 없습니다.");
 	}
 
 	public List<MaterialOrderSupplierView> findSuppliersByStyleCode(String styleCode, String agreementCode,
@@ -474,7 +490,7 @@ public class MaterialOrderService {
 		}
 		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_id"));
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
-		String supplierColumn = findFirstExistingColumn("material_orders", List.of("supplier_code"));
+		String supplierColumn = findFirstExistingColumn("material_orders", List.of("vendor_code", "supplier_code"));
 		String styleIdColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id"));
 
 		if (prdColumn == null || colorColumn == null || supplierColumn == null) {
@@ -505,7 +521,7 @@ public class MaterialOrderService {
 
 		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_id"));
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
-		String supplierColumn = findFirstExistingColumn("material_orders", List.of("supplier_code"));
+		String supplierColumn = findFirstExistingColumn("material_orders", List.of("vendor_code", "supplier_code"));
 		String styleIdColumn = findFirstExistingColumn("material_orders", List.of("styles_id", "style_id"));
 		String bomIdColumn = findFirstExistingColumn("material_orders", List.of("bom_id"));
 

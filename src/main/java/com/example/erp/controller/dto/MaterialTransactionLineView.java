@@ -3,6 +3,7 @@ package com.example.erp.controller.dto;
 import java.math.BigDecimal;
 
 public class MaterialTransactionLineView {
+	private String mOrderCode;
 	private Long bomId;
 	private String stylesId;
 	private String styleCode;
@@ -23,6 +24,7 @@ public class MaterialTransactionLineView {
 	private BigDecimal unitPrice;
 	private BigDecimal orderQuantity;
 	private BigDecimal inboundQuantity;
+	private BigDecimal plannedOutboundQuantity;
 	private BigDecimal outboundQuantity;
 	private String remark;
 
@@ -33,7 +35,8 @@ public class MaterialTransactionLineView {
 			String agreementMonth, String colorCode, String category, String materialName, String materialUsage,
 			String spec, String materialColor, String uom, BigDecimal qtyPerPiece, String supplierCode,
 			String supplierName, String productionManager, String orderUom, BigDecimal unitPrice,
-			BigDecimal orderQuantity, BigDecimal inboundQuantity, BigDecimal outboundQuantity, String remark) {
+			BigDecimal orderQuantity, BigDecimal inboundQuantity, BigDecimal plannedOutboundQuantity,
+			BigDecimal outboundQuantity, String remark) {
 		this.bomId = bomId;
 		this.stylesId = stylesId;
 		this.styleCode = styleCode;
@@ -54,8 +57,14 @@ public class MaterialTransactionLineView {
 		this.unitPrice = unitPrice;
 		this.orderQuantity = orderQuantity;
 		this.inboundQuantity = inboundQuantity;
+		this.plannedOutboundQuantity = plannedOutboundQuantity;
 		this.outboundQuantity = outboundQuantity;
 		this.remark = remark;
+	}
+
+	public MaterialTransactionLineView setMOrderCode(String mOrderCode) {
+		this.mOrderCode = mOrderCode;
+		return this;
 	}
 
 	public MaterialTransactionLineView setBomId(Long bomId) {
@@ -158,6 +167,11 @@ public class MaterialTransactionLineView {
 		return this;
 	}
 
+	public MaterialTransactionLineView setPlannedOutboundQuantity(BigDecimal plannedOutboundQuantity) {
+		this.plannedOutboundQuantity = plannedOutboundQuantity;
+		return this;
+	}
+
 	public MaterialTransactionLineView setOutboundQuantity(BigDecimal outboundQuantity) {
 		this.outboundQuantity = outboundQuantity;
 		return this;
@@ -170,6 +184,10 @@ public class MaterialTransactionLineView {
 
 	public Long getBomId() {
 		return bomId;
+	}
+
+	public String getMOrderCode() {
+		return mOrderCode;
 	}
 
 	public String getStylesId() {
@@ -246,6 +264,10 @@ public class MaterialTransactionLineView {
 
 	public BigDecimal getInboundQuantity() {
 		return inboundQuantity;
+	}
+
+	public BigDecimal getPlannedOutboundQuantity() {
+		return plannedOutboundQuantity;
 	}
 
 	public BigDecimal getOutboundQuantity() {

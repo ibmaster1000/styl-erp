@@ -278,6 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				alert(result.message || '발주 처리에 실패했습니다.');
 				return;
 			}
+			alert(result.message || '발주 신청이 완료되었습니다.');
 			const btn = row.querySelector('.order-action-btn');
 			btn.textContent = '발주완료';
 			btn.classList.remove('btn--primary');

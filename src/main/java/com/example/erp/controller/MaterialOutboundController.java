@@ -73,13 +73,6 @@ public class MaterialOutboundController extends PageViewSupport {
 		return materialTransactionService.findMaterials(stylesId, styleCode, prdAgreeCode, colorCode);
 	}
 
-	@GetMapping("/tx-list")
-	@ResponseBody
-	public List<MaterialTransactionLineView> fetchTransactions(@RequestParam(name = "styleCode", required = false) String styleCode,
-			@RequestParam(name = "tranDate", required = false) String tranDate) {
-		return materialTransactionService.findTransactionsByType("OUT", styleCode, tranDate);
-	}
-
     @PostMapping("/save")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> saveOutbound(@RequestBody MaterialTransactionSaveRequest request,

@@ -60,11 +60,6 @@
 			max-width: 520px;
 		}
 
-		.moout-date-input {
-			min-width: 180px;
-			max-width: 220px;
-		}
-
 		.material-search-button {
 			width: 140px;
 			align-self: stretch;
@@ -103,25 +98,20 @@
 
 	<div class="mb-3">
 		<h4 class="fw-bold mb-1">원부자재 출고 등록</h4>
-		<p class="text-muted mb-0">품번 또는 출고일 기준으로 DB 목록을 조회하세요.</p>
+		<p class="text-muted mb-0">품번/색상/합의월 기준으로 출고 대상 목록을 조회하세요.</p>
 	</div>
 
 	<div class="moout-layout">
 		<div class="material-panel">
 			<div class="d-flex justify-content-between align-items-center mb-2">
 				<h6 class="fw-bold mb-0">검색/선택</h6>
-				<small class="text-muted">품번 또는 날짜 중 하나만 입력해도 조회할 수 있습니다.</small>
+				<small class="text-muted">품번 확인 후 색상과 합의월을 선택하세요.</small>
 			</div>
 			<div class="material-row form-row mb-2">
 				<label class="form-label fw-bold mb-0">품번</label>
 				<input type="hidden" id="mout-styles-id">
 				<div class="material-style-input">
 					<input type="text" id="mout-style-input" class="form-control" placeholder="품번을 입력하세요">
-				</div>
-				<span class="fw-bold text-muted">또는</span>
-				<div class="material-meta-item">
-					<label class="form-label fw-bold mb-0">출고일</label>
-					<input type="date" id="mout-date-input" class="form-control moout-date-input">
 				</div>
 				<div class="actions">
 					<button type="button" class="btn btn--primary material-search-button" id="mout-search-button">조회</button>
@@ -135,9 +125,9 @@
 					</select>
 				</div>
 				<div class="material-meta-item">
-					<label class="form-label fw-bold mb-0">생산합의코드</label>
+					<label class="form-label fw-bold mb-0">합의월</label>
 					<select id="mout-agreement-select" class="form-select material-agree-select" disabled>
-						<option value="">생산합의 코드를 선택하세요</option>
+						<option value="">합의월을 선택하세요</option>
 					</select>
 				</div>
 			</div>
@@ -148,7 +138,7 @@
 			<div class="d-flex justify-content-between align-items-center mb-2">
 				<div>
 					<h6 class="fw-bold mb-0">출고 대상 목록</h6>
-					<small class="text-muted">입고량-기출고량보다 많은 출고량은 저장이 차단됩니다.</small>
+					<small class="text-muted">실입고 누적을 초과하는 실출고는 저장이 차단됩니다.</small>
 				</div>
 				<div class="actions">
 					<button type="button" class="btn btn--primary" id="mout-save-button">저장</button>
@@ -175,13 +165,13 @@
 							<th>발주량</th>
 							<th>입고량</th>
 							<th>기출고량</th>
-							<th>출고량</th>
+							<th>출고량(실출고)</th>
 							<th>생산처</th>
 						</tr>
 					</thead>
 					<tbody id="mout-table-body">
 						<tr>
-							<td colspan="19" class="moout-placeholder">품번 또는 출고일을 입력한 뒤 조회하세요.</td>
+							<td colspan="19" class="moout-placeholder">품번/색상/합의월 조건을 선택한 뒤 조회하세요.</td>
 						</tr>
 					</tbody>
 				</table>
@@ -198,7 +188,6 @@
 			const styleCodeInput = document.getElementById('mout-style-input');
 			const colorSelect = document.getElementById('mout-color-select');
 			const agreeSelect = document.getElementById('mout-agreement-select');
-			const dateInput = document.getElementById('mout-date-input');
 			const searchButton = document.getElementById('mout-search-button');
 			const saveButton = document.getElementById('mout-save-button');
 			const tableBody = document.getElementById('mout-table-body');
@@ -214,7 +203,7 @@
 					return;
 				}
 				renderSelectOptions(colorSelect, [], '색상 선택');
-				renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
+						renderSelectOptions(agreeSelect, [], '합의월 선택');
 				colorSelect.disabled = true;
 				agreeSelect.disabled = true;
 			});
@@ -224,11 +213,11 @@
 					.then(res => res.json())
 					.then(data => {
 						renderSelectOptions(colorSelect, data.colors, '색상 선택');
-						renderSelectOptions(agreeSelect, data.agreements, '생산합의코드 선택');
+						renderSelectOptions(agreeSelect, data.agreements, '합의월 선택');
 					})
 					.catch(() => {
 						renderSelectOptions(colorSelect, [], '색상 선택');
-						renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
+						renderSelectOptions(agreeSelect, [], '합의월 선택');
 					});
 			}
 
@@ -274,17 +263,16 @@
 			searchButton.addEventListener('click', async () => {
 				clearMessage();
 				const styleCode = styleCodeInput.value.trim();
-				const tranDate = dateInput.value;
-				if (!styleCode && !tranDate) {
-					setMessage('danger', '품번 또는 날짜 중 하나는 반드시 입력하세요.');
-					resetTable('품번 또는 출고일을 입력한 뒤 조회하세요.');
+				if (!styleCode || !colorSelect.value || !agreeSelect.value) {
+					setMessage('danger', '품번/색상/합의월을 선택하세요.');
+					resetTable('품번/색상/합의월 조건을 선택한 뒤 조회하세요.');
 					return;
 				}
-				await loadMaterials(styleCode, tranDate);
+				await loadMaterials(styleCode);
 			});
 
-			async function loadMaterials(styleCode, tranDate) {
-				const url = `/production/material-outbound/tx-list?styleCode=${encodeURIComponent(styleCode)}&tranDate=${encodeURIComponent(tranDate)}`;
+			async function loadMaterials(styleCode) {
+				const url = `/production/material-outbound/list?styleCode=${encodeURIComponent(styleCode)}&prdAgreeCode=${encodeURIComponent(agreeSelect.value)}&colorCode=${encodeURIComponent(colorSelect.value)}`;
 				try {
 					const res = await fetch(url);
 					const list = await res.json();
@@ -318,7 +306,7 @@
 					const outbound = safeNumber(item.outboundQuantity);
 					const available = Math.max(inbound - outbound, 0);
 					const row = document.createElement('tr');
-					row.dataset.bomId = item.bomId || '';
+					row.dataset.mOrderCode = item.mOrderCode || '';
 					row.dataset.orderUom = item.orderUom || '';
 					row.dataset.unitPrice = item.unitPrice || '';
 					row.dataset.available = available;
@@ -339,16 +327,26 @@
 						<td>${formatDecimal(item.unitPrice)}</td>
 						<td>${formatDecimal(item.orderQuantity)}</td>
 						<td>${formatDecimal(item.inboundQuantity)}</td>
-						<td>${formatDecimal(item.outboundQuantity)}</td>
-						<td><input type="number" class="form-control form-control-sm mout-qty-input" min="0" step="0.01" value="0"></td>
+						<td>
+							<div class="d-flex flex-column gap-1">
+								<span class="text-muted small">${formatDecimal(item.plannedOutboundQuantity)}</span>
+								<input type="number" class="form-control form-control-sm mout-planned-input" min="0" step="0.01" value="0">
+							</div>
+						</td>
+						<td>
+							<div class="d-flex flex-column gap-1">
+								<span class="text-muted small">${formatDecimal(item.outboundQuantity)}</span>
+								<input type="number" class="form-control form-control-sm mout-issued-input" min="0" step="0.01" value="0">
+							</div>
+						</td>
 						<td>${renderFactorySelect()}</td>
 					`;
-					const qtyInput = row.querySelector('.mout-qty-input');
-					qtyInput.addEventListener('input', () => {
-						const val = parseFloat(qtyInput.value || '0');
+					const issuedInput = row.querySelector('.mout-issued-input');
+					issuedInput.addEventListener('input', () => {
+						const val = parseFloat(issuedInput.value || '0');
 						if (!isNaN(val) && val > available) {
 							alert('출고 가능 수량을 초과했습니다.');
-							qtyInput.value = available > 0 ? available : 0;
+							issuedInput.value = available > 0 ? available : 0;
 						}
 					});
 					tableBody.appendChild(row);
@@ -364,15 +362,16 @@
 			}
 
 			saveButton.addEventListener('click', () => {
-				const rows = Array.from(tableBody.querySelectorAll('tr[data-bom-id]'));
+				const rows = Array.from(tableBody.querySelectorAll('tr[data-m-order-code]'));
 				const items = [];
 				let hasValidationError = false;
 
 				rows.forEach(row => {
-					const qty = parseFloat(row.querySelector('.mout-qty-input')?.value || '0');
-					if (qty > 0) {
+					const planned = parseFloat(row.querySelector('.mout-planned-input')?.value || '0');
+					const issued = parseFloat(row.querySelector('.mout-issued-input')?.value || '0');
+					if (planned > 0 || issued > 0) {
 						const available = parseFloat(row.dataset.available || '0');
-						if (qty > available) {
+						if (issued > available) {
 							hasValidationError = true;
 							return;
 						}
@@ -383,8 +382,9 @@
 							return;
 						}
 						items.push({
-							bomId: row.dataset.bomId ? Number(row.dataset.bomId) : null,
-							quantity: qty,
+							mOrderCode: row.dataset.mOrderCode || null,
+							plannedOutQuantity: isNaN(planned) ? 0 : planned,
+							issuedOutQuantity: isNaN(issued) ? 0 : issued,
 							orderUom: row.dataset.orderUom || null,
 							unitPrice: row.dataset.unitPrice ? Number(row.dataset.unitPrice) : null,
 							factoryCode
@@ -397,7 +397,7 @@
 					return;
 				}
 				if (items.length === 0) {
-					alert('출고량을 입력하세요.');
+					alert('기출고량/출고량을 입력하세요.');
 					return;
 				}
 
@@ -406,7 +406,6 @@
 					styleCode: styleCodeInput.value,
 					prdAgreeCode: agreeSelect.value,
 					colorCode: colorSelect.value,
-					tranDate: dateInput.value || null,
 					items
 				};
 
@@ -418,10 +417,10 @@
 					.then(res => res.json())
 					.then(data => {
 						if (data.success) {
-							alert('출고 저장이 완료되었습니다.');
-							loadMaterials(styleCodeInput.value.trim(), dateInput.value);
+							alert(data.message || '출고가 등록되었습니다.');
+							loadMaterials(styleCodeInput.value.trim());
 						} else {
-							alert('출고 저장에 실패했습니다.');
+							alert(data.message || '출고 등록에 실패했습니다.');
 						}
 					})
 					.catch(() => alert('출고 저장 중 오류가 발생했습니다.'));

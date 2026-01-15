@@ -8,7 +8,6 @@ public class MaterialOrderRequest {
     private String supplierCode;
     private String orderDate;
     private String dueDate;
-    private String deliveryPlace;
     private String warehouseCode;
     private String remark;
 
@@ -66,14 +65,6 @@ public class MaterialOrderRequest {
 
     public void setDueDate(String dueDate) {
         this.dueDate = dueDate;
-    }
-
-    public String getDeliveryPlace() {
-        return deliveryPlace;
-    }
-
-    public void setDeliveryPlace(String deliveryPlace) {
-        this.deliveryPlace = deliveryPlace;
     }
 
     public String getWarehouseCode() {
