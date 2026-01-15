@@ -1,0 +1,21 @@
+--- a/src/main/java/com/example/erp/service/MaterialTransactionService.java
++++ b/src/main/java/com/example/erp/service/MaterialTransactionService.java
+@@ -377,7 +377,7 @@
+ 				.append(selectCoalesce("mt.", unitPriceColumn, "ms.", specUnitPriceColumn, "unit_price")).append(", ")
+ 				.append("mt.").append(quantityColumn).append(" as quantity, ")
+ 				.append(selectCoalesce("mt.", remarkColumn, "ms.", remarkSpecColumn, "remark"))
+-				.append("from material_transactions mt ");
++				.append(" from material_transactions mt ");
+ 
+ 		if (specColumn != null && specBomIdColumn != null) {
+ 			sql.append("left join material_specs ms on mt.").append(specColumn).append(" = ms.").append(specBomIdColumn)
+@@ -769,6 +769,9 @@
+ 		if (candidates.isEmpty()) {
+ 			return "null as style_code, ";
+ 		}
++		if (candidates.size() == 1) {
++			return candidates.get(0) + " as style_code, ";
++		}
+ 		return "coalesce(" + String.join(", ", candidates) + ") as style_code, ";
+ 	}
+ 

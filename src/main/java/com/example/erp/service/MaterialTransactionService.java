@@ -442,7 +442,7 @@ public class MaterialTransactionService {
 					.setSpec(rs.getString("spec")).setMaterialColor(rs.getString("material_color"))
 					.setUom(rs.getString("uom")).setQtyPerPiece(rs.getBigDecimal("qty_per_piece"))
 					.setSupplierCode(supCode).setSupplierName(null).setProductionManager(null)
-					.setOrderUom(rs.getString("order_uom")).setUnitPrice(rs.getString("unit_price"))
+					.setOrderUom(rs.getString("order_uom")).setUnitPrice(rs.getBigDecimal("unit_price"))
 					.setOrderQuantity(null)
 					.setInboundQuantity("IN".equalsIgnoreCase(tranType) ? quantity : BigDecimal.ZERO)
 					.setOutboundQuantity("OUT".equalsIgnoreCase(tranType) ? quantity : BigDecimal.ZERO)

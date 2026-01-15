@@ -339,7 +339,9 @@ public class MaterialSpecService {
             }
         }
 
-        return Map.of("success", true, "created", created, "updated", updated, "deleted", deleted);
+        int savedCount = created + updated + deleted;
+        return Map.of("success", true, "created", created, "updated", updated, "deleted", deleted,
+                "savedCount", savedCount);
     }
 
     private List<String> findSizes(String styleCode, String colorCode) {
