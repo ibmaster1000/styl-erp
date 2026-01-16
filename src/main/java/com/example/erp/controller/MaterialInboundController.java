@@ -66,11 +66,19 @@ public class MaterialInboundController extends PageViewSupport {
 
 	@GetMapping("/list")
 	@ResponseBody
-	public List<MaterialTransactionLineView> fetchList(@RequestParam(name = "stylesId", required = false) String stylesId,
+	public ResponseEntity<?> fetchList(@RequestParam(name = "stylesId", required = false) String stylesId,
 			@RequestParam(name = "styleCode", required = false) String styleCode,
 			@RequestParam(name = "prdAgreeCode", required = false) String prdAgreeCode,
 			@RequestParam(name = "colorCode", required = false) String colorCode) {
-		return materialTransactionService.findInboundMaterials(stylesId, styleCode, prdAgreeCode, colorCode);
+		try {
+			List<MaterialTransactionLineView> result =
+					materialTransactionService.findInboundMaterials(stylesId, styleCode, prdAgreeCode, colorCode);
+			return ResponseEntity.ok(result);
+		} catch (Exception e) {
+			log.error("원부자재 입고 조회 중 오류가 발생했습니다.", e);
+			String message = "조회 중 오류가 발생했습니다. (원인: " + e.getMessage() + ")";
+			return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
+		}
 	}
 
     @PostMapping("/save")

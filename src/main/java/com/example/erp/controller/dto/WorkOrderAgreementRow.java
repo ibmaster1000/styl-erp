@@ -12,6 +12,8 @@ public class WorkOrderAgreementRow {
     private String dueDate;
     private String deliveryPlaceCode;
     private String deliveryPlaceName;
+    private Long prdAgreeId;
+    private String status;
     private boolean ordered;
 
     public String getStyleCode() {
@@ -84,6 +86,22 @@ public class WorkOrderAgreementRow {
 
     public void setDeliveryPlaceName(String deliveryPlaceName) {
         this.deliveryPlaceName = deliveryPlaceName;
+    }
+
+    public Long getPrdAgreeId() {
+        return prdAgreeId;
+    }
+
+    public void setPrdAgreeId(Long prdAgreeId) {
+        this.prdAgreeId = prdAgreeId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public boolean isOrdered() {

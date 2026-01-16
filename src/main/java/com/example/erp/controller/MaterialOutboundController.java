@@ -80,7 +80,7 @@ public class MaterialOutboundController extends PageViewSupport {
 		} catch (Exception e) {
 			log.error("원부자재 출고 조회 중 오류가 발생했습니다.", e);
 			String message = "조회 중 오류가 발생했습니다. (원인: " + e.getMessage() + ")";
-			return ResponseEntity.status(500).body(Map.of("message", message));
+			return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
 		}
 	}
 

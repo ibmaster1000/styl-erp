@@ -314,6 +314,31 @@ public class MaterialTransactionService {
 
 		String moOrderCol = findOrderCodeColumn("material_orders");
 
+		String agreementCodeCol = findFirstExistingColumn("production_agreements",
+				List.of("agreement_code", "prd_agree_code", "prd_agree_no"));
+		String agreementColorCol = findFirstExistingColumn("production_agreements",
+				List.of("color_code", "color"));
+		String agreementQtyCol = findFirstExistingColumn("production_agreements", List.of("quantity", "qty"));
+		String lossRateCol = findFirstExistingColumn("material_specs", List.of("loss_rate", "loss"));
+		String lossExpr = lossRateCol != null ? "coalesce(ms." + lossRateCol + ", 0)" : "0";
+
+		String requiredJoin = "";
+		String requiredSelect = "0 as required_qty, ";
+		String requiredExpr = null;
+		if (agreementCodeCol != null && agreementColorCol != null && agreementQtyCol != null) {
+			requiredJoin = """
+					left join (
+						select coalesce(sum(%s), 0) as agreement_qty
+						from production_agreements
+						where %s = :prdAgreeCode
+						  and %s = :colorCode
+					) pa on 1=1
+					""".formatted(agreementQtyCol, agreementCodeCol, agreementColorCol);
+			requiredExpr = "coalesce(pa.agreement_qty, 0) * coalesce(ms.qty_per_piece, 0) "
+					+ "* (1 + (" + lossExpr + " / 100.0))";
+			requiredSelect = requiredExpr + " as required_qty, ";
+		}
+
 		String inboundJoin = "";
 		String inboundSelect = "0 as inbound_qty, ";
 		if (includeOutbound) {
@@ -330,26 +355,8 @@ public class MaterialTransactionService {
 					inboundSelect = "coalesce(mi.inbound_qty, 0) as inbound_qty, ";
 				}
 			}
-		} else {
-			String agreementCodeCol = findFirstExistingColumn("production_agreements",
-					List.of("agreement_code", "prd_agree_code", "prd_agree_no"));
-			String agreementColorCol = findFirstExistingColumn("production_agreements",
-					List.of("color_code", "color"));
-			String agreementQtyCol = findFirstExistingColumn("production_agreements", List.of("quantity", "qty"));
-			if (agreementCodeCol != null && agreementColorCol != null && agreementQtyCol != null) {
-				inboundJoin = """
-						left join (
-							select coalesce(sum(%s), 0) as agreement_qty
-							from production_agreements
-							where %s = :prdAgreeCode
-							  and %s = :colorCode
-						) pa on 1=1
-						""".formatted(agreementQtyCol, agreementCodeCol, agreementColorCol);
-				String lossRateCol = findFirstExistingColumn("material_specs", List.of("loss_rate", "loss"));
-				String lossExpr = lossRateCol != null ? "coalesce(ms." + lossRateCol + ", 0)" : "0";
-				inboundSelect = "coalesce(pa.agreement_qty, 0) * coalesce(ms.qty_per_piece, 0) "
-						+ "* (1 + (" + lossExpr + " / 100.0)) as inbound_qty, ";
-			}
+		} else if (requiredExpr != null) {
+			inboundSelect = requiredExpr + " as inbound_qty, ";
 		}
 
 		String outboundJoin = "";
@@ -392,12 +399,15 @@ public class MaterialTransactionService {
 				.append("ms.order_uom as order_uom, ")
 				.append("mo.unit_price as unit_price, ")
 				.append("mo.order_amount as order_amount, ")
+				.append(requiredSelect)
 				.append(inboundSelect)
 				.append(includeOutbound ? outboundSelect : "0 as planned_out_qty, 0 as issued_out_qty, ")
 				.append("ms.remark as remark ")
 				.append("from material_orders mo ")
 				.append("join material_specs ms on mo.bom_id = ms.bom_id ")
-				.append("left join styles s on s.styles_id = mo.styles_id ").append(inboundJoin)
+				.append("left join styles s on s.styles_id = mo.styles_id ")
+				.append(requiredJoin)
+				.append(inboundJoin)
 				.append(outboundJoin)
 				.append("where mo.prd_agree_id = :prdAgreeId ")
 				.append("and mo.color_code = :colorCode ");
@@ -444,6 +454,7 @@ public class MaterialTransactionService {
 					.setOrderUom(rs.getString("order_uom"))
 					.setUnitPrice(rs.getBigDecimal("unit_price"))
 					.setOrderQuantity(rs.getBigDecimal("order_amount"))
+					.setRequiredQuantity(rs.getBigDecimal("required_qty"))
 					.setInboundQuantity(rs.getBigDecimal("inbound_qty"))
 					.setPlannedOutboundQuantity(rs.getBigDecimal("planned_out_qty"))
 					.setOutboundQuantity(rs.getBigDecimal("issued_out_qty"))
@@ -461,10 +472,37 @@ public class MaterialTransactionService {
 	private String findOrderCodeColumn(String tableName) {
 		List<String> candidates = List.of("m_order_code", "order_code", "morder_code", "m_order_no");
 		String column = findFirstExistingColumn(tableName, candidates);
-		if (column == null && hasTable(tableName)) {
-			log.warn("{} 주문코드 컬럼을 찾을 수 없습니다.", tableName);
+		if (column != null) {
+			return column;
 		}
-		return column;
+		if (!hasTable(tableName)) {
+			return null;
+		}
+		List<String> columns = loadColumnNames(tableName);
+		log.warn("{} 주문코드 컬럼을 찾을 수 없습니다. columns={}", tableName, columns);
+		String fallback = columns.stream()
+				.filter(name -> "m_order_code".equalsIgnoreCase(name))
+				.findFirst()
+				.orElse(null);
+		if (fallback != null) {
+			return fallback;
+		}
+		throw new IllegalStateException(tableName + " 주문코드 컬럼을 찾을 수 없습니다.");
+	}
+
+	private List<String> loadColumnNames(String tableName) {
+		try {
+			return jdbcTemplate.query("""
+					select column_name
+					from information_schema.columns
+					where upper(table_name) = upper(:tableName)
+					order by ordinal_position
+					""", new MapSqlParameterSource("tableName", tableName),
+					(rs, rowNum) -> rs.getString("column_name"));
+		} catch (Exception e) {
+			log.warn("{} 컬럼 목록 조회에 실패했습니다.", tableName, e);
+			return Collections.emptyList();
+		}
 	}
 
 	private BigDecimal sumInboundForOrder(String mOrderCode) {

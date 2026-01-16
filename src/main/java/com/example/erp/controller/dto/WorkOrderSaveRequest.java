@@ -7,6 +7,7 @@ public class WorkOrderSaveRequest {
     private String prdAgreeCode;
     private String colorCode;
     private BigDecimal agreementQuantity;
+    private Long prdAgreeId;
     private String producerCode;
     private String dueDate;
     private String deliveryPlaceCode;
@@ -41,6 +42,14 @@ public class WorkOrderSaveRequest {
 
     public void setAgreementQuantity(BigDecimal agreementQuantity) {
         this.agreementQuantity = agreementQuantity;
+    }
+
+    public Long getPrdAgreeId() {
+        return prdAgreeId;
+    }
+
+    public void setPrdAgreeId(Long prdAgreeId) {
+        this.prdAgreeId = prdAgreeId;
     }
 
     public String getProducerCode() {

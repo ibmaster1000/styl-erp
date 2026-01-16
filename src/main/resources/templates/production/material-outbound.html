@@ -345,6 +345,7 @@
 					const inbound = safeNumber(item.inboundQuantity);
 					const outbound = safeNumber(item.outboundQuantity);
 					const available = Math.max(inbound - outbound, 0);
+					const requiredQty = formatQuantity(item.requiredQuantity ?? item.orderQuantity);
 					const row = document.createElement('tr');
 					row.dataset.mOrderCode = item.mOrderCode || '';
 					row.dataset.orderUom = item.orderUom || '';
@@ -360,13 +361,13 @@
 							<td>${item.materialUsage || '-'}</td>
 							<td>${item.spec || '-'}</td>
 							<td>${item.materialColor || '-'}</td>
-							<td></td>
+							<td>${item.uom || '-'}</td>
 							<td>${formatQuantity(item.qtyPerPiece)}</td>
 							<td>${item.supplierName || item.supplierCode || '-'}</td>
 							<td>${item.productionManager || '-'}</td>
-							<td></td>
+							<td>${item.orderUom || '-'}</td>
 							<td>${formatPrice(item.unitPrice)}</td>
-							<td>${formatQuantity(item.orderQuantity)}</td>
+							<td>${requiredQty}</td>
 							<td>${formatQuantity(item.inboundQuantity)}</td>
 							<td><span class="text-muted small">${plannedOutbound}</span></td>
 							<td>

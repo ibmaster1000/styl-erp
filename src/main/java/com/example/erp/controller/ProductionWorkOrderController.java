@@ -9,6 +9,9 @@ import com.example.erp.domain.User;
 import com.example.erp.repository.UserRepository;
 import com.example.erp.service.MaterialOrderService;
 import com.example.erp.service.ProductionWorkOrderService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -24,12 +27,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import java.util.Collections;
-
 @Controller
 @RequestMapping("/production/work-orders")
 public class ProductionWorkOrderController extends PageViewSupport {
 	
+	private static final Logger log = LoggerFactory.getLogger(ProductionWorkOrderController.class);
 	private final MaterialOrderService materialOrderService;
     private final ProductionWorkOrderService productionWorkOrderService;
     private final UserRepository userRepository;
@@ -62,18 +64,64 @@ public class ProductionWorkOrderController extends PageViewSupport {
 
     @GetMapping("/list")
     @ResponseBody
-    public List<WorkOrderAgreementRow> fetchList(@RequestParam(name = "stylesId", required = false) String stylesId,
+    public ResponseEntity<?> fetchList(@RequestParam(name = "stylesId", required = false) String stylesId,
             @RequestParam(name = "styleCode", required = false) String styleCode,
             @RequestParam(name = "prdAgreeCode", required = false) String prdAgreeCode,
             @RequestParam(name = "colorCode", required = false) String colorCode) {
-        return productionWorkOrderService.findAgreementRows(stylesId, styleCode, prdAgreeCode, colorCode);
+        try {
+            List<WorkOrderAgreementRow> result =
+                    productionWorkOrderService.findAgreementRows(stylesId, styleCode, prdAgreeCode, colorCode);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("작업지시 목록 조회 중 오류가 발생했습니다.", e);
+            String message = "조회 중 오류가 발생했습니다. (원인: " + e.getMessage() + ")";
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
+        }
+    }
+
+    @PostMapping("/draft")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> saveDraft(@RequestBody WorkOrderSaveRequest request,
+            Principal principal) {
+        String empNo = resolveEmpNo(principal);
+        try {
+            Map<String, Object> result = productionWorkOrderService.saveDraftWorkOrder(request, empNo);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("작업지시 저장 중 오류가 발생했습니다.", e);
+            String message = "작업지시 저장에 실패했습니다. (원인: " + e.getMessage() + ")";
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
+        }
+    }
+
+    @PostMapping("/activate")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> activate(@RequestBody WorkOrderSaveRequest request,
+            Principal principal) {
+        String empNo = resolveEmpNo(principal);
+        try {
+            Map<String, Object> result = productionWorkOrderService.activateWorkOrder(request, empNo);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("작업지시 활성화 중 오류가 발생했습니다.", e);
+            String message = "작업지시 활성화에 실패했습니다. (원인: " + e.getMessage() + ")";
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
+        }
     }
 
     @PostMapping("/save")
     @ResponseBody
-    public Map<String, Object> save(@RequestBody WorkOrderSaveRequest request, Principal principal) {
+    public ResponseEntity<Map<String, Object>> save(@RequestBody WorkOrderSaveRequest request,
+            Principal principal) {
         String empNo = resolveEmpNo(principal);
-        return productionWorkOrderService.saveWorkOrder(request, empNo);
+        try {
+            Map<String, Object> result = productionWorkOrderService.saveDraftWorkOrder(request, empNo);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("작업지시 저장 중 오류가 발생했습니다.", e);
+            String message = "작업지시 저장에 실패했습니다. (원인: " + e.getMessage() + ")";
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
+        }
     }
 
     private String resolveEmpNo(Principal principal) {

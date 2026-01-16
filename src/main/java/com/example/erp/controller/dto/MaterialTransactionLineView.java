@@ -23,6 +23,7 @@ public class MaterialTransactionLineView {
 	private String orderUom;
 	private BigDecimal unitPrice;
 	private BigDecimal orderQuantity;
+	private BigDecimal requiredQuantity;
 	private BigDecimal inboundQuantity;
 	private BigDecimal plannedOutboundQuantity;
 	private BigDecimal outboundQuantity;
@@ -162,6 +163,11 @@ public class MaterialTransactionLineView {
 		return this;
 	}
 
+	public MaterialTransactionLineView setRequiredQuantity(BigDecimal requiredQuantity) {
+		this.requiredQuantity = requiredQuantity;
+		return this;
+	}
+
 	public MaterialTransactionLineView setInboundQuantity(BigDecimal inboundQuantity) {
 		this.inboundQuantity = inboundQuantity;
 		return this;
@@ -260,6 +266,10 @@ public class MaterialTransactionLineView {
 
 	public BigDecimal getOrderQuantity() {
 		return orderQuantity;
+	}
+
+	public BigDecimal getRequiredQuantity() {
+		return requiredQuantity;
 	}
 
 	public BigDecimal getInboundQuantity() {
