@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public class MaterialTransactionSaveLine {
     private Long bomId;
-    private String mOrderCode;
+    private Long mOrderId;
     private BigDecimal quantity;
     private BigDecimal plannedOutQuantity;
     private BigDecimal issuedOutQuantity;
@@ -21,12 +21,12 @@ public class MaterialTransactionSaveLine {
         this.bomId = bomId;
     }
 
-    public String getMOrderCode() {
-        return mOrderCode;
+    public Long getMOrderId() {
+        return mOrderId;
     }
 
-    public void setMOrderCode(String mOrderCode) {
-        this.mOrderCode = mOrderCode;
+    public void setMOrderId(Long mOrderId) {
+        this.mOrderId = mOrderId;
     }
 
     public BigDecimal getQuantity() {

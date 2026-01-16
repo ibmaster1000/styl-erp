@@ -347,7 +347,7 @@
 					const available = Math.max(inbound - outbound, 0);
 					const requiredQty = formatQuantity(item.requiredQuantity ?? item.orderQuantity);
 					const row = document.createElement('tr');
-					row.dataset.mOrderCode = item.mOrderCode || '';
+					row.dataset.mOrderId = item.mOrderId || '';
 					row.dataset.orderUom = item.orderUom || '';
 					row.dataset.unitPrice = item.unitPrice || '';
 					row.dataset.available = available;
@@ -399,7 +399,7 @@
 			}
 
 			saveButton.addEventListener('click', () => {
-				const rows = Array.from(tableBody.querySelectorAll('tr[data-m-order-code]'));
+				const rows = Array.from(tableBody.querySelectorAll('tr[data-m-order-id]'));
 				const items = [];
 				let hasValidationError = false;
 
@@ -418,7 +418,7 @@
 							return;
 						}
 						items.push({
-							mOrderCode: row.dataset.mOrderCode || null,
+							mOrderId: row.dataset.mOrderId || null,
 							issuedOutQuantity: isNaN(issued) ? 0 : issued,
 							orderUom: row.dataset.orderUom || null,
 							unitPrice: row.dataset.unitPrice ? Number(row.dataset.unitPrice) : null,

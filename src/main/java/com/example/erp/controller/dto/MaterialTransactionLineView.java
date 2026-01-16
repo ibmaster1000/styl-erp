@@ -3,7 +3,7 @@ package com.example.erp.controller.dto;
 import java.math.BigDecimal;
 
 public class MaterialTransactionLineView {
-	private String mOrderCode;
+	private Long mOrderId;
 	private Long bomId;
 	private String stylesId;
 	private String styleCode;
@@ -63,8 +63,8 @@ public class MaterialTransactionLineView {
 		this.remark = remark;
 	}
 
-	public MaterialTransactionLineView setMOrderCode(String mOrderCode) {
-		this.mOrderCode = mOrderCode;
+	public MaterialTransactionLineView setMOrderId(Long mOrderId) {
+		this.mOrderId = mOrderId;
 		return this;
 	}
 
@@ -188,12 +188,12 @@ public class MaterialTransactionLineView {
 		return this;
 	}
 
-	public Long getBomId() {
-		return bomId;
+	public Long getMOrderId() {
+		return mOrderId;
 	}
 
-	public String getMOrderCode() {
-		return mOrderCode;
+	public Long getBomId() {
+		return bomId;
 	}
 
 	public String getStylesId() {
