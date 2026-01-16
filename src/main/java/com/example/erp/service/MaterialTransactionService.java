@@ -314,9 +314,9 @@ public class MaterialTransactionService {
 		if (hasTable("material_inbounds")) {
 			inboundJoin = """
 					left join (
-						select m_order_code, coalesce(sum(received_qty), 0) as inbound_qty
-						from material_inbounds
-						group by m_order_code
+						select mi2.m_order_code as m_order_code, coalesce(sum(mi2.received_qty), 0) as inbound_qty
+						from material_inbounds mi2
+						group by mi2.m_order_code
 					) mi on mi.m_order_code = mo.m_order_code
 					""";
 		}
@@ -327,11 +327,11 @@ public class MaterialTransactionService {
 			if (hasTable("material_outbounds")) {
 				outboundJoin = """
 					left join (
-						select m_order_code,
-						       coalesce(sum(planned_out_qty), 0) as planned_qty,
-						       coalesce(sum(issued_out_qty), 0) as issued_qty
-						from material_outbounds
-						group by m_order_code
+						select mo3.m_order_code as m_order_code,
+						       coalesce(sum(mo3.planned_out_qty), 0) as planned_qty,
+						       coalesce(sum(mo3.issued_out_qty), 0) as issued_qty
+						from material_outbounds mo3
+						group by mo3.m_order_code
 					) mo2 on mo2.m_order_code = mo.m_order_code
 					""";
 			}

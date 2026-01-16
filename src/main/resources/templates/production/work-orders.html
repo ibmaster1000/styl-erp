@@ -92,6 +92,14 @@
 			min-width: 140px;
 		}
 
+		.wo-input-group {
+			flex-wrap: nowrap;
+		}
+
+		.wo-input-group .btn {
+			white-space: nowrap;
+		}
+
 		@media (max-width: 1200px) {
 			.wo-grid {
 				grid-template-columns: 1fr;
@@ -306,7 +314,7 @@
 				if (window.bootstrap?.Modal) {
 					return new window.bootstrap.Modal(element);
 				}
-				console.warn(`${label} 모달을 초기화할 수 없습니다. Bootstrap JS가 필요합니다.`);
+				console.warn(`${label} 모달을 초기화할 수 없습니다. Bootstrap JS 필요합니다.`);
 				return { show: () => { }, hide: () => { } };
 			};
 
@@ -421,6 +429,7 @@
 					rightBody.innerHTML = '<tr><td colspan="7" class="wo-placeholder">좌측 목록을 선택하면 입력 항목이 표시됩니다.</td></tr>';
 					return;
 				}
+				const dueDateValue = rowData.dueDate ? rowData.dueDate.slice(0, 10) : '';
 				const tr = document.createElement('tr');
 				const producerLabel = [rowData.producerCode, rowData.producerName].filter(Boolean).join(' ');
 				const deliveryLabel = [rowData.deliveryPlaceCode, rowData.deliveryPlaceName].filter(Boolean).join(' ');
@@ -439,7 +448,7 @@
 					<td>
 						<div class="input-group input-group-sm">
 							<span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
-							<input type="datetime-local" class="form-control wo-due-input" placeholder="납기일" value="${rowData.dueDate || ''}">
+							<input type="date" class="form-control wo-due-input" placeholder="납기일" value="${dueDateValue}">
 						</div>
 					</td>
 					<td>

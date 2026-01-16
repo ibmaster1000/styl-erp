@@ -219,7 +219,6 @@ public class MaterialOrderService {
 		String orderCodeColumn = findFirstExistingColumn("material_orders", List.of("m_order_code", "order_code"));
 		String prdColumn = findFirstExistingColumn("material_orders", List.of("prd_agree_id"));
 		String colorColumn = findFirstExistingColumn("material_orders", List.of("color_code"));
-		String colorTypeColumn = findFirstExistingColumn("material_orders", List.of("color_type"));
 		String bomIdColumn = findFirstExistingColumn("material_orders", List.of("bom_id"));
 		String vendorTypeColumn = findFirstExistingColumn("material_orders", List.of("vendor_type"));
 		String vendorCodeColumn = findFirstExistingColumn("material_orders", List.of("vendor_code", "supplier_code"));
@@ -273,7 +272,6 @@ public class MaterialOrderService {
 					.addValue("vendorCode", request.getSupplierCode())
 					.addValue("warehouseType", "WAREHOUSE")
 					.addValue("warehouseCode", request.getWarehouseCode())
-					.addValue("colorType", "COLOR")
 					.addValue("orderAmount", orderQty)
 					.addValue("unitPrice", unitPrice).addValue("orderedBy", orderedBy)
 					.addValue("orderDate", toSqlDate(request.getOrderDate()))
@@ -292,10 +290,6 @@ public class MaterialOrderService {
 			values.add(":prdAgreeId");
 			columns.add(colorColumn);
 			values.add(":colorCode");
-			if (colorTypeColumn != null) {
-				columns.add(colorTypeColumn);
-				values.add(":colorType");
-			}
 			columns.add(bomIdColumn);
 			values.add(":bomId");
 			if (vendorTypeColumn != null) {
