@@ -1,1187 +1,253 @@
-diff --git a/src/main/resources/static/css/app.css b/src/main/resources/static/css/app.css
-index eb811ffed1f88f81ff02eec6188e3b65167b1253..03592033d42558e8b42f3d68e07cee3b28ebe453 100644
---- a/src/main/resources/static/css/app.css
-+++ b/src/main/resources/static/css/app.css
-@@ -35,91 +35,92 @@
- 	background: #ffffff;
- 	color: #0f172a;
- 	border-color: #0f172a;
- }
- 
- .btn--outline:hover:not(:disabled) {
- 	background: #0f172a;
- 	color: #ffffff;
- }
- 
- .btn--outline:disabled {
- 	color: #9ca3af;
- 	border-color: #d1d5db;
- 	background: #f8fafc;
- }
- 
- .btn.btn-sm {
- 	padding: 6px 10px;
- 	font-size: 13px;
- }
- 
- .form-row {
- 	display: flex;
- 	align-items: center;
- 	gap: 12px;
--	flex-wrap: wrap;
-+	flex-wrap: nowrap;
- }
- 
- .form-field {
- 	display: flex;
- 	align-items: center;
- 	gap: 8px;
- 	flex: 1 1 auto;
- 	min-width: 220px;
-+	flex-wrap: nowrap;
- }
- 
- .actions {
- 	display: flex;
- 	align-items: center;
- 	gap: 8px;
--	flex-wrap: nowrap;
- 	white-space: nowrap;
-+	flex-wrap: nowrap;
- }
- 
- .actions .btn {
- 	flex-shrink: 0;
- }
- 
- .data-table {
- 	width: 100%;
- 	border-collapse: collapse;
- 	table-layout: fixed;
- 	background: #ffffff;
- 	border: 1px solid #e5e7eb;
- }
- 
- .data-table thead th {
- 	background: #f9fafb;
- 	font-weight: 800;
- 	font-size: 13px;
- }
- 
- .data-table th,
- .data-table td {
- 	padding: 10px 12px;
- 	font-size: 13px;
- 	text-align: center;
- 	border-right: 1px solid #e5e7eb;
- 	border-bottom: 1px solid #e5e7eb;
- 	white-space: nowrap;
- 	overflow: hidden;
- 	text-overflow: ellipsis;
- 	vertical-align: middle;
- }
- 
- .data-table th:last-child,
- .data-table td:last-child {
- 	border-right: none;
- }
- 
- .data-table tbody tr:nth-child(even) {
- 	background: #fcfcfd;
- }
- 
- .t-left {
- 	text-align: left !important;
- }
- 
- .t-right {
- 	text-align: right !important;
--}
-\ No newline at end of file
-+}
-
-diff --git a/src/main/resources/templates/codes.html b/src/main/resources/templates/codes.html
-index f4c9e96667f11c80ff7f5579c1ad6a1253dce4ae..3390930959db1fb867d377aab83afa0d570c4843 100644
---- a/src/main/resources/templates/codes.html
-+++ b/src/main/resources/templates/codes.html
-@@ -59,75 +59,75 @@
- 										<div class="table-responsive">
- 											<table class="table table-hover align-middle mb-0 data-table">
- 												<thead class="table-light">
- 													<tr>
- 														<th style="width: 12%" class="t-left">분류</th>
- 														<th style="width: 12%" class="t-left">코드</th>
- 														<th style="width: 20%" class="t-left">코드명</th>
- 														<th style="width: 10%">정렬</th>
- 														<th class="t-left">설명</th>
- 														<th style="width: 120px;" class="text-center">관리</th>
- 													</tr>
- 												</thead>
- 												<tbody>
- 													<tr th:if="${#lists.isEmpty(codes)}">
- 														<td colspan="6" class="text-center text-muted">등록된 코드가 없습니다.
- 														</td>
- 													</tr>
- 													<tr th:each="code : ${codes}">
- 														<td class="t-left" th:text="${code.codeType}">COLOR</td>
- 														<td class="t-left" th:text="${code.code}">RED</td>
- 														<td class="t-left" th:text="${code.name}">빨강</td>
- 														<td th:text="${code.sortOrder}">0</td>
- 														<td class="t-left" th:text="${code.description}">설명</td>
- 														<td class="text-center">
- 															<div class="btn-group btn-group-sm" role="group"> <button
--																	type="button" class="btn btn-outline-primary"
-+																	type="button" class="btn btn--outline"
- 																	th:attr="data-type=${code.id.codeType}, data-code=${code.id.code}, data-name=${code.name}, data-sort=${code.sortOrder}, data-desc=${code.description}"
- 																	onclick="fillForm(this)"> <i
- 																		class="bi bi-pencil"></i> </button>
- 																<form
- 																	th:action="@{'/codes/' + ${code.id.codeType} + '/' + ${code.id.code} + '/delete'}"
- 																	method="post" class="d-inline"> <button
--																		type="submit" class="btn btn-outline-danger"
-+																		type="submit" class="btn btn--outline"
- 																		onclick="return confirm('삭제하시겠습니까?');"> <i
- 																			class="bi bi-trash"></i> </button> </form>
- 															</div>
- 														</td>
- 													</tr>
- 												</tbody>
- 											</table>
- 										</div>
- 									</div>
- 								</div>
- 							</div>
- 							<script>
- 								const formEl = document.getElementById('codeForm');
- 								const submitLabel = document.getElementById('submitLabel');
- 								const submitBtn = document.getElementById('submitBtn');
- 								const resetBtn = document.getElementById('resetBtn');
- 								const createAction = formEl?.dataset.createAction;
- 								function resetForm() {
- 									if (!formEl) return;
- 									formEl.reset();
- 									formEl.action = createAction || '/codes';
- 									submitLabel.textContent = '추가';
- 									submitBtn.className = 'btn btn--primary flex-grow-1';
- 								}
- 
- 								function fillForm(button) {
- 									if (!formEl || !button) return;
- 									formEl.action = `/codes/${button.dataset.type}/${button.dataset.code}/update`;
- 									document.getElementById('codeType').value = button.dataset.type || '';
- 									document.getElementById('code').value = button.dataset.code || '';
- 									document.getElementById('name').value = button.dataset.name || '';
- 									document.getElementById('sortOrder').value = button.dataset.sort || 0;
- 									document.getElementById('description').value = button.dataset.desc || '';
- 									submitLabel.textContent = '수정';
- 									submitBtn.className = 'btn btn--primary flex-grow-1';
- 								}
- 
- 								resetBtn?.addEventListener('click', resetForm);
- 							</script>
- </body>
- 
--</html>
-\ No newline at end of file
-+</html>
-
-
-diff --git a/src/main/resources/templates/pages/work-orders.html b/src/main/resources/templates/pages/work-orders.html
-index 4181a24e660c2d32d5a779f4ffb2fe3371cda64c..adf2ef8c8fcb9db01d41323acb9b4c9910aa5f0f 100644
---- a/src/main/resources/templates/pages/work-orders.html
-+++ b/src/main/resources/templates/pages/work-orders.html
-@@ -194,166 +194,172 @@
- 			.wo-layout {
- 				flex-direction: column;
- 			}
- 		}
- 	</style>
- 
- 	<div class="mb-3">
- 		<h4 class="fw-bold mb-1">작업지시서 관리</h4>
- 		<p class="text-muted mb-0">치수표와 첨부 문서를 동시에 확인하세요.</p>
- 	</div>
- 	<div class="wo-layout">
- 		<div class="wo-left">
- 			<form class="wo-panel mb-1" method="get" th:action="@{/work-orders}">
- 				<div class="row g-3 align-items-end">
- 					<div class="col-md-5">
- 						<label class="form-label fw-semibold">품번</label>
- 						<input type="text" class="form-control" name="styleNo" th:value="${param.styleNo}"
- 							placeholder="품번 코드">
- 					</div>
- 					<div class="col-md-5">
- 						<label class="form-label fw-semibold">작업지시</label>
- 						<input type="text" class="form-control" name="workOrderId" th:value="${param.workOrderId}"
- 							placeholder="작업지시 코드">
- 					</div>
- 					<div class="col-md-2 d-grid">
--						<button type="submit" class="btn btn-dark">검색</button>
-+						<div class="actions">
-+							<button type="submit" class="btn btn--primary w-100">검색</button>
-+						</div>
- 					</div>
- 				</div>
- 			</form>
- 
- 			<div class="wo-panel">
- 				<div class="d-flex justify-content-between align-items-center mb-2">
- 					<h6 class="mb-0 fw-bold">작업지시 목록</h6>
- 					<span class="text-muted small" th:text="'총 ' + ${#lists.size(list)} + '건'">총 0건</span>
- 				</div>
- 				<div class="table-responsive" style="max-height: 240px;">
--					<table class="table table-hover align-middle mb-0 wo-table">
-+					<table class="table table-hover align-middle mb-0 wo-table data-table">
- 						<thead class="table-light">
- 							<tr>
--								<th>작업지시</th>
--								<th>품번</th>
--								<th>생산합의</th>
--								<th>색상</th>
--								<th>사이즈</th>
-+								<th class="t-left">작업지시</th>
-+								<th class="t-left">품번</th>
-+								<th class="t-left">생산합의</th>
-+								<th class="t-left">색상</th>
-+								<th class="t-left">사이즈</th>
- 								<th>수량</th>
--								<th>납기일</th>
--								<th>상태</th>
-+								<th class="t-left">납기일</th>
-+								<th class="t-left">상태</th>
- 							</tr>
- 						</thead>
- 						<tbody id="wo-list-body">
- 							<tr th:if="${#lists.isEmpty(list)}">
- 								<td colspan="8" class="text-center text-muted">조회된 데이터가 없습니다.</td>
- 							</tr>
- 							<tr th:each="w, iter : ${list}" data-wo-row
- 								th:classappend="${iter.index == 0} ? 'wo-row-selected'">
--								<td th:text="${w.workOrderId}" data-field="workOrderId">WO-001</td>
--								<td th:text="${w.styleNo}" data-field="styleNo">ST-001</td>
--								<td th:text="${w.agreementCode}" data-field="agreementCode">PA-001</td>
--								<td th:text="${w.color}" data-field="color">RED</td>
--								<td th:text="${w.size}" data-field="size">L</td>
-+								<td class="t-left" th:text="${w.workOrderId}" data-field="workOrderId">WO-001</td>
-+								<td class="t-left" th:text="${w.styleNo}" data-field="styleNo">ST-001</td>
-+								<td class="t-left" th:text="${w.agreementCode}" data-field="agreementCode">PA-001</td>
-+								<td class="t-left" th:text="${w.color}" data-field="color">RED</td>
-+								<td class="t-left" th:text="${w.size}" data-field="size">L</td>
- 								<td th:text="${w.quantity}" data-field="quantity">100</td>
--								<td th:text="${w.dueDate}" data-field="dueDate">2024-01-10</td>
--								<td th:text="${w.status}" data-field="status">진행</td>
-+								<td class="t-left" th:text="${w.dueDate}" data-field="dueDate">2024-01-10</td>
-+								<td class="t-left" th:text="${w.status}" data-field="status">진행</td>
- 							</tr>
- 						</tbody>
- 					</table>
- 				</div>
- 			</div>
- 			<div class="wo-panel">
- 				<div class="d-flex justify-content-between align-items-center mb-3">
- 					<h6 class="mb-0 fw-bold">작업지시 기본 정보</h6>
- 					<span class="text-muted small">선택한 작업지시 기준</span>
- 				</div>
- 				<div class="wo-summary-grid">
- 					<div>
- 						<div class="text-muted small">작업지시</div>
- 						<div class="fw-bold" id="wo-summary-id">-</div>
- 					</div>
- 					<div>
- 						<div class="text-muted small">품번</div>
- 						<div class="fw-bold" id="wo-summary-style">-</div>
- 					</div>
- 					<div>
- 						<div class="text-muted small">생산합의</div>
- 						<div class="fw-bold" id="wo-summary-agreement">-</div>
- 					</div>
- 					<div>
- 						<div class="text-muted small">납기일</div>
- 						<div class="fw-bold" id="wo-summary-due">-</div>
- 					</div>
- 				</div>
- 			</div>
- 			<div class="wo-panel">
- 				<div class="d-flex justify-content-between align-items-center mb-2">
- 					<h6 class="mb-0 fw-bold">치수표</h6>
- 					<span class="text-muted small">구분 × 사이즈별 입력</span>
- 				</div>
- 				<div class="table-responsive" style="max-height: 420px;">
--					<table class="table table-sm align-middle measure-table" id="measure-table">
-+					<table class="table table-sm align-middle measure-table data-table" id="measure-table">
- 						<thead>
- 							<tr id="measure-head-row"></tr>
- 						</thead>
- 						<tbody id="measure-body"></tbody>
- 					</table>
- 				</div>
- 			</div>
- 		</div>
- 		<div class="wo-right">
- 			<div class="wo-panel wo-attachments-panel h-100">
- 							<div class="attachment-section">
- 					<div class="attachment-header">
- 						<div>
- 							<div class="fw-bold">도식화</div>
- 							<div class="text-muted small">등록된 도식화를 확인하세요.</div>
- 						</div>
--						<button type="button" class="btn btn-outline-secondary btn-sm">도식화 등록</button>
-+						<div class="actions">
-+							<button type="button" class="btn btn--outline btn-sm">도식화 등록</button>
-+						</div>
- 					</div>
- 					<div class="attachment-grid" id="illustration-grid"></div>
- 				</div>
- 
- 				<div class="attachment-section">
- 					<div class="attachment-header">
- 						<div>
- 							<div class="fw-bold">봉제방법</div>
- 							<div class="text-muted small">등록된 봉제방법을 확인하세요.</div>
- 						</div>
--						<button type="button" class="btn btn-outline-secondary btn-sm">봉제방법 등록</button>
-+						<div class="actions">
-+							<button type="button" class="btn btn--outline btn-sm">봉제방법 등록</button>
-+						</div>
- 					</div>
- 					<div class="attachment-grid" id="sewing-grid"></div>
- 				</div>
- 			</div>
- 		</div>
- 	</div>
- 
- 	<div class="modal-backdrop" id="wo-preview-modal">
- 		<div class="modal-body">
- 			<img id="wo-preview-image" alt="미리보기">
- 			<div class="modal-actions">
--				<button type="button" class="btn btn-outline-light btn-sm">편집(준비중)</button>
--				<button type="button" class="btn btn-outline-light btn-sm">다운로드(준비중)</button>
--				<button type="button" class="btn btn-outline-danger btn-sm">삭제(준비중)</button>
-+				<button type="button" class="btn btn--outline btn-sm">편집(준비중)</button>
-+				<button type="button" class="btn btn--outline btn-sm">다운로드(준비중)</button>
-+				<button type="button" class="btn btn--primary btn-sm">삭제(준비중)</button>
- 			</div>
- 			<button type="button" class="modal-close" id="wo-modal-close">×</button>
- 		</div>
- 	</div>
- 	<script th:inline="javascript">
- 		/*<![CDATA[*/
- 		const workOrders = /*[[${list}]]*/[];
- 		const styleRules = /*[[${styleRules}]]*/ {};
- 		const attachments = /*[[${attachments}]]*/ {};
- 
- 		const defaultSizes = ['095', '100', '105', '110'];
- 		const measureItems = ['총기장', '허리폭', '다리폭', '둔폭', '밑길이'];
- 		const measureState = {};
- 
- 		const getSizesByStyle = (styleNo) => {
- 			if (!styleNo || !styleRules || !styleRules[styleNo]) return defaultSizes;
- 			const rule = styleRules[styleNo];
- 			const sizes = new Set();
- 			Object.values(rule).forEach((list) => {
- 				if (Array.isArray(list)) {
- 					list.forEach((size) => sizes.add(size));
- 				}
- 			});
- 			return sizes.size ? Array.from(sizes) : defaultSizes;
- 		};
-@@ -459,26 +465,26 @@
- 
- 		const modal = document.getElementById('wo-preview-modal');
- 		const modalImg = document.getElementById('wo-preview-image');
- 		const openModal = (src) => {
- 			if (!src) return;
- 			modalImg.src = src;
- 			modal.classList.add('active');
- 		};
- 		const closeModal = () => modal.classList.remove('active');
- 
- 		document.getElementById('wo-modal-close').addEventListener('click', closeModal);
- 		document.addEventListener('keydown', (e) => {
- 			if (e.key === 'Escape') closeModal();
- 		});
- 		modal.addEventListener('click', (e) => {
- 			if (e.target === modal) closeModal();
- 		});
- 
- 		document.addEventListener('DOMContentLoaded', () => {
- 			bindRowEvents();
- 			renderAttachments(attachments.ILLUSTRATION, 'illustration-grid', '도식화가 없습니다.');
- 			renderAttachments(attachments.SEWING, 'sewing-grid', '봉제방법이 없습니다.');
- 		});
- 		/*]]>*/
- 	</script>
--</div>
-\ No newline at end of file
-+</div>
-
-diff --git a/src/main/resources/templates/popup/code-search.html b/src/main/resources/templates/popup/code-search.html
-index b13685992bb7596a1be85dae0bdd8dff9155a636..09e9f461dae4fa331c703f955c1b9c21ddd24b79 100644
---- a/src/main/resources/templates/popup/code-search.html
-+++ b/src/main/resources/templates/popup/code-search.html
-@@ -1,114 +1,115 @@
- <!doctype html>
- <html lang="ko" xmlns:th="http://www.thymeleaf.org">
- <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1">
-     <title>공통 코드 검색</title>
-     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-+    <link rel="stylesheet" href="/css/app.css">
-     <style>
-         body { background-color: #f8f9fa; }
-         .table-container { max-height: 420px; overflow-y: auto; }
-         .clickable-row { cursor: pointer; }
-         .clickable-row.selected { background-color: var(--bs-primary-bg-subtle) !important; }
-         .search-card { border: 1px solid #dee2e6; }
-     </style>
- </head>
- <body>
- <div class="container py-3">
-     <div class="bg-white rounded shadow-sm p-3 search-card">
-         <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
-             <h5 class="mb-0 fw-bold">공통 코드 검색</h5>
--            <div class="btn-group">
--                <button type="submit" form="codeSearchForm" class="btn btn-secondary btn-sm">검색</button>
--                <button type="button" id="btnCodeSelect" class="btn btn-primary btn-sm">선택</button>
-+            <div class="actions">
-+                <button type="submit" form="codeSearchForm" class="btn btn--primary btn-sm">검색</button>
-+                <button type="button" id="btnCodeSelect" class="btn btn--primary btn-sm">선택</button>
-             </div>
-         </div>
- 
-         <form id="codeSearchForm" method="get" class="row gy-2 gx-3 mb-3">
-             <div class="col-md-3 col-6">
-                 <label class="form-label small fw-semibold mb-1">분류</label>
-                 <select class="form-select form-select-sm" name="codeType">
-                     <option value="">전체</option>
-                     <option th:each="type : ${codeTypes}"
-                             th:value="${type}"
-                             th:text="${type}"
-                             th:selected="${type} == ${searchCodeType}">분류</option>
-                 </select>
-             </div>
-             <div class="col-md-3 col-6">
-                 <label class="form-label small fw-semibold mb-1">코드</label>
-                 <input type="text" name="code" class="form-control form-control-sm" th:value="${searchCode}">
-             </div>
-             <div class="col-md-3 col-6">
-                 <label class="form-label small fw-semibold mb-1">명칭</label>
-                 <input type="text" name="codeName" class="form-control form-control-sm" th:value="${searchCodeName}">
-             </div>
-             <div class="col-md-3 col-6">
-                 <label class="form-label small fw-semibold mb-1">비고</label>
-                 <input type="text" name="remark" class="form-control form-control-sm" th:value="${searchRemark}">
-             </div>
-         </form>
- 
-         <div class="table-responsive table-container border rounded">
--            <table class="table table-hover mb-0 align-middle">
-+            <table class="table table-hover mb-0 align-middle data-table">
-                 <thead class="table-light">
-                 <tr>
--                    <th style="width: 20%">분류</th>
--                    <th style="width: 20%">코드</th>
--                    <th style="width: 30%">명칭</th>
--                    <th>비고</th>
-+                    <th style="width: 20%" class="t-left">분류</th>
-+                    <th style="width: 20%" class="t-left">코드</th>
-+                    <th style="width: 30%" class="t-left">명칭</th>
-+                    <th class="t-left">비고</th>
-                 </tr>
-                 </thead>
-                 <tbody>
-                 <tr th:if="${#lists.isEmpty(codes)}">
-                     <td colspan="4" class="text-center text-muted">조건에 해당하는 코드가 없습니다.</td>
-                 </tr>
-                 <tr th:each="code : ${codes}"
-                     class="clickable-row"
-                     th:data-code-type="${code.codeType}"
-                     th:data-code="${code.code}"
-                     th:data-code-name="${code.codeName} ?: ${code.name}">
--                    <td th:text="${code.codeType}">분류</td>
--                    <td th:text="${code.code}">CODE</td>
--                    <td th:text="${code.codeName} ?: ${code.name}">명칭</td>
--                    <td th:text="${code.remark}">비고</td>
-+                    <td class="t-left" th:text="${code.codeType}">분류</td>
-+                    <td class="t-left" th:text="${code.code}">CODE</td>
-+                    <td class="t-left" th:text="${code.codeName} ?: ${code.name}">명칭</td>
-+                    <td class="t-left" th:text="${code.remark}">비고</td>
-                 </tr>
-                 </tbody>
-             </table>
-         </div>
-     </div>
- </div>
- 
- <script>
-     const codeRows = document.querySelectorAll('.clickable-row');
-     const codeSelectBtn = document.getElementById('btnCodeSelect');
-     let selectedCodeRow = null;
- 
-     codeRows.forEach(row => {
-         row.addEventListener('click', () => {
-             codeRows.forEach(r => r.classList.remove('table-primary', 'selected'));
-             row.classList.add('table-primary', 'selected');
-             selectedCodeRow = row;
-         });
-     });
- 
-     codeSelectBtn?.addEventListener('click', () => {
-         if (!selectedCodeRow) {
-             alert('선택된 코드가 없습니다.');
-             return;
-         }
-         if (!window.opener || typeof window.opener.onCodeSelected !== 'function') {
-             alert('부모창 콜백이 없습니다.');
-             return;
-         }
-         const payload = {
-             codeType: selectedCodeRow.dataset.codeType,
-             code: selectedCodeRow.dataset.code,
-             codeName: selectedCodeRow.dataset.codeName
-         };
-         window.opener.onCodeSelected(payload);
-         window.close();
-     });
- </script>
- </body>
--</html>
-\ No newline at end of file
-+</html>
-
-diff --git a/src/main/resources/templates/popup/employee-search.html b/src/main/resources/templates/popup/employee-search.html
-index e42282b1034a05b712ea15b300b53d3c2918b749..cc3fe8d2dd0d42a59a47ee4148c379ba61d4e617 100644
---- a/src/main/resources/templates/popup/employee-search.html
-+++ b/src/main/resources/templates/popup/employee-search.html
-@@ -1,109 +1,110 @@
- <!doctype html>
- <html lang="ko" xmlns:th="http://www.thymeleaf.org">
- <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1">
-     <title>사원 검색</title>
-     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-+    <link rel="stylesheet" href="/css/app.css">
-     <style>
-         body { background-color: #f8f9fa; }
-         .table-container { max-height: 420px; overflow-y: auto; }
-         .clickable-row { cursor: pointer; }
-         .clickable-row.selected { background-color: var(--bs-primary-bg-subtle) !important; }
-         .search-card { border: 1px solid #dee2e6; }
-     </style>
- </head>
- <body>
- <div class="container py-3">
-     <div class="bg-white rounded shadow-sm p-3 search-card">
-         <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3">
-             <h5 class="mb-0 fw-bold">사원 검색</h5>
--            <div class="btn-group">
--                <button type="submit" form="employeeSearchForm" class="btn btn-secondary btn-sm">검색</button>
--                <button type="button" id="btnEmployeeSelect" class="btn btn-primary btn-sm">선택</button>
-+            <div class="actions">
-+                <button type="submit" form="employeeSearchForm" class="btn btn--primary btn-sm">검색</button>
-+                <button type="button" id="btnEmployeeSelect" class="btn btn--primary btn-sm">선택</button>
-             </div>
-         </div>
- 
-         <form id="employeeSearchForm" method="get" class="row gy-2 gx-3 mb-2">
-             <div class="col-md-4 col-6">
-                 <label class="form-label small fw-semibold mb-1">사번</label>
-                 <input type="text" name="empNo" class="form-control form-control-sm" th:value="${searchEmpNo}">
-             </div>
-             <div class="col-md-4 col-6">
-                 <label class="form-label small fw-semibold mb-1">이름</label>
-                 <input type="text" name="name" class="form-control form-control-sm" th:value="${searchName}">
-             </div>
-             <div class="col-md-4 col-12">
-                 <label class="form-label small fw-semibold mb-1">부서</label>
-                 <select name="dept" class="form-select form-select-sm">
-                     <option value="">전체</option>
-                     <option th:each="dept : ${departments}"
-                             th:value="${dept}"
-                             th:text="${dept}"
-                             th:selected="${dept} == ${searchDept}">부서</option>
-                 </select>
-                 <div class="text-muted small mt-1">부서를 특정해서 검색할 때는 부서 자동 입력, 입력 불가</div>
-             </div>
-         </form>
- 
-         <div class="table-responsive table-container border rounded mt-2">
--            <table class="table table-hover mb-0 align-middle">
-+            <table class="table table-hover mb-0 align-middle data-table">
-                 <thead class="table-light">
-                 <tr>
--                    <th style="width: 25%">사번</th>
--                    <th style="width: 35%">이름</th>
--                    <th>부서</th>
-+                    <th style="width: 25%" class="t-left">사번</th>
-+                    <th style="width: 35%" class="t-left">이름</th>
-+                    <th class="t-left">부서</th>
-                 </tr>
-                 </thead>
-                 <tbody>
-                 <tr th:if="${#lists.isEmpty(employees)}">
-                     <td colspan="3" class="text-center text-muted">조건에 해당하는 사원이 없습니다.</td>
-                 </tr>
-                 <tr th:each="emp : ${employees}"
-                     class="clickable-row"
-                     th:data-emp-no="${emp.empNo}"
-                     th:data-name="${emp.name}"
-                     th:data-dept="${emp.dept}">
--                    <td th:text="${emp.empNo}">EMP001</td>
--                    <td th:text="${emp.name}">홍길동</td>
--                    <td th:text="${emp.dept}">부서</td>
-+                    <td class="t-left" th:text="${emp.empNo}">EMP001</td>
-+                    <td class="t-left" th:text="${emp.name}">홍길동</td>
-+                    <td class="t-left" th:text="${emp.dept}">부서</td>
-                 </tr>
-                 </tbody>
-             </table>
-         </div>
-     </div>
- </div>
- 
- <script>
-     const employeeRows = document.querySelectorAll('.clickable-row');
-     const employeeSelectBtn = document.getElementById('btnEmployeeSelect');
-     let selectedEmployeeRow = null;
- 
-     employeeRows.forEach(row => {
-         row.addEventListener('click', () => {
-             employeeRows.forEach(r => r.classList.remove('table-primary', 'selected'));
-             row.classList.add('table-primary', 'selected');
-             selectedEmployeeRow = row;
-         });
-     });
- 
-     employeeSelectBtn?.addEventListener('click', () => {
-         if (!selectedEmployeeRow) {
-             alert('선택된 사원이 없습니다.');
-             return;
-         }
-         if (!window.opener || typeof window.opener.onEmployeeSelected !== 'function') {
-             alert('부모창 콜백이 없습니다.');
-             return;
-         }
-         const payload = {
-             empNo: selectedEmployeeRow.dataset.empNo,
-             name: selectedEmployeeRow.dataset.name,
-             dept: selectedEmployeeRow.dataset.dept
-         };
-         window.opener.onEmployeeSelected(payload);
-         window.close();
-     });
- </script>
- </body>
--</html>
-\ No newline at end of file
-+</html>
-
-diff --git a/src/main/resources/templates/production/material-inbound.html b/src/main/resources/templates/production/material-inbound.html
-index fb03df3b77a98c1339ee38813456fa6d78f8c943..6b116a2b710f049697cd44b5ae72bd069c94064f 100644
---- a/src/main/resources/templates/production/material-inbound.html
-+++ b/src/main/resources/templates/production/material-inbound.html
-@@ -83,155 +83,159 @@
+diff --git a/src/main/resources/templates/pages/style.html b/src/main/resources/templates/pages/style.html
+index 45152d786210b40df5e55269ccc07b3d6aefddee..2ed7ad760f1a1701f4976875d94fb57604952b62 100644
+--- a/src/main/resources/templates/pages/style.html
++++ b/src/main/resources/templates/pages/style.html
+@@ -13,50 +13,77 @@
+ 			padding: 8px 14px;
  		}
  
- 		.mi-table tbody td {
+ 		.style-table-wrap {
+ 			overflow-x: auto;
+ 		}
+ 
+ 		.style-table {
+ 			min-width: 1400px;
+ 		}
+ 
+ 		.style-table thead th {
+ 			background: #f9fafb;
+ 			font-weight: 800;
  			font-size: 13px;
- 			vertical-align: middle;
  			white-space: nowrap;
  		}
  
- 		.mi-placeholder {
- 			text-align: center;
- 			color: #6b7280;
+ 		.style-table tbody td,
+ 		.style-table tbody th {
+ 			vertical-align: middle;
+ 			font-size: 13px;
+ 			white-space: nowrap;
  		}
- 	</style>
  
- 	<div class="mb-3">
- 		<h4 class="fw-bold mb-1">원부자재 입고 등록</h4>
- 		<p class="text-muted mb-0">품번/색상/생산합의 기준으로 입고량을 입력해 저장하세요.</p>
- 	</div>
++		.style-code-cell {
++			position: relative;
++			padding-right: 28px;
++		}
++
++		.style-code-copy {
++			position: absolute;
++			top: 50%;
++			right: 6px;
++			transform: translateY(-50%);
++			border: none;
++			background: transparent;
++			color: #9ca3af;
++			opacity: 0;
++			transition: opacity 0.15s ease, color 0.15s ease;
++			padding: 0;
++			line-height: 1;
++		}
++
++		.style-code-cell:hover .style-code-copy {
++			opacity: 1;
++		}
++
++		.style-code-copy:hover {
++			color: #111827;
++		}
++
+ 		.style-row {
+ 			cursor: pointer;
+ 		}
  
- 	<div class="mi-layout">
- 		<div class="material-panel">
- 			<div class="d-flex justify-content-between align-items-center mb-2">
- 				<h6 class="fw-bold mb-0">검색/선택</h6>
- 				<small class="text-muted">품번 선택 전에는 색상/합의/입고일/검색이 비활성화됩니다.</small>
- 			</div>
--			<div class="material-row mb-2">
-+			<div class="material-row form-row mb-2">
- 				<label class="form-label fw-bold mb-0">품번</label>
- 				<input type="hidden" id="mi-styles-id">
- 				<div class="input-group material-style-input">
- 					<input type="text" id="mi-style-input" class="form-control" placeholder="품번을 선택하세요" readonly>
--					<button type="button" class="btn btn-outline-secondary" id="mi-style-search">품번 검색</button>
-+					<button type="button" class="btn btn--primary" id="mi-style-search">품번 검색</button>
- 				</div>
- 			</div>
--			<div class="material-row">
-+			<div class="material-row form-row">
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">색상</label>
- 					<select id="mi-color-select" class="form-select material-color-select" disabled>
- 						<option value="">색상을 선택하세요</option>
- 					</select>
- 				</div>
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">생산합의코드</label>
- 					<select id="mi-agreement-select" class="form-select material-agree-select" disabled>
- 						<option value="">생산합의 코드를 선택하세요</option>
- 					</select>
- 				</div>
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">입고일</label>
- 					<input type="date" id="mi-date-input" class="form-control mi-date-input" disabled>
- 				</div>
--				<button type="button" class="btn btn-dark material-search-button" id="mi-search-button" disabled>검색</button>
-+				<div class="actions">
-+					<button type="button" class="btn btn--primary material-search-button" id="mi-search-button" disabled>검색</button>
-+				</div>
- 			</div>
- 		</div>
+ 		.style-row-selected td,
+ 		.style-row-selected th {
+ 			background-color: #e5e7eb !important;
+ 		}
  
- 		<div class="material-panel">
- 			<div class="d-flex justify-content-between align-items-center mb-2">
- 				<div>
- 					<h6 class="fw-bold mb-0">입고 대상 목록</h6>
- 					<small class="text-muted">입고량을 입력하고 저장을 눌러주세요.</small>
- 				</div>
--				<button type="button" class="btn btn-primary" id="mi-save-button">저장</button>
-+				<div class="actions">
-+					<button type="button" class="btn btn--primary" id="mi-save-button">저장</button>
-+				</div>
- 			</div>
- 			<div class="table-responsive">
--				<table class="table table-bordered align-middle mi-table">
-+				<table class="table table-bordered align-middle mi-table data-table">
- 					<thead class="table-light">
- 						<tr>
--							<th>품번</th>
--							<th>합의월</th>
-+							<th class="t-left">품번</th>
-+							<th class="t-left">합의월</th>
- 							<th>색상</th>
--							<th>원부자재구분</th>
--							<th>자재명칭</th>
--							<th>용도</th>
--							<th>자재규격</th>
--							<th>자재색상</th>
-+							<th class="t-left">원부자재구분</th>
-+							<th class="t-left">자재명칭</th>
-+							<th class="t-left">용도</th>
-+							<th class="t-left">자재규격</th>
-+							<th class="t-left">자재색상</th>
- 							<th>소요량단위</th>
- 							<th>1매소요량</th>
--							<th>자재처</th>
--							<th>생산담당</th>
-+							<th class="t-left">자재처</th>
-+							<th class="t-left">생산담당</th>
- 							<th>발주단위</th>
- 							<th>단가</th>
- 							<th>발주량</th>
- 							<th>기입고량</th>
- 							<th>입고량</th>
+ 		.style-row-selected:hover td,
+ 		.style-row-selected:hover th {
+ 			background-color: #e5e7eb !important;
+ 		}
+ 
+ 		.style-badge {
+ 			display: inline-flex;
+ 			align-items: center;
+ 			gap: 6px;
+ 			padding: 6px 10px;
+ 			border-radius: 10px;
+ 			background: #f3f4f6;
+ 			font-weight: 700;
+ 			color: #111827;
+ 		}
+ 
+@@ -384,51 +411,57 @@
+ 							<th class="t-left sortable" data-sort-key="productionManager">생산담당<span
+ 									class="sort-indicator"></span></th>
+ 							<th class="t-left sortable" data-sort-key="salesManager">영업담당<span
+ 									class="sort-indicator"></span></th>
+ 							<th class="t-left sortable" data-sort-key="logisticManager">운송담당<span
+ 									class="sort-indicator"></span></th>
+ 							<th class="text-start sortable" data-sort-key="productionCost">생산원가<span
+ 									class="sort-indicator"></span></th>
+ 							<th class="text-start sortable" data-sort-key="supplyPrice">공급가<span
+ 									class="sort-indicator"></span></th>
+ 							<th class="text-start sortable" data-sort-key="salesPrice">판매가<span
+ 									class="sort-indicator"></span></th>
+ 							<th class="text-start sortable" data-sort-key="startDate">시작일<span
+ 									class="sort-indicator"></span></th>
+ 							<th class="text-start sortable" data-sort-key="status">상태<span
+ 									class="sort-indicator"></span></th>
  						</tr>
  					</thead>
- 					<tbody id="mi-table-body">
- 						<tr>
- 							<td colspan="17" class="mi-placeholder">품번/색상/생산합의/입고일을 선택한 뒤 검색하세요.</td>
+ 					<tbody>
+ 						<tr th:if="${#lists.isEmpty(list)}">
+ 							<td colspan="13" class="text-center text-muted">조회된 데이터가 없습니다.</td>
  						</tr>
- 					</tbody>
- 				</table>
- 			</div>
- 		</div>
- 	</div>
  
- 	<div class="modal fade" id="miStyleSearchModal" tabindex="-1" aria-hidden="true">
- 		<div class="modal-dialog modal-lg modal-dialog-scrollable">
- 			<div class="modal-content">
- 				<div class="modal-header">
- 					<h5 class="modal-title fw-bold">품번 검색</h5>
- 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
- 				</div>
--				<div class="modal-body">
--					<div class="input-group mb-3">
--						<input type="text" class="form-control" id="mi-style-search-keyword" placeholder="품번 또는 아이템명 검색">
--						<button class="btn btn-outline-secondary" type="button" id="mi-style-search-btn">검색</button>
--					</div>
--					<div class="table-responsive">
--						<table class="table table-hover align-middle">
--							<thead class="table-light">
--								<tr>
--									<th>품번</th>
--									<th>아이템</th>
--									<th>상태</th>
--								</tr>
--							</thead>
--							<tbody id="mi-style-search-results">
--								<tr>
--									<td colspan="3" class="mi-placeholder">검색어를 입력하세요.</td>
-+			<div class="modal-body">
-+				<div class="input-group mb-3">
-+					<input type="text" class="form-control" id="mi-style-search-keyword" placeholder="품번 또는 아이템명 검색">
-+					<button class="btn btn--primary" type="button" id="mi-style-search-btn">검색</button>
-+				</div>
-+				<div class="table-responsive">
-+					<table class="table table-hover align-middle data-table">
-+						<thead class="table-light">
-+							<tr>
-+								<th class="t-left">품번</th>
-+								<th class="t-left">아이템</th>
-+								<th>상태</th>
-+							</tr>
-+						</thead>
-+						<tbody id="mi-style-search-results">
-+							<tr>
-+								<td colspan="3" class="mi-placeholder">검색어를 입력하세요.</td>
- 								</tr>
- 							</tbody>
- 						</table>
- 					</div>
--				</div>
--				<div class="modal-footer">
--					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
--					<button type="button" class="btn btn-primary" id="mi-style-select-btn">선택</button>
--				</div>
--			</div>
- 		</div>
-+		<div class="modal-footer">
-+			<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
-+			<button type="button" class="btn btn--primary" id="mi-style-select-btn">선택</button>
-+		</div>
-+	</div>
-+</div>
+ 						<tr th:each="s : ${list}" class="style-row"
+ 							th:attr="data-styles-id=${s.stylesId},data-style-code=${s.styleCode},data-item-code=${s.itemCode}">
+-							<td class="t-left" data-sort-field="styleCode" th:text="${s.styleCode}">ST-001</td>
++							<td class="t-left style-code-cell" data-sort-field="styleCode">
++								<span class="style-code-text" th:text="${s.styleCode}">ST-001</span>
++								<button type="button" class="style-code-copy" th:attr="data-style-code=${s.styleCode}"
++									title="품번 복사">
++									<i class="bi bi-clipboard"></i>
++								</button>
++							</td>
+ 							<td class="t-left" data-sort-field="item" th:text="${s.item}">후드티</td>
+ 							<td class="t-left ellipsis-cell cell-clickable" data-sort-field="colors"
+ 								th:attr="data-full=${s.colorsFull}, data-title='색상'" th:text="${s.colorsDisplay}"
+ 								th:title="${s.colorsFull}">BLACK, WHITE</td>
+ 							<td class="t-left ellipsis-cell cell-clickable" data-sort-field="sizes"
+ 								th:attr="data-full=${s.sizesFull}, data-title='사이즈'" th:text="${s.sizesDisplay}"
+ 								th:title="${s.sizesFull}">S, M, L</td>
+ 							<td class="t-left" data-sort-field="designer" th:text="${s.designer}">김디</td>
+ 							<td class="t-left" data-sort-field="productionManager" th:text="${s.productionManager}">박생산
+ 							</td>
+ 							<td class="t-left" data-sort-field="salesManager" th:text="${s.salesManager}">이영업</td>
+ 							<td class="t-left" data-sort-field="logisticManager" th:text="${s.logisticManager}">최운송</td>
+ 							<td class="text-start" data-sort-field="productionCost"
+ 								th:attr="data-sort-value=${s.productionCost}"
+ 								th:text="${s.productionCost != null ? s.productionCost : '-'}">-</td>
+ 							<td class="text-start" data-sort-field="supplyPrice"
+ 								th:attr="data-sort-value=${s.supplyPrice}"
+ 								th:text="${s.supplyPrice != null ? s.supplyPrice : '-'}">-</td>
+ 							<td class="text-start" data-sort-field="salesPrice"
+ 								th:attr="data-sort-value=${s.salesPrice}"
+ 								th:text="${s.salesPrice != null ? s.salesPrice : '-'}">-</td>
+ 							<td class="text-start" data-sort-field="startDate" th:attr="data-sort-value=${s.startDate}"
+ 								th:text="${s.startDate}">2024-01-01</td>
+ 							<td class="text-start" data-sort-field="status"
+ 								th:attr="data-sort-value=${s.active ? 1 : 0}" th:text="${s.active ? '사용' : '중지'}">사용
+@@ -877,50 +910,82 @@
+ 	<div
+ 		th:replace="~{fragments/employee-picker-modal :: employeePickerModal('style-edit-designer-picker', '사원 검색', 'style-edit-designer-emp', '/api/users/search', '/api/users/depts')}">
  	</div>
- 
+ 	<div
+ 		th:replace="~{fragments/employee-picker-modal :: employeePickerModal('style-edit-product-picker', '사원 검색', 'style-edit-product-emp', '/api/users/search', '/api/users/depts')}">
+ 	</div>
+ 	<div
+ 		th:replace="~{fragments/employee-picker-modal :: employeePickerModal('style-edit-sales-picker', '사원 검색', 'style-edit-sales-emp', '/api/users/search', '/api/users/depts')}">
+ 	</div>
+ 	<div
+ 		th:replace="~{fragments/employee-picker-modal :: employeePickerModal('style-edit-logistic-picker', '사원 검색', 'style-edit-logistic-emp', '/api/users/search', '/api/users/depts')}">
+ 	</div>
+ 	<script th:src="@{/js/employeePicker.js}"></script>
  	<script>
  		document.addEventListener('DOMContentLoaded', () => {
- 			const styleModal = new bootstrap.Modal(document.getElementById('miStyleSearchModal'));
- 			const styleSearchBtn = document.getElementById('mi-style-search-btn');
- 			const styleSearchKeyword = document.getElementById('mi-style-search-keyword');
- 			const styleSearchResults = document.getElementById('mi-style-search-results');
- 			const styleSelectBtn = document.getElementById('mi-style-select-btn');
- 			const styleSearchTrigger = document.getElementById('mi-style-search');
- 			const styleIdInput = document.getElementById('mi-styles-id');
- 			const styleCodeInput = document.getElementById('mi-style-input');
- 			const colorSelect = document.getElementById('mi-color-select');
- 			const agreeSelect = document.getElementById('mi-agreement-select');
- 			const dateInput = document.getElementById('mi-date-input');
- 			const searchButton = document.getElementById('mi-search-button');
- 			const saveButton = document.getElementById('mi-save-button');
- 			const tableBody = document.getElementById('mi-table-body');
- 
- 			let selectedStyleRow = null;
- 
- 			styleSearchTrigger.addEventListener('click', () => {
- 				styleModal.show();
- 				styleSearchKeyword.focus();
- 			});
-@@ -431,26 +435,26 @@
- 							loadMaterials();
- 						} else {
- 							alert('입고 저장에 실패했습니다.');
- 						}
- 					})
- 					.catch(() => alert('입고 저장 중 오류가 발생했습니다.'));
+ 			const cells = document.querySelectorAll('.ellipsis-cell');
+ 			cells.forEach((cell) => {
+ 				const fullValue = (cell.dataset.full || '').trim();
+ 				const titleValue = fullValue || '내용 없음';
+ 				if (!cell.getAttribute('title')) {
+ 					cell.setAttribute('title', titleValue);
+ 				}
+ 				new bootstrap.Tooltip(cell, {title: titleValue});
  			});
  
- 			function formatNumber(value) {
- 				if (value === null || value === undefined) {
- 					return '-';
- 				}
- 				const num = Number(value);
- 				return isNaN(num) ? '-' : num.toLocaleString();
++			const copyStyleCode = async (code) => {
++				if (!code) {
++					alert('품번 정보가 없습니다.');
++					return;
++				}
++				try {
++					if (navigator.clipboard?.writeText) {
++						await navigator.clipboard.writeText(code);
++					} else {
++						const temp = document.createElement('textarea');
++						temp.value = code;
++						document.body.appendChild(temp);
++						temp.select();
++						document.execCommand('copy');
++						temp.remove();
++					}
++					alert('품번이 복사되었습니다!');
++				} catch (error) {
++					alert('품번 복사에 실패했습니다.');
++				}
++			};
++
++			document.addEventListener('click', (event) => {
++				const copyButton = event.target.closest('.style-code-copy');
++				if (!copyButton) {
++					return;
++				}
++				event.stopPropagation();
++				const styleCode = copyButton.dataset.styleCode || copyButton.closest('tr')?.dataset.styleCode;
++				copyStyleCode(styleCode || '');
++			});
++
+ 			const modalElement = document.getElementById('listDetailModal');
+ 			if (!modalElement) {
+ 				return;
  			}
+ 			const modal = new bootstrap.Modal(modalElement);
+ 			const modalTitle = document.getElementById('listDetailModalTitle');
+ 			const modalBody = document.getElementById('listDetailModalBody');
  
- 			function formatDecimal(value) {
- 				if (value === null || value === undefined) {
- 					return '-';
+ 			const renderEmptyState = () => {
+ 				modalBody.className = '';
+ 				modalBody.innerHTML = '<span class="text-muted">내용 없음</span>';
+ 			};
+ 
+ 			const renderBadges = (items) => {
+ 				modalBody.className = 'd-flex flex-wrap gap-2';
+ 				modalBody.innerHTML = '';
+ 				items.forEach((item) => {
+ 					const badge = document.createElement('span');
+ 					badge.className = 'badge bg-secondary-subtle text-secondary-emphasis';
+ 					badge.textContent = item;
+ 					modalBody.appendChild(badge);
+ 				});
+ 			};
+ 
+ 			const renderText = (text) => {
+@@ -1507,26 +1572,26 @@
+ 				if (!stylesId) {
+ 					alert('선택된 품번 정보가 없습니다.');
+ 					return;
  				}
- 				const num = Number(value);
- 				return isNaN(num) ? '-' : num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
- 			}
+ 				if (!confirm('선택한 품번을 삭제할까요?')) {
+ 					return;
+ 				}
+ 				try {
+ 					const response = await fetch(`/api/styles/${encodeURIComponent(stylesId)}`, {method: 'DELETE'});
+ 					if (!response.ok) {
+ 						throw new Error('delete failed');
+ 					}
+ 					const result = await response.json();
+ 					if (result?.deactivated) {
+ 						alert('참조 중인 품번은 비활성화 처리되었습니다.');
+ 					} else {
+ 						alert('삭제되었습니다.');
+ 					}
+ 					window.location.reload();
+ 				} catch (error) {
+ 					alert('삭제에 실패했습니다.');
+ 				}
+ 			});
  		});
  	</script>
 -</div>
 \ No newline at end of file
 +</div>
-
-diff --git a/src/main/resources/templates/production/material-outbound.html b/src/main/resources/templates/production/material-outbound.html
-index 0185e4b8ebafa237c8ff3293eb8f16cc4eae60e2..2dd00e30c85ab376e93927dd6b67f6fe2f6a3f99 100644
---- a/src/main/resources/templates/production/material-outbound.html
-+++ b/src/main/resources/templates/production/material-outbound.html
-@@ -83,157 +83,161 @@
- 		}
- 
- 		.moout-table tbody td {
- 			font-size: 13px;
- 			vertical-align: middle;
- 			white-space: nowrap;
- 		}
- 
- 		.moout-placeholder {
- 			text-align: center;
- 			color: #6b7280;
- 		}
- 	</style>
- 
- 	<div class="mb-3">
- 		<h4 class="fw-bold mb-1">원부자재 출고 등록</h4>
- 		<p class="text-muted mb-0">입고 대비 출고량을 입력하고 생산처를 지정하세요.</p>
- 	</div>
- 
- 	<div class="moout-layout">
- 		<div class="material-panel">
- 			<div class="d-flex justify-content-between align-items-center mb-2">
- 				<h6 class="fw-bold mb-0">검색/선택</h6>
- 				<small class="text-muted">품번 선택 전에는 색상/합의/출고일/검색이 비활성화됩니다.</small>
- 			</div>
--			<div class="material-row mb-2">
-+			<div class="material-row form-row mb-2">
- 				<label class="form-label fw-bold mb-0">품번</label>
- 				<input type="hidden" id="mout-styles-id">
- 				<div class="input-group material-style-input">
- 					<input type="text" id="mout-style-input" class="form-control" placeholder="품번을 선택하세요" readonly>
--					<button type="button" class="btn btn-outline-secondary" id="mout-style-search">품번 검색</button>
-+					<button type="button" class="btn btn--primary" id="mout-style-search">품번 검색</button>
- 				</div>
- 			</div>
--			<div class="material-row">
-+			<div class="material-row form-row">
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">색상</label>
- 					<select id="mout-color-select" class="form-select material-color-select" disabled>
- 						<option value="">색상을 선택하세요</option>
- 					</select>
- 				</div>
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">생산합의코드</label>
- 					<select id="mout-agreement-select" class="form-select material-agree-select" disabled>
- 						<option value="">생산합의 코드를 선택하세요</option>
- 					</select>
- 				</div>
- 				<div class="material-meta-item">
- 					<label class="form-label fw-bold mb-0">출고일</label>
- 					<input type="date" id="mout-date-input" class="form-control moout-date-input" disabled>
- 				</div>
--				<button type="button" class="btn btn-dark material-search-button" id="mout-search-button" disabled>검색</button>
-+				<div class="actions">
-+					<button type="button" class="btn btn--primary material-search-button" id="mout-search-button" disabled>검색</button>
-+				</div>
- 			</div>
- 		</div>
- 
- 		<div class="material-panel">
- 			<div class="d-flex justify-content-between align-items-center mb-2">
- 				<div>
- 					<h6 class="fw-bold mb-0">출고 대상 목록</h6>
- 					<small class="text-muted">입고량-기출고량보다 많은 출고량은 저장이 차단됩니다.</small>
- 				</div>
--				<button type="button" class="btn btn-primary" id="mout-save-button">저장</button>
-+				<div class="actions">
-+					<button type="button" class="btn btn--primary" id="mout-save-button">저장</button>
-+				</div>
- 			</div>
- 			<div class="table-responsive">
--				<table class="table table-bordered align-middle moout-table">
-+				<table class="table table-bordered align-middle moout-table data-table">
- 					<thead class="table-light">
- 						<tr>
--							<th>품번</th>
-+							<th class="t-left">품번</th>
- 							<th>색상</th>
--							<th>합의월</th>
--							<th>원부자재구분</th>
--							<th>자재명칭</th>
--							<th>용도</th>
--							<th>자재규격</th>
--							<th>자재색상</th>
-+							<th class="t-left">합의월</th>
-+							<th class="t-left">원부자재구분</th>
-+							<th class="t-left">자재명칭</th>
-+							<th class="t-left">용도</th>
-+							<th class="t-left">자재규격</th>
-+							<th class="t-left">자재색상</th>
- 							<th>소요량단위</th>
- 							<th>1매소요량</th>
--							<th>자재처</th>
--							<th>생산담당</th>
-+							<th class="t-left">자재처</th>
-+							<th class="t-left">생산담당</th>
- 							<th>발주단위</th>
- 							<th>단가</th>
- 							<th>발주량</th>
- 							<th>입고량</th>
- 							<th>기출고량</th>
- 							<th>출고량</th>
- 							<th>생산처</th>
- 						</tr>
- 					</thead>
- 					<tbody id="mout-table-body">
- 						<tr>
- 							<td colspan="19" class="moout-placeholder">품번/색상/생산합의/출고일을 선택한 뒤 검색하세요.</td>
- 						</tr>
- 					</tbody>
- 				</table>
- 			</div>
- 		</div>
- 	</div>
- 
- 	<div class="modal fade" id="moutStyleSearchModal" tabindex="-1" aria-hidden="true">
- 		<div class="modal-dialog modal-lg modal-dialog-scrollable">
- 			<div class="modal-content">
- 				<div class="modal-header">
- 					<h5 class="modal-title fw-bold">품번 검색</h5>
- 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
- 				</div>
--				<div class="modal-body">
--					<div class="input-group mb-3">
--						<input type="text" class="form-control" id="mout-style-search-keyword" placeholder="품번 또는 아이템명 검색">
--						<button class="btn btn-outline-secondary" type="button" id="mout-style-search-btn">검색</button>
--					</div>
--					<div class="table-responsive">
--						<table class="table table-hover align-middle">
--							<thead class="table-light">
--								<tr>
--									<th>품번</th>
--									<th>아이템</th>
--									<th>상태</th>
--								</tr>
--							</thead>
--							<tbody id="mout-style-search-results">
--								<tr>
--									<td colspan="3" class="moout-placeholder">검색어를 입력하세요.</td>
-+			<div class="modal-body">
-+				<div class="input-group mb-3">
-+					<input type="text" class="form-control" id="mout-style-search-keyword" placeholder="품번 또는 아이템명 검색">
-+					<button class="btn btn--primary" type="button" id="mout-style-search-btn">검색</button>
-+				</div>
-+				<div class="table-responsive">
-+					<table class="table table-hover align-middle data-table">
-+						<thead class="table-light">
-+							<tr>
-+								<th class="t-left">품번</th>
-+								<th class="t-left">아이템</th>
-+								<th>상태</th>
-+							</tr>
-+						</thead>
-+						<tbody id="mout-style-search-results">
-+							<tr>
-+								<td colspan="3" class="moout-placeholder">검색어를 입력하세요.</td>
- 								</tr>
- 							</tbody>
- 						</table>
- 					</div>
--				</div>
--				<div class="modal-footer">
--					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
--					<button type="button" class="btn btn-primary" id="mout-style-select-btn">선택</button>
--				</div>
--			</div>
- 		</div>
-+		<div class="modal-footer">
-+			<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
-+			<button type="button" class="btn btn--primary" id="mout-style-select-btn">선택</button>
-+		</div>
-+	</div>
-+</div>
- 	</div>
- 
- 	<script th:inline="javascript">
- 		/*<![CDATA[*/
- 		const factoryOptions = /*[[${factories}]]*/ [];
- 
- 		document.addEventListener('DOMContentLoaded', () => {
- 			const styleModal = new bootstrap.Modal(document.getElementById('moutStyleSearchModal'));
- 			const styleSearchBtn = document.getElementById('mout-style-search-btn');
- 			const styleSearchKeyword = document.getElementById('mout-style-search-keyword');
- 			const styleSearchResults = document.getElementById('mout-style-search-results');
- 			const styleSelectBtn = document.getElementById('mout-style-select-btn');
- 			const styleSearchTrigger = document.getElementById('mout-style-search');
- 			const styleIdInput = document.getElementById('mout-styles-id');
- 			const styleCodeInput = document.getElementById('mout-style-input');
- 			const colorSelect = document.getElementById('mout-color-select');
- 			const agreeSelect = document.getElementById('mout-agreement-select');
- 			const dateInput = document.getElementById('mout-date-input');
- 			const searchButton = document.getElementById('mout-search-button');
- 			const saveButton = document.getElementById('mout-save-button');
- 			const tableBody = document.getElementById('mout-table-body');
- 
- 			let selectedStyleRow = null;
- 
- 			styleSearchTrigger.addEventListener('click', () => {
-@@ -473,26 +477,26 @@
- 						if (data.success) {
- 							alert('출고 저장이 완료되었습니다.');
- 							loadMaterials();
- 						} else {
- 							alert('출고 저장에 실패했습니다.');
- 						}
- 					})
- 					.catch(() => alert('출고 저장 중 오류가 발생했습니다.'));
- 			});
- 
- 			function formatDecimal(value) {
- 				if (value === null || value === undefined) {
- 					return '-';
- 				}
- 				const num = Number(value);
- 				return isNaN(num) ? '-' : num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
- 			}
- 
- 			function safeNumber(value) {
- 				const num = Number(value);
- 				return isNaN(num) ? 0 : num;
- 			}
- 		});
- 		/*]]>*/
- 	</script>
--</div>
-\ No newline at end of file
-+</div>
-
-diff --git a/src/main/resources/templates/signup.html b/src/main/resources/templates/signup.html
-index dd8b7270a1e03204292cb28bc1eb0f2b198a2c34..3e1183dda77cdf03bce65eab9bd531ca592c0907 100644
---- a/src/main/resources/templates/signup.html
-+++ b/src/main/resources/templates/signup.html
-@@ -62,33 +62,33 @@
-             <label class="form-label fw-semibold">비밀번호 *</label>
-             <input type="password" th:field="*{password}" class="form-control" placeholder="8자 이상 비밀번호">
-             <div class="text-danger small" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
-           </div>
-           <div class="col-md-6">
-             <label class="form-label fw-semibold">이름 *</label>
-             <input type="text" th:field="*{name}" class="form-control" placeholder="이름">
-             <div class="text-danger small" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
-           </div>
-           <div class="col-md-6">
-             <label class="form-label fw-semibold">부서</label>
-             <input type="text" th:field="*{dept}" class="form-control" placeholder="부서명">
-           </div>
-           <div class="col-md-6">
-             <label class="form-label fw-semibold">이메일</label>
-             <input type="email" th:field="*{email}" class="form-control" placeholder="email@example.com">
-           </div>
-           <div class="col-md-6">
-             <label class="form-label fw-semibold">전화번호</label>
-             <input type="text" th:field="*{phone}" class="form-control" placeholder="010-0000-0000">
-           </div>
-         </div>
- 
-         <div class="d-flex justify-content-between align-items-center mt-4">
-           <a class="text-decoration-none" th:href="@{/login}">이미 계정이 있으신가요? 로그인</a>
--          <button type="submit" class="btn btn-primary btn-rounded">회원가입</button>
-+          <button type="submit" class="btn btn--primary btn-rounded">회원가입</button>
-         </div>
-       </form>
-     </div>
-   </div>
- </div>
- </body>
--</html>
-\ No newline at end of file
-+</html>

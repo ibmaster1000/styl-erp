@@ -30,4 +30,11 @@ public class CodesApiController {
         List<Code> codes = codeService.searchActiveCodes("WAREHOUSE", search, search, search);
         return materialSpecService.filterCodes(codes, keyword);
     }
+    
+    @GetMapping("/customers")
+    public List<MaterialSpecCodeView> searchCustomers(@RequestParam(name = "keyword", required = false) String keyword) {
+        String search = StringUtils.hasText(keyword) ? keyword.trim() : null;
+        List<Code> codes = codeService.searchActiveCodes("CUSTOMER", search, search, search);
+        return materialSpecService.filterCodes(codes, keyword);
+    }
 }

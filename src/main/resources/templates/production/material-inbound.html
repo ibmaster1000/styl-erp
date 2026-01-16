@@ -17,7 +17,7 @@
 		.material-row {
 			display: flex;
 			align-items: center;
-			gap: 12px;
+			gap: 8px;
 			flex-wrap: wrap;
 		}
 
@@ -42,7 +42,7 @@
 			align-items: center;
 			gap: 8px;
 			flex: 1 1 auto;
-			min-width: 200px;
+			min-width: 160px;
 		}
 
 		.material-meta-item .form-label {
@@ -51,13 +51,13 @@
 		}
 
 		.material-color-select {
-			max-width: 160px;
+			max-width: 140px;
 		}
 
 		.material-agree-select {
-			flex: 1 1 260px;
-			min-width: 240px;
-			max-width: 520px;
+			flex: 1 1 220px;
+			min-width: 200px;
+			max-width: 360px;
 		}
 
 		.material-search-button {
@@ -109,14 +109,12 @@
 			<div class="material-row form-row mb-2">
 				<label class="form-label fw-bold mb-0">품번</label>
 				<input type="hidden" id="mi-styles-id">
-				<div class="material-style-input">
+				<div class="material-style-input input-group">
 					<input type="text" id="mi-style-input" class="form-control" placeholder="품번을 입력하세요">
-				</div>
-				<div class="actions">
-					<button type="button" class="btn btn--primary material-search-button" id="mi-search-button">조회</button>
+					<button type="button" class="btn btn--outline" id="mi-verify-button">품번 확인</button>
 				</div>
 			</div>
-			<div class="material-row form-row">
+			<div class="material-row form-row justify-content-between">
 				<div class="material-meta-item">
 					<label class="form-label fw-bold mb-0">색상</label>
 					<select id="mi-color-select" class="form-select material-color-select" disabled>
@@ -128,6 +126,10 @@
 					<select id="mi-agreement-select" class="form-select material-agree-select" disabled>
 						<option value="">생산합의 코드를 선택하세요</option>
 					</select>
+				</div>
+				<div class="actions ms-auto">
+					<button type="button" class="btn btn--primary material-search-button"
+						id="mi-search-button">조회</button>
 				</div>
 			</div>
 			<div id="mi-search-message" class="mt-2"></div>
@@ -162,8 +164,8 @@
 							<th>발주단위</th>
 							<th>단가</th>
 							<th>발주량</th>
-							<th>기입고량</th>
-							<th>입고량</th>
+							<th>기입고량(발주량)</th>
+							<th>실입고량</th>
 						</tr>
 					</thead>
 					<tbody id="mi-table-body">
@@ -183,23 +185,20 @@
 			const colorSelect = document.getElementById('mi-color-select');
 			const agreeSelect = document.getElementById('mi-agreement-select');
 			const searchButton = document.getElementById('mi-search-button');
+			const verifyButton = document.getElementById('mi-verify-button');
 			const saveButton = document.getElementById('mi-save-button');
 			const tableBody = document.getElementById('mi-table-body');
 			const messageBox = document.getElementById('mi-search-message');
+			let styleVerified = false;
 
-			styleCodeInput.addEventListener('change', () => {
-				const styleCode = styleCodeInput.value.trim();
+			styleCodeInput.addEventListener('input', () => {
 				styleIdInput.value = '';
-				if (styleCode) {
-					colorSelect.disabled = false;
-					agreeSelect.disabled = false;
-					loadSelectionOptions(styleCode);
-					return;
-				}
+				styleVerified = false;
 				renderSelectOptions(colorSelect, [], '색상 선택');
 				renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
 				colorSelect.disabled = true;
 				agreeSelect.disabled = true;
+				clearMessage();
 			});
 
 			function loadSelectionOptions(styleCode) {
@@ -208,10 +207,14 @@
 					.then(data => {
 						renderSelectOptions(colorSelect, data.colors, '색상 선택');
 						renderSelectOptions(agreeSelect, data.agreements, '생산합의코드 선택');
+						colorSelect.disabled = false;
+						agreeSelect.disabled = false;
 					})
 					.catch(() => {
 						renderSelectOptions(colorSelect, [], '색상 선택');
 						renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
+						colorSelect.disabled = false;
+						agreeSelect.disabled = false;
 					});
 			}
 
@@ -241,6 +244,29 @@
 				messageBox.innerHTML = '';
 			}
 
+			async function verifyStyleCode() {
+				clearMessage();
+				const styleCode = styleCodeInput.value.trim();
+				if (!styleCode) {
+					setMessage('danger', '품번을 입력하세요.');
+					styleVerified = false;
+					return;
+				}
+				const exists = await checkStyleExists(styleCode);
+				if (!exists) {
+					setMessage('danger', '존재하지 않는 품번입니다.');
+					styleVerified = false;
+					renderSelectOptions(colorSelect, [], '색상 선택');
+					renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
+					colorSelect.disabled = true;
+					agreeSelect.disabled = true;
+					return;
+				}
+				styleVerified = true;
+				setMessage('success', '품번이 확인되었습니다.');
+				loadSelectionOptions(styleCode);
+			}
+
 			async function checkStyleExists(styleCode) {
 				try {
 					const res = await fetch(`/production/material-inbound/styles?keyword=${encodeURIComponent(styleCode)}`);
@@ -257,6 +283,11 @@
 			searchButton.addEventListener('click', async () => {
 				clearMessage();
 				const styleCode = styleCodeInput.value.trim();
+				if (!styleVerified) {
+					setMessage('danger', '품번 확인 후 조회하세요.');
+					resetTable('품번을 확인한 뒤 조회하세요.');
+					return;
+				}
 				if (!styleCode || !colorSelect.value || !agreeSelect.value) {
 					setMessage('danger', '품번/색상/생산합의코드를 선택하세요.');
 					resetTable('품번/색상/생산합의 조건을 선택한 뒤 조회하세요.');
@@ -354,7 +385,7 @@
 
 				fetch('/production/material-inbound/save', {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: {'Content-Type': 'application/json'},
 					body: JSON.stringify(payload)
 				})
 					.then(res => res.json())
@@ -382,8 +413,10 @@
 					return '-';
 				}
 				const num = Number(value);
-				return isNaN(num) ? '-' : num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+				return isNaN(num) ? '-' : num.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
 			}
+			
+			verifyButton.addEventListener('click', verifyStyleCode);
 		});
 	</script>
 </div>

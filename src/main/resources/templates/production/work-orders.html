@@ -1,8 +1,788 @@
 <div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
-	<div class="card ui-card">
-		<div class="card-body ui-card-body">
-			<h4 class="fw-bold mb-2">원부자재 기반 완제품 생산 작업지시</h4>
-			<p class="text-muted mb-0">생산 작업지시 기능이 준비 중입니다. 필요한 정보가 확인되면 이 화면에서 작업지시서를 관리할 수 있습니다.</p>
+	<style>
+		.wo-layout {
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+		}
+
+		.wo-panel {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+
+		.wo-row {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			flex-wrap: wrap;
+		}
+
+		.wo-row .form-label {
+			margin-bottom: 0;
+			white-space: nowrap;
+		}
+
+		.wo-style-input {
+			flex: 1 1 260px;
+			max-width: 320px;
+			min-width: 240px;
+		}
+
+		.wo-meta-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			flex: 1 1 auto;
+			min-width: 160px;
+		}
+
+		.wo-color-select {
+			max-width: 140px;
+		}
+
+		.wo-agree-select {
+			flex: 1 1 220px;
+			min-width: 200px;
+			max-width: 360px;
+		}
+
+		.wo-search-button {
+			width: 140px;
+			align-self: stretch;
+			min-height: 38px;
+		}
+
+		.wo-grid {
+			display: grid;
+			grid-template-columns: 1.1fr 1fr;
+			gap: 16px;
+		}
+
+		.wo-table thead th {
+			font-size: 13px;
+			font-weight: 800;
+			background: #f9fafb;
+			white-space: nowrap;
+		}
+
+		.wo-table tbody td {
+			font-size: 13px;
+			vertical-align: middle;
+			white-space: nowrap;
+		}
+
+		.wo-placeholder {
+			text-align: center;
+			color: #6b7280;
+		}
+
+		.wo-row-selected td {
+			background-color: #e5e7eb !important;
+		}
+
+		.wo-row-disabled {
+			opacity: 0.5;
+		}
+
+		.wo-input-group .form-control {
+			min-width: 140px;
+		}
+
+		@media (max-width: 1200px) {
+			.wo-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+
+	<div class="mb-3">
+		<h4 class="fw-bold mb-1">작업지시</h4>
+		<p class="text-muted mb-0">품번/색상/생산합의 기준으로 작업지시를 등록하세요.</p>
+	</div>
+
+	<div class="wo-layout">
+		<div class="wo-panel">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<h6 class="fw-bold mb-0">검색/선택</h6>
+				<small class="text-muted">품번 확인 후 색상과 생산합의코드를 선택하세요.</small>
+			</div>
+			<div class="wo-row form-row mb-2">
+				<label class="form-label fw-bold mb-0">품번</label>
+				<input type="hidden" id="wo-styles-id">
+				<div class="wo-style-input input-group">
+					<input type="text" id="wo-style-input" class="form-control" placeholder="품번을 입력하세요">
+					<button type="button" class="btn btn--outline" id="wo-verify-button">품번 확인</button>
+				</div>
+			</div>
+			<div class="wo-row form-row justify-content-between">
+				<div class="wo-meta-item">
+					<label class="form-label fw-bold mb-0">색상</label>
+					<select id="wo-color-select" class="form-select wo-color-select" disabled>
+						<option value="">색상을 선택하세요</option>
+					</select>
+				</div>
+				<div class="wo-meta-item">
+					<label class="form-label fw-bold mb-0">생산합의코드</label>
+					<select id="wo-agreement-select" class="form-select wo-agree-select" disabled>
+						<option value="">생산합의 코드를 선택하세요</option>
+					</select>
+				</div>
+				<div class="actions ms-auto">
+					<button type="button" class="btn btn--primary wo-search-button" id="wo-search-button">조회</button>
+				</div>
+			</div>
+			<div id="wo-search-message" class="mt-2"></div>
+		</div>
+
+		<div class="wo-grid">
+			<div class="wo-panel">
+				<div class="d-flex justify-content-between align-items-center mb-2">
+					<h6 class="fw-bold mb-0">생산합의 목록</h6>
+					<small class="text-muted">행을 선택한 뒤 작업지시를 등록하세요.</small>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-bordered align-middle wo-table data-table">
+						<thead class="table-light">
+							<tr>
+								<th>품번</th>
+								<th>생산합의코드</th>
+								<th>색상</th>
+								<th>합의량</th>
+								<th>생산처</th>
+								<th>작업지시</th>
+							</tr>
+						</thead>
+						<tbody id="wo-left-body">
+							<tr>
+								<td colspan="6" class="wo-placeholder">품번/색상/생산합의 조건을 선택한 뒤 조회하세요.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="wo-panel">
+				<div class="d-flex justify-content-between align-items-center mb-2">
+					<h6 class="fw-bold mb-0">작업지시 입력/목록</h6>
+					<small class="text-muted">생산처/납기일/납품장소를 입력하세요.</small>
+				</div>
+				<div class="table-responsive">
+					<table class="table table-bordered align-middle wo-table data-table">
+						<thead class="table-light">
+							<tr>
+								<th>품번</th>
+								<th>생산합의코드</th>
+								<th>색상</th>
+								<th>합의량</th>
+								<th>생산처</th>
+								<th>납기일</th>
+								<th>납품장소</th>
+							</tr>
+						</thead>
+						<tbody id="wo-right-body">
+							<tr>
+								<td colspan="7" class="wo-placeholder">좌측 목록을 선택하면 입력 항목이 표시됩니다.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
 	</div>
+
+	<div class="modal fade" id="woProducerModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title fw-bold">생산처 검색</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="input-group mb-3">
+						<input type="text" class="form-control" id="woProducerKeyword" placeholder="생산처 코드/명 검색">
+						<button class="btn btn--primary" type="button" id="woProducerSearchBtn">검색</button>
+					</div>
+					<div class="table-responsive">
+						<table class="table table-hover align-middle data-table">
+							<thead class="table-light">
+								<tr>
+									<th class="text-start">코드</th>
+									<th class="text-start">생산처 명칭</th>
+									<th class="text-start">비고</th>
+								</tr>
+							</thead>
+							<tbody id="woProducerResults">
+								<tr>
+									<td colspan="3" class="text-center text-muted">검색어를 입력하세요.</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
+					<button type="button" class="btn btn--primary" id="woProducerSelectBtn">선택</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="woWarehouseModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title fw-bold">납품장소 검색</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="input-group mb-3">
+						<input type="text" class="form-control" id="woWarehouseKeyword" placeholder="창고 코드/명 검색">
+						<button class="btn btn--primary" type="button" id="woWarehouseSearchBtn">검색</button>
+					</div>
+					<div class="table-responsive">
+						<table class="table table-hover align-middle data-table">
+							<thead class="table-light">
+								<tr>
+									<th class="text-start">코드</th>
+									<th class="text-start">납품장소 명칭</th>
+									<th class="text-start">비고</th>
+								</tr>
+							</thead>
+							<tbody id="woWarehouseResults">
+								<tr>
+									<td colspan="3" class="text-center text-muted">검색어를 입력하세요.</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
+					<button type="button" class="btn btn--primary" id="woWarehouseSelectBtn">선택</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const styleIdInput = document.getElementById('wo-styles-id');
+			const styleCodeInput = document.getElementById('wo-style-input');
+			const colorSelect = document.getElementById('wo-color-select');
+			const agreeSelect = document.getElementById('wo-agreement-select');
+			const verifyButton = document.getElementById('wo-verify-button');
+			const searchButton = document.getElementById('wo-search-button');
+			const messageBox = document.getElementById('wo-search-message');
+			const leftBody = document.getElementById('wo-left-body');
+			const rightBody = document.getElementById('wo-right-body');
+			const producerModalEl = document.getElementById('woProducerModal');
+			const producerKeyword = document.getElementById('woProducerKeyword');
+			const producerSearchBtn = document.getElementById('woProducerSearchBtn');
+			const producerResults = document.getElementById('woProducerResults');
+			const producerSelectBtn = document.getElementById('woProducerSelectBtn');
+			const warehouseModalEl = document.getElementById('woWarehouseModal');
+			const warehouseKeyword = document.getElementById('woWarehouseKeyword');
+			const warehouseSearchBtn = document.getElementById('woWarehouseSearchBtn');
+			const warehouseResults = document.getElementById('woWarehouseResults');
+			const warehouseSelectBtn = document.getElementById('woWarehouseSelectBtn');
+
+			let styleVerified = false;
+			let activeRow = null;
+			let activeRowData = null;
+			let producerModal = null;
+			let warehouseModal = null;
+			let selectedProducer = null;
+			let selectedWarehouse = null;
+			let producerInput = null;
+			let producerCodeInput = null;
+			let dueDateInput = null;
+			let deliveryInput = null;
+			let deliveryCodeInput = null;
+
+			const createModal = (element, label) => {
+				if (window.bootstrap?.Modal) {
+					return new window.bootstrap.Modal(element);
+				}
+				console.warn(`${label} 모달을 초기화할 수 없습니다. Bootstrap JS가 필요합니다.`);
+				return { show: () => { }, hide: () => { } };
+			};
+
+			producerModal = createModal(producerModalEl, '생산처');
+			warehouseModal = createModal(warehouseModalEl, '납품장소');
+
+			const renderSelectOptions = (selectEl, options, placeholder) => {
+				selectEl.innerHTML = '';
+				const defaultOpt = document.createElement('option');
+				defaultOpt.value = '';
+				defaultOpt.textContent = placeholder;
+				selectEl.appendChild(defaultOpt);
+				(options || []).forEach(opt => {
+					const optionEl = document.createElement('option');
+					optionEl.value = opt;
+					optionEl.textContent = opt;
+					selectEl.appendChild(optionEl);
+				});
+			};
+
+			const resetOptions = () => {
+				renderSelectOptions(colorSelect, [], '색상 선택');
+				renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
+				colorSelect.disabled = true;
+				agreeSelect.disabled = true;
+			};
+
+			const resetTables = () => {
+				leftBody.innerHTML = '<tr><td colspan="6" class="wo-placeholder">품번/색상/생산합의 조건을 선택한 뒤 조회하세요.</td></tr>';
+				rightBody.innerHTML = '<tr><td colspan="7" class="wo-placeholder">좌측 목록을 선택하면 입력 항목이 표시됩니다.</td></tr>';
+				activeRow = null;
+				activeRowData = null;
+			};
+
+			const setMessage = (type, text) => {
+				messageBox.innerHTML = `<div class="alert alert-${type} py-2 mb-0">${text}</div>`;
+			};
+
+			const clearMessage = () => {
+				messageBox.innerHTML = '';
+			};
+
+			const checkStyleExists = async (styleCode) => {
+				try {
+					const res = await fetch(`/production/work-orders/styles?keyword=${encodeURIComponent(styleCode)}`);
+					if (!res.ok) {
+						return true;
+					}
+					const list = await res.json();
+					return (list || []).some(item => (item.styleCode || '').toLowerCase() === styleCode.toLowerCase());
+				} catch (e) {
+					return true;
+				}
+			};
+
+			const loadSelectionOptions = (styleCode) => {
+				fetch(`/production/work-orders/options?styleCode=${encodeURIComponent(styleCode)}`)
+					.then(res => res.json())
+					.then(data => {
+						renderSelectOptions(colorSelect, data.colors, '색상 선택');
+						renderSelectOptions(agreeSelect, data.agreements, '생산합의코드 선택');
+						colorSelect.disabled = false;
+						agreeSelect.disabled = false;
+					})
+					.catch(() => {
+						renderSelectOptions(colorSelect, [], '색상 선택');
+						renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
+						colorSelect.disabled = false;
+						agreeSelect.disabled = false;
+					});
+			};
+
+			const verifyStyleCode = async () => {
+				clearMessage();
+				const styleCode = styleCodeInput.value.trim();
+				if (!styleCode) {
+					setMessage('danger', '품번을 입력하세요.');
+					styleVerified = false;
+					return;
+				}
+				const exists = await checkStyleExists(styleCode);
+				if (!exists) {
+					setMessage('danger', '존재하지 않는 품번입니다.');
+					styleVerified = false;
+					resetOptions();
+					return;
+				}
+				styleVerified = true;
+				setMessage('success', '품번이 확인되었습니다.');
+				loadSelectionOptions(styleCode);
+			};
+
+			const updateActionButtonState = () => {
+				if (!activeRow || !activeRowData) {
+					return;
+				}
+				const actionButton = activeRow.querySelector('.wo-action-btn');
+				if (!actionButton) {
+					return;
+				}
+				if (activeRowData.ordered) {
+					actionButton.disabled = true;
+					return;
+				}
+				const ready = !!(activeRowData.producerCode && activeRowData.dueDate && activeRowData.deliveryPlaceCode);
+				actionButton.disabled = !ready;
+			};
+
+			const renderRightTable = (rowData) => {
+				rightBody.innerHTML = '';
+				if (!rowData) {
+					rightBody.innerHTML = '<tr><td colspan="7" class="wo-placeholder">좌측 목록을 선택하면 입력 항목이 표시됩니다.</td></tr>';
+					return;
+				}
+				const tr = document.createElement('tr');
+				const producerLabel = [rowData.producerCode, rowData.producerName].filter(Boolean).join(' ');
+				const deliveryLabel = [rowData.deliveryPlaceCode, rowData.deliveryPlaceName].filter(Boolean).join(' ');
+				tr.innerHTML = `
+					<td>${rowData.styleCode || '-'}</td>
+					<td>${rowData.prdAgreeCode || '-'}</td>
+					<td>${rowData.colorCode || '-'}</td>
+					<td>${formatDecimal(rowData.agreementQuantity)}</td>
+					<td>
+						<div class="input-group input-group-sm wo-input-group">
+							<input type="text" class="form-control wo-producer-input" placeholder="생산처" value="${producerLabel}" readonly>
+							<input type="hidden" class="wo-producer-code" value="${rowData.producerCode || ''}">
+							<button class="btn btn--outline wo-producer-search" type="button"><i class="bi bi-search"></i></button>
+						</div>
+					</td>
+					<td>
+						<div class="input-group input-group-sm">
+							<span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+							<input type="datetime-local" class="form-control wo-due-input" placeholder="납기일" value="${rowData.dueDate || ''}">
+						</div>
+					</td>
+					<td>
+						<div class="input-group input-group-sm wo-input-group">
+							<input type="text" class="form-control wo-delivery-input" placeholder="납품장소" value="${deliveryLabel}" readonly>
+							<input type="hidden" class="wo-delivery-code" value="${rowData.deliveryPlaceCode || ''}">
+							<button class="btn btn--outline wo-delivery-search" type="button"><i class="bi bi-search"></i></button>
+						</div>
+					</td>
+				`;
+
+				rightBody.appendChild(tr);
+				producerInput = tr.querySelector('.wo-producer-input');
+				producerCodeInput = tr.querySelector('.wo-producer-code');
+				dueDateInput = tr.querySelector('.wo-due-input');
+				deliveryInput = tr.querySelector('.wo-delivery-input');
+				deliveryCodeInput = tr.querySelector('.wo-delivery-code');
+
+				const producerSearch = tr.querySelector('.wo-producer-search');
+				const deliverySearch = tr.querySelector('.wo-delivery-search');
+
+				if (rowData.ordered) {
+					producerSearch.disabled = true;
+					deliverySearch.disabled = true;
+					dueDateInput.disabled = true;
+				}
+
+				producerSearch.addEventListener('click', () => {
+					selectedProducer = null;
+					producerKeyword.value = '';
+					resetProducerResults('조회 중입니다...');
+					producerModal.show();
+					loadProducerResults('');
+				});
+
+				deliverySearch.addEventListener('click', () => {
+					selectedWarehouse = null;
+					warehouseKeyword.value = '';
+					resetWarehouseResults('조회 중입니다...');
+					warehouseModal.show();
+					loadWarehouseResults('');
+				});
+
+				dueDateInput.addEventListener('change', () => {
+					activeRowData.dueDate = dueDateInput.value || '';
+					updateActionButtonState();
+				});
+			};
+
+			const renderLeftTable = (list) => {
+				leftBody.innerHTML = '';
+				if (!list || list.length === 0) {
+					leftBody.innerHTML = '<tr><td colspan="6" class="wo-placeholder">조회된 데이터가 없습니다.</td></tr>';
+					rightBody.innerHTML = '<tr><td colspan="7" class="wo-placeholder">좌측 목록을 선택하면 입력 항목이 표시됩니다.</td></tr>';
+					return;
+				}
+				list.forEach((item) => {
+					const row = document.createElement('tr');
+					row.className = item.ordered ? 'wo-row-disabled' : '';
+					row.innerHTML = `
+						<td>${item.styleCode || '-'}</td>
+						<td>${item.prdAgreeCode || '-'}</td>
+						<td>${item.colorCode || '-'}</td>
+						<td>${formatDecimal(item.agreementQuantity)}</td>
+						<td>${item.producerName || item.producerCode || '-'}</td>
+						<td>
+							<button type="button" class="btn ${item.ordered ? 'btn--outline' : 'btn--primary'} wo-action-btn" disabled>${item.ordered ? '지시완료' : '작업지시'}</button>
+						</td>
+					`;
+					row.addEventListener('click', () => {
+						leftBody.querySelectorAll('tr').forEach((tr) => tr.classList.remove('wo-row-selected'));
+						row.classList.add('wo-row-selected');
+						activeRow = row;
+						activeRowData = {
+							...item
+						};
+						renderRightTable(activeRowData);
+						updateActionButtonState();
+					});
+
+					const actionButton = row.querySelector('.wo-action-btn');
+					actionButton.addEventListener('click', async (event) => {
+						event.stopPropagation();
+						if (!activeRowData || activeRowData.styleCode !== item.styleCode || activeRowData.prdAgreeCode !== item.prdAgreeCode) {
+							row.click();
+						}
+						if (item.ordered) {
+							return;
+						}
+						if (!activeRowData || !activeRowData.producerCode || !activeRowData.dueDate || !activeRowData.deliveryPlaceCode) {
+							alert('생산처/납기일/납품장소를 입력하세요.');
+							return;
+						}
+						if (!confirm('작업을 지시하시겠습니까?')) {
+							return;
+						}
+						const payload = {
+							styleCode: activeRowData.styleCode,
+							prdAgreeCode: activeRowData.prdAgreeCode,
+							colorCode: activeRowData.colorCode,
+							agreementQuantity: activeRowData.agreementQuantity,
+							producerCode: activeRowData.producerCode,
+							dueDate: activeRowData.dueDate,
+							deliveryPlaceCode: activeRowData.deliveryPlaceCode
+						};
+						try {
+							const res = await fetch('/production/work-orders/save', {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify(payload)
+							});
+							const data = await res.json();
+							if (!data.success) {
+								alert(data.message || '작업지시 등록에 실패했습니다.');
+								return;
+							}
+							alert(data.message || '작업지시가 등록되었습니다.');
+							item.ordered = true;
+							row.classList.add('wo-row-disabled');
+							actionButton.textContent = '지시완료';
+							actionButton.classList.remove('btn--primary');
+							actionButton.classList.add('btn--outline');
+							actionButton.disabled = true;
+							activeRowData.ordered = true;
+							if (producerInput) {
+								producerInput.setAttribute('readonly', 'readonly');
+							}
+							if (dueDateInput) {
+								dueDateInput.disabled = true;
+							}
+							if (deliveryInput) {
+								deliveryInput.setAttribute('readonly', 'readonly');
+							}
+							updateActionButtonState();
+						} catch (e) {
+							alert('작업지시 등록 중 오류가 발생했습니다.');
+						}
+					});
+
+					leftBody.appendChild(row);
+				});
+			};
+
+			const loadList = async () => {
+				clearMessage();
+				const styleCode = styleCodeInput.value.trim();
+				if (!styleVerified) {
+					setMessage('danger', '품번 확인 후 조회하세요.');
+					resetTables();
+					return;
+				}
+				if (!styleCode || !colorSelect.value || !agreeSelect.value) {
+					setMessage('danger', '품번/색상/생산합의코드를 선택하세요.');
+					resetTables();
+					return;
+				}
+				const url = `/production/work-orders/list?styleCode=${encodeURIComponent(styleCode)}&prdAgreeCode=${encodeURIComponent(agreeSelect.value)}&colorCode=${encodeURIComponent(colorSelect.value)}`;
+				try {
+					const res = await fetch(url);
+					const list = await res.json();
+					renderLeftTable(list);
+					if (list && list.length > 0) {
+						setMessage('success', `총 ${list.length}건 조회되었습니다.`);
+						return;
+					}
+					setMessage('warning', '조회된 데이터가 없습니다.');
+				} catch (e) {
+					renderLeftTable([]);
+					setMessage('danger', '조회 중 오류가 발생했습니다.');
+				}
+			};
+
+			const resetProducerResults = (message) => {
+				producerResults.innerHTML = `<tr><td colspan="3" class="text-center text-muted">${message}</td></tr>`;
+			};
+
+			const resetWarehouseResults = (message) => {
+				warehouseResults.innerHTML = `<tr><td colspan="3" class="text-center text-muted">${message}</td></tr>`;
+			};
+
+			const renderProducerResults = (list) => {
+				producerResults.innerHTML = '';
+				if (!list || list.length === 0) {
+					resetProducerResults('검색 결과가 없습니다.');
+					return;
+				}
+				list.forEach((producer) => {
+					const row = document.createElement('tr');
+					row.className = 'wo-producer-row';
+					row.innerHTML = `
+						<td class="text-start">${producer.code || ''}</td>
+						<td class="text-start">${producer.codeName || ''}</td>
+						<td class="text-start">${producer.remark || ''}</td>
+					`;
+					row.addEventListener('click', () => {
+						producerResults.querySelectorAll('.wo-producer-row').forEach((r) => r.classList.remove('table-primary'));
+						row.classList.add('table-primary');
+						selectedProducer = producer;
+					});
+					row.addEventListener('dblclick', () => {
+						selectedProducer = producer;
+						applyProducerSelection();
+					});
+					producerResults.appendChild(row);
+				});
+			};
+
+			const renderWarehouseResults = (list) => {
+				warehouseResults.innerHTML = '';
+				if (!list || list.length === 0) {
+					resetWarehouseResults('검색 결과가 없습니다.');
+					return;
+				}
+				list.forEach((warehouse) => {
+					const row = document.createElement('tr');
+					row.className = 'wo-warehouse-row';
+					row.innerHTML = `
+						<td class="text-start">${warehouse.code || ''}</td>
+						<td class="text-start">${warehouse.codeName || ''}</td>
+						<td class="text-start">${warehouse.remark || ''}</td>
+					`;
+					row.addEventListener('click', () => {
+						warehouseResults.querySelectorAll('.wo-warehouse-row').forEach((r) => r.classList.remove('table-primary'));
+						row.classList.add('table-primary');
+						selectedWarehouse = warehouse;
+					});
+					row.addEventListener('dblclick', () => {
+						selectedWarehouse = warehouse;
+						applyWarehouseSelection();
+					});
+					warehouseResults.appendChild(row);
+				});
+			};
+
+			const loadProducerResults = async (keyword) => {
+				try {
+					const res = await fetch(`/api/codes/customers?keyword=${encodeURIComponent(keyword || '')}`);
+					if (!res.ok) {
+						throw new Error('producer');
+					}
+					const data = await res.json();
+					renderProducerResults(data);
+				} catch (e) {
+					renderProducerResults([]);
+				}
+			};
+
+			const loadWarehouseResults = async (keyword) => {
+				try {
+					const res = await fetch(`/api/codes/warehouses?keyword=${encodeURIComponent(keyword || '')}`);
+					if (!res.ok) {
+						throw new Error('warehouse');
+					}
+					const data = await res.json();
+					renderWarehouseResults(data);
+				} catch (e) {
+					renderWarehouseResults([]);
+				}
+			};
+
+			const applyProducerSelection = () => {
+				if (!selectedProducer || !producerInput || !producerCodeInput) {
+					alert('선택된 생산처가 없습니다.');
+					return;
+				}
+				producerInput.value = [selectedProducer.code, selectedProducer.codeName].filter(Boolean).join(' ');
+				producerCodeInput.value = selectedProducer.code || '';
+				if (activeRowData) {
+					activeRowData.producerCode = selectedProducer.code || '';
+					activeRowData.producerName = selectedProducer.codeName || '';
+					if (activeRow) {
+						const producerCell = activeRow.querySelector('td:nth-child(5)');
+						if (producerCell) {
+							producerCell.textContent = activeRowData.producerName || activeRowData.producerCode || '-';
+						}
+					}
+				}
+				producerModal.hide();
+				updateActionButtonState();
+			};
+
+			const applyWarehouseSelection = () => {
+				if (!selectedWarehouse || !deliveryInput || !deliveryCodeInput) {
+					alert('선택된 납품장소가 없습니다.');
+					return;
+				}
+				deliveryInput.value = [selectedWarehouse.code, selectedWarehouse.codeName].filter(Boolean).join(' ');
+				deliveryCodeInput.value = selectedWarehouse.code || '';
+				if (activeRowData) {
+					activeRowData.deliveryPlaceCode = selectedWarehouse.code || '';
+					activeRowData.deliveryPlaceName = selectedWarehouse.codeName || '';
+				}
+				warehouseModal.hide();
+				updateActionButtonState();
+			};
+
+			const formatDecimal = (value) => {
+				if (value === null || value === undefined) {
+					return '-';
+				}
+				const num = Number(value);
+				return Number.isNaN(num) ? '-' : num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+			};
+
+			styleCodeInput.addEventListener('input', () => {
+				styleVerified = false;
+				resetOptions();
+				resetTables();
+				clearMessage();
+			});
+
+			verifyButton.addEventListener('click', verifyStyleCode);
+			searchButton.addEventListener('click', loadList);
+
+			producerSearchBtn.addEventListener('click', () => {
+				loadProducerResults(producerKeyword.value.trim());
+			});
+
+			producerSelectBtn.addEventListener('click', applyProducerSelection);
+
+			producerKeyword.addEventListener('keydown', (event) => {
+				if (event.key === 'Enter') {
+					event.preventDefault();
+					loadProducerResults(producerKeyword.value.trim());
+				}
+			});
+
+			warehouseSearchBtn.addEventListener('click', () => {
+				loadWarehouseResults(warehouseKeyword.value.trim());
+			});
+
+			warehouseSelectBtn.addEventListener('click', applyWarehouseSelection);
+
+			warehouseKeyword.addEventListener('keydown', (event) => {
+				if (event.key === 'Enter') {
+					event.preventDefault();
+					loadWarehouseResults(warehouseKeyword.value.trim());
+				}
+			});
+
+			resetOptions();
+			resetTables();
+			clearMessage();
+		});
+	</script>
 </div>

@@ -35,6 +35,33 @@
 			white-space: nowrap;
 		}
 
+		.style-code-cell {
+			position: relative;
+			padding-right: 28px;
+		}
+
+		.style-code-copy {
+			position: absolute;
+			top: 50%;
+			right: 6px;
+			transform: translateY(-50%);
+			border: none;
+			background: transparent;
+			color: #9ca3af;
+			opacity: 0;
+			transition: opacity 0.15s ease, color 0.15s ease;
+			padding: 0;
+			line-height: 1;
+		}
+
+		.style-code-cell:hover .style-code-copy {
+			opacity: 1;
+		}
+
+		.style-code-copy:hover {
+			color: #111827;
+		}
+
 		.style-row {
 			cursor: pointer;
 		}
@@ -406,7 +433,13 @@
 
 						<tr th:each="s : ${list}" class="style-row"
 							th:attr="data-styles-id=${s.stylesId},data-style-code=${s.styleCode},data-item-code=${s.itemCode}">
-							<td class="t-left" data-sort-field="styleCode" th:text="${s.styleCode}">ST-001</td>
+							<td class="t-left style-code-cell" data-sort-field="styleCode">
+								<span class="style-code-text" th:text="${s.styleCode}">ST-001</span>
+								<button type="button" class="style-code-copy" th:attr="data-style-code=${s.styleCode}"
+									title="품번 복사">
+									<i class="bi bi-clipboard"></i>
+								</button>
+							</td>
 							<td class="t-left" data-sort-field="item" th:text="${s.item}">후드티</td>
 							<td class="t-left ellipsis-cell cell-clickable" data-sort-field="colors"
 								th:attr="data-full=${s.colorsFull}, data-title='색상'" th:text="${s.colorsDisplay}"
@@ -697,7 +730,8 @@
 											<input type="text" class="form-control" name="designerEmpNo"
 												id="style-edit-designer-emp" placeholder="사번">
 											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-designer-picker" data-default-dept="디자인">
+												data-employee-picker-open="style-edit-designer-picker"
+												data-default-dept="디자인">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>
@@ -708,7 +742,8 @@
 											<input type="text" class="form-control" name="productEmpNo"
 												id="style-edit-product-emp" placeholder="사번">
 											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-product-picker" data-default-dept="생산">
+												data-employee-picker-open="style-edit-product-picker"
+												data-default-dept="생산">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>
@@ -719,7 +754,8 @@
 											<input type="text" class="form-control" name="salesEmpNo"
 												id="style-edit-sales-emp" placeholder="사번">
 											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-sales-picker" data-default-dept="영업">
+												data-employee-picker-open="style-edit-sales-picker"
+												data-default-dept="영업">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>
@@ -730,7 +766,8 @@
 											<input type="text" class="form-control" name="logisticEmpNo"
 												id="style-edit-logistic-emp" placeholder="사번">
 											<button class="btn btn--outline" type="button"
-												data-employee-picker-open="style-edit-logistic-picker" data-default-dept="물류">
+												data-employee-picker-open="style-edit-logistic-picker"
+												data-default-dept="물류">
 												<i class="bi bi-search"></i>
 											</button>
 										</div>
@@ -897,6 +934,38 @@
 					cell.setAttribute('title', titleValue);
 				}
 				new bootstrap.Tooltip(cell, {title: titleValue});
+			});
+
+			const copyStyleCode = async (code) => {
+				if (!code) {
+					alert('품번 정보가 없습니다.');
+					return;
+				}
+				try {
+					if (navigator.clipboard?.writeText) {
+						await navigator.clipboard.writeText(code);
+					} else {
+						const temp = document.createElement('textarea');
+						temp.value = code;
+						document.body.appendChild(temp);
+						temp.select();
+						document.execCommand('copy');
+						temp.remove();
+					}
+					alert('품번이 복사되었습니다!');
+				} catch (error) {
+					alert('품번 복사에 실패했습니다.');
+				}
+			};
+
+			document.addEventListener('click', (event) => {
+				const copyButton = event.target.closest('.style-code-copy');
+				if (!copyButton) {
+					return;
+				}
+				event.stopPropagation();
+				const styleCode = copyButton.dataset.styleCode || copyButton.closest('tr')?.dataset.styleCode;
+				copyStyleCode(styleCode || '');
 			});
 
 			const modalElement = document.getElementById('listDetailModal');

@@ -17,7 +17,7 @@
 		.material-row {
 			display: flex;
 			align-items: center;
-			gap: 12px;
+			gap: 8px;
 			flex-wrap: wrap;
 		}
 
@@ -42,7 +42,7 @@
 			align-items: center;
 			gap: 8px;
 			flex: 1 1 auto;
-			min-width: 200px;
+			min-width: 160px;
 		}
 
 		.material-meta-item .form-label {
@@ -51,13 +51,13 @@
 		}
 
 		.material-color-select {
-			max-width: 160px;
+			max-width: 140px;
 		}
 
 		.material-agree-select {
-			flex: 1 1 260px;
-			min-width: 240px;
-			max-width: 520px;
+			flex: 1 1 220px;
+			min-width: 200px;
+			max-width: 360px;
 		}
 
 		.material-search-button {
@@ -98,26 +98,24 @@
 
 	<div class="mb-3">
 		<h4 class="fw-bold mb-1">원부자재 출고 등록</h4>
-		<p class="text-muted mb-0">품번/색상/합의월 기준으로 출고 대상 목록을 조회하세요.</p>
+		<p class="text-muted mb-0">품번/색상/생산합의코드 기준으로 출고 대상 목록을 조회하세요.</p>
 	</div>
 
 	<div class="moout-layout">
 		<div class="material-panel">
 			<div class="d-flex justify-content-between align-items-center mb-2">
 				<h6 class="fw-bold mb-0">검색/선택</h6>
-				<small class="text-muted">품번 확인 후 색상과 합의월을 선택하세요.</small>
+				<small class="text-muted">품번 확인 후 색상과 생산합의코드를 선택하세요.</small>
 			</div>
 			<div class="material-row form-row mb-2">
 				<label class="form-label fw-bold mb-0">품번</label>
 				<input type="hidden" id="mout-styles-id">
-				<div class="material-style-input">
+				<div class="material-style-input input-group">
 					<input type="text" id="mout-style-input" class="form-control" placeholder="품번을 입력하세요">
-				</div>
-				<div class="actions">
-					<button type="button" class="btn btn--primary material-search-button" id="mout-search-button">조회</button>
+					<button type="button" class="btn btn--outline" id="mout-verify-button">품번 확인</button>
 				</div>
 			</div>
-			<div class="material-row form-row">
+			<div class="material-row form-row justify-content-between">
 				<div class="material-meta-item">
 					<label class="form-label fw-bold mb-0">색상</label>
 					<select id="mout-color-select" class="form-select material-color-select" disabled>
@@ -125,10 +123,14 @@
 					</select>
 				</div>
 				<div class="material-meta-item">
-					<label class="form-label fw-bold mb-0">합의월</label>
+					<label class="form-label fw-bold mb-0">생산합의코드</label>
 					<select id="mout-agreement-select" class="form-select material-agree-select" disabled>
-						<option value="">합의월을 선택하세요</option>
+						<option value="">생산합의코드를 선택하세요</option>
 					</select>
+				</div>
+				<div class="actions ms-auto">
+					<button type="button" class="btn btn--primary material-search-button"
+						id="mout-search-button">조회</button>
 				</div>
 			</div>
 			<div id="mout-search-message" class="mt-2"></div>
@@ -150,7 +152,7 @@
 						<tr>
 							<th>품번</th>
 							<th>색상</th>
-							<th>합의월</th>
+							<th>생산합의코드</th>
 							<th>원부자재구분</th>
 							<th>자재명칭</th>
 							<th>용도</th>
@@ -171,7 +173,7 @@
 					</thead>
 					<tbody id="mout-table-body">
 						<tr>
-							<td colspan="19" class="moout-placeholder">품번/색상/합의월 조건을 선택한 뒤 조회하세요.</td>
+							<td colspan="19" class="moout-placeholder">품번/색상/생산합의 조건 선택한 뒤 조회하세요.</td>
 						</tr>
 					</tbody>
 				</table>
@@ -181,7 +183,7 @@
 
 	<script th:inline="javascript">
 		/*<![CDATA[*/
-		const factoryOptions = /*[[${factories}]]*/ [];
+		const factoryOptions = /*[[${factories}]]*/[];
 
 		document.addEventListener('DOMContentLoaded', () => {
 			const styleIdInput = document.getElementById('mout-styles-id');
@@ -189,23 +191,20 @@
 			const colorSelect = document.getElementById('mout-color-select');
 			const agreeSelect = document.getElementById('mout-agreement-select');
 			const searchButton = document.getElementById('mout-search-button');
+			const verifyButton = document.getElementById('mout-verify-button');
 			const saveButton = document.getElementById('mout-save-button');
 			const tableBody = document.getElementById('mout-table-body');
 			const messageBox = document.getElementById('mout-search-message');
+			let styleVerified = false;
 
-			styleCodeInput.addEventListener('change', () => {
-				const styleCode = styleCodeInput.value.trim();
+			styleCodeInput.addEventListener('input', () => {
 				styleIdInput.value = '';
-				if (styleCode) {
-					colorSelect.disabled = false;
-					agreeSelect.disabled = false;
-					loadSelectionOptions(styleCode);
-					return;
-				}
+				styleVerified = false;
 				renderSelectOptions(colorSelect, [], '색상 선택');
-						renderSelectOptions(agreeSelect, [], '합의월 선택');
+				renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
 				colorSelect.disabled = true;
 				agreeSelect.disabled = true;
+				clearMessage();
 			});
 
 			function loadSelectionOptions(styleCode) {
@@ -213,11 +212,15 @@
 					.then(res => res.json())
 					.then(data => {
 						renderSelectOptions(colorSelect, data.colors, '색상 선택');
-						renderSelectOptions(agreeSelect, data.agreements, '합의월 선택');
+						renderSelectOptions(agreeSelect, data.agreements, '생산합의코드 선택');
+						colorSelect.disabled = false;
+						agreeSelect.disabled = false;
 					})
 					.catch(() => {
 						renderSelectOptions(colorSelect, [], '색상 선택');
-						renderSelectOptions(agreeSelect, [], '합의월 선택');
+						renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
+						colorSelect.disabled = false;
+						agreeSelect.disabled = false;
 					});
 			}
 
@@ -260,12 +263,40 @@
 				}
 			}
 
+			async function verifyStyleCode() {
+				clearMessage();
+				const styleCode = styleCodeInput.value.trim();
+				if (!styleCode) {
+					setMessage('danger', '품번을 입력하세요.');
+					styleVerified = false;
+					return;
+				}
+				const exists = await checkStyleExists(styleCode);
+				if (!exists) {
+					setMessage('danger', '존재하지 않는 품번입니다.');
+					styleVerified = false;
+					renderSelectOptions(colorSelect, [], '색상 선택');
+					renderSelectOptions(agreeSelect, [], '생산합의코드 선택');
+					colorSelect.disabled = true;
+					agreeSelect.disabled = true;
+					return;
+				}
+				styleVerified = true;
+				setMessage('success', '품번이 확인되었습니다.');
+				loadSelectionOptions(styleCode);
+			}
+
 			searchButton.addEventListener('click', async () => {
 				clearMessage();
 				const styleCode = styleCodeInput.value.trim();
+				if (!styleVerified) {
+					setMessage('danger', '품번 확인 후 조회하세요.');
+					resetTable('품번을 확인한 뒤 조회하세요.');
+					return;
+				}
 				if (!styleCode || !colorSelect.value || !agreeSelect.value) {
-					setMessage('danger', '품번/색상/합의월을 선택하세요.');
-					resetTable('품번/색상/합의월 조건을 선택한 뒤 조회하세요.');
+					setMessage('danger', '품번/색상/생산합의코드를 선택하세요.');
+					resetTable('품번/색상/생산합의 조건을 선택한 뒤 조회하세요.');
 					return;
 				}
 				await loadMaterials(styleCode);
@@ -311,36 +342,36 @@
 					row.dataset.unitPrice = item.unitPrice || '';
 					row.dataset.available = available;
 					row.innerHTML = `
-						<td>${item.styleCode || '-'}</td>
-						<td>${item.colorCode || '-'}</td>
-						<td>${item.agreementMonth || item.prdAgreeCode || '-'}</td>
-						<td>${item.category || '-'}</td>
-						<td>${item.materialName || '-'}</td>
-						<td>${item.materialUsage || '-'}</td>
-						<td>${item.spec || '-'}</td>
-						<td>${item.materialColor || '-'}</td>
-						<td>${item.uom || '-'}</td>
-						<td>${formatDecimal(item.qtyPerPiece)}</td>
-						<td>${item.supplierName || item.supplierCode || '-'}</td>
-						<td>${item.productionManager || '-'}</td>
-						<td>${item.orderUom || '-'}</td>
-						<td>${formatDecimal(item.unitPrice)}</td>
-						<td>${formatDecimal(item.orderQuantity)}</td>
-						<td>${formatDecimal(item.inboundQuantity)}</td>
-						<td>
-							<div class="d-flex flex-column gap-1">
-								<span class="text-muted small">${formatDecimal(item.plannedOutboundQuantity)}</span>
-								<input type="number" class="form-control form-control-sm mout-planned-input" min="0" step="0.01" value="0">
-							</div>
-						</td>
-						<td>
-							<div class="d-flex flex-column gap-1">
-								<span class="text-muted small">${formatDecimal(item.outboundQuantity)}</span>
-								<input type="number" class="form-control form-control-sm mout-issued-input" min="0" step="0.01" value="0">
-							</div>
-						</td>
-						<td>${renderFactorySelect()}</td>
-					`;
+							<td>${item.styleCode || '-'}</td>
+							<td>${item.colorCode || '-'}</td>
+							<td>${item.agreementMonth || item.prdAgreeCode || '-'}</td>
+							<td>${item.category || '-'}</td>
+							<td>${item.materialName || '-'}</td>
+							<td>${item.materialUsage || '-'}</td>
+							<td>${item.spec || '-'}</td>
+							<td>${item.materialColor || '-'}</td>
+							<td>${item.uom || '-'}</td>
+							<td>${formatDecimal(item.qtyPerPiece)}</td>
+							<td>${item.supplierName || item.supplierCode || '-'}</td>
+							<td>${item.productionManager || '-'}</td>
+							<td>${item.orderUom || '-'}</td>
+							<td>${formatDecimal(item.unitPrice)}</td>
+							<td>${formatDecimal(item.orderQuantity)}</td>
+							<td>${formatDecimal(item.inboundQuantity)}</td>
+							<td>
+								<div class="d-flex flex-column gap-1">
+									<span class="text-muted small">${formatDecimal(item.plannedOutboundQuantity)}</span>
+									<input type="number" class="form-control form-control-sm mout-planned-input" min="0" step="0.01" value="0">
+								</div>
+							</td>
+							<td>
+								<div class="d-flex flex-column gap-1">
+									<span class="text-muted small">${formatDecimal(item.outboundQuantity)}</span>
+									<input type="number" class="form-control form-control-sm mout-issued-input" min="0" step="0.01" value="0">
+								</div>
+							</td>
+							<td>${renderFactorySelect()}</td>
+						`;
 					const issuedInput = row.querySelector('.mout-issued-input');
 					issuedInput.addEventListener('input', () => {
 						const val = parseFloat(issuedInput.value || '0');
@@ -411,7 +442,7 @@
 
 				fetch('/production/material-outbound/save', {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: {'Content-Type': 'application/json'},
 					body: JSON.stringify(payload)
 				})
 					.then(res => res.json())
@@ -431,13 +462,15 @@
 					return '-';
 				}
 				const num = Number(value);
-				return isNaN(num) ? '-' : num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+				return isNaN(num) ? '-' : num.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
 			}
 
 			function safeNumber(value) {
 				const num = Number(value);
 				return isNaN(num) ? 0 : num;
 			}
+
+			verifyButton.addEventListener('click', verifyStyleCode);
 		});
 		/*]]>*/
 	</script>
