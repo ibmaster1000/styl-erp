@@ -206,5 +206,191 @@
 		</div>
 	</div>
 
-	<!-- 이하 스크립트 동일 -->
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const styleIdInput = document.getElementById('wo-styles-id');
+			const styleCodeInput = document.getElementById('wo-style-input');
+			const colorSelect = document.getElementById('wo-color-select');
+			const agreeSelect = document.getElementById('wo-agreement-select');
+			const searchButton = document.getElementById('wo-search-button');
+			const verifyButton = document.getElementById('wo-verify-button');
+			const leftBody = document.getElementById('wo-left-body');
+			const messageBox = document.getElementById('wo-search-message');
+			let styleVerified = false;
+			let cachedAgreements = [];
+
+			styleCodeInput.addEventListener('input', () => {
+				styleIdInput.value = '';
+				styleVerified = false;
+				cachedAgreements = [];
+				renderSelectOptions(colorSelect, [], '색상을 선택하세요');
+				renderSelectOptions(agreeSelect, [], '생산합의 코드를 선택하세요');
+				colorSelect.disabled = true;
+				agreeSelect.disabled = true;
+				clearMessage();
+				resetTable('품번/색상/생산합의 조건을 선택한 뒤 조회하세요.');
+			});
+
+			colorSelect.addEventListener('change', () => {
+				if (!colorSelect.value) {
+					renderSelectOptions(agreeSelect, [], '생산합의 코드를 선택하세요');
+					agreeSelect.disabled = true;
+					return;
+				}
+				renderSelectOptions(agreeSelect, cachedAgreements, '생산합의 코드를 선택하세요');
+				agreeSelect.disabled = false;
+			});
+
+			function renderSelectOptions(selectEl, options, placeholder) {
+				selectEl.innerHTML = '';
+				const defaultOpt = document.createElement('option');
+				defaultOpt.value = '';
+				defaultOpt.textContent = placeholder;
+				selectEl.appendChild(defaultOpt);
+				(options || []).forEach(opt => {
+					const optionEl = document.createElement('option');
+					optionEl.value = opt;
+					optionEl.textContent = opt;
+					selectEl.appendChild(optionEl);
+				});
+			}
+
+			function resetTable(message) {
+				leftBody.innerHTML = `<tr><td colspan="6" class="wo-placeholder">${message}</td></tr>`;
+			}
+
+			function setMessage(type, text) {
+				messageBox.innerHTML = `<div class="alert alert-${type} py-2 mb-0">${text}</div>`;
+			}
+
+			function clearMessage() {
+				messageBox.innerHTML = '';
+			}
+
+			async function checkStyleExists(styleCode) {
+				try {
+					const res = await fetch(`/production/work-orders/styles?keyword=${encodeURIComponent(styleCode)}`);
+					if (!res.ok) {
+						return true;
+					}
+					const list = await res.json();
+					return (list || []).some(item => (item.styleCode || '').toLowerCase() === styleCode.toLowerCase());
+				} catch (e) {
+					return true;
+				}
+			}
+
+			async function verifyStyleCode() {
+				clearMessage();
+				const styleCode = styleCodeInput.value.trim();
+				if (!styleCode) {
+					setMessage('danger', '품번을 입력하세요.');
+					styleVerified = false;
+					return;
+				}
+				const exists = await checkStyleExists(styleCode);
+				if (!exists) {
+					setMessage('danger', '존재하지 않는 품번입니다.');
+					styleVerified = false;
+					renderSelectOptions(colorSelect, [], '색상을 선택하세요');
+					renderSelectOptions(agreeSelect, [], '생산합의 코드를 선택하세요');
+					colorSelect.disabled = true;
+					agreeSelect.disabled = true;
+					return;
+				}
+
+				styleVerified = true;
+				setMessage('success', '품번이 확인되었습니다.');
+				loadSelectionOptions(styleCode);
+			}
+
+			function loadSelectionOptions(styleCode) {
+				fetch(`/production/work-orders/options?styleCode=${encodeURIComponent(styleCode)}`)
+					.then(res => res.json())
+					.then(data => {
+						styleIdInput.value = data.stylesId || '';
+						renderSelectOptions(colorSelect, data.colors, '색상을 선택하세요');
+						cachedAgreements = data.agreements || [];
+						renderSelectOptions(agreeSelect, [], '생산합의 코드를 선택하세요');
+						colorSelect.disabled = false;
+						agreeSelect.disabled = true;
+					})
+					.catch(() => {
+						renderSelectOptions(colorSelect, [], '색상을 선택하세요');
+						renderSelectOptions(agreeSelect, [], '생산합의 코드를 선택하세요');
+						colorSelect.disabled = false;
+						agreeSelect.disabled = true;
+					});
+			}
+
+			searchButton.addEventListener('click', async () => {
+				clearMessage();
+				const styleCode = styleCodeInput.value.trim();
+				if (!styleVerified) {
+					setMessage('danger', '품번 확인 후 조회하세요.');
+					resetTable('품번을 확인한 뒤 조회하세요.');
+					return;
+				}
+				if (!styleCode || !colorSelect.value || !agreeSelect.value) {
+					setMessage('danger', '품번/색상/생산합의코드를 선택하세요.');
+					resetTable('품번/색상/생산합의 조건을 선택한 뒤 조회하세요.');
+					return;
+				}
+				await loadAgreements(styleCode);
+			});
+
+			async function loadAgreements(styleCode) {
+				const url = `/production/work-orders/list?styleCode=${encodeURIComponent(styleCode)}&prdAgreeCode=${encodeURIComponent(agreeSelect.value)}&colorCode=${encodeURIComponent(colorSelect.value)}`;
+				try {
+					const res = await fetch(url);
+					const data = await res.json().catch(() => ({}));
+					if (!res.ok) {
+						throw new Error(data?.message || '조회 중 오류가 발생했습니다.');
+					}
+					renderTable(data);
+					if (data && data.length > 0) {
+						setMessage('success', `총 ${data.length}건 조회되었습니다.`);
+						return;
+					}
+					setMessage('warning', '조회된 데이터가 없습니다.');
+				} catch (e) {
+					const rawMessage = e?.message;
+					const message = rawMessage && rawMessage.includes('원인:')
+						? rawMessage
+						: `조회 중 오류가 발생했습니다. (원인: ${rawMessage || '알 수 없는 오류'})`;
+					renderTable([]);
+					setMessage('danger', message);
+				}
+			}
+
+			function renderTable(list) {
+				leftBody.innerHTML = '';
+				if (!list || list.length === 0) {
+					resetTable('조회된 데이터가 없습니다.');
+					return;
+				}
+				list.forEach(item => {
+					const row = document.createElement('tr');
+					const statusLabel = item.status || (item.ordered ? 'ACTIVE' : '-');
+					row.innerHTML = `
+							<td>${item.styleCode || '-'}</td>
+							<td>${item.prdAgreeCode || '-'}</td>
+							<td>${item.colorCode || '-'}</td>
+							<td>${formatQuantity(item.agreementQuantity)}</td>
+							<td>${item.producerName || item.producerCode || '-'}</td>
+							<td>${statusLabel}</td>
+						`;
+					leftBody.appendChild(row);
+				});
+			}
+
+			function formatQuantity(value) {
+				const num = Number(value);
+				const safe = isNaN(num) ? 0 : num;
+				return safe.toLocaleString(undefined, {minimumFractionDigits: 3, maximumFractionDigits: 3});
+			}
+
+			verifyButton.addEventListener('click', verifyStyleCode);
+		});
+	</script>
 </div>

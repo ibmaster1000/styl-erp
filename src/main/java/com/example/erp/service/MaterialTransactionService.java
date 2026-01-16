@@ -209,9 +209,10 @@ public class MaterialTransactionService {
 					"message", created > 0 ? "입고가 등록되었습니다." : "입고 등록에 실패했습니다.");
 		} catch (Exception e) {
 			String errorId = UUID.randomUUID().toString();
-			log.error("입고 저장 중 오류가 발생했습니다. errorId={}", errorId, e);
+			String errorDetail = resolveErrorDetail(e);
+			log.error("입고 저장 중 오류가 발생했습니다. errorId={} detail={}", errorId, errorDetail, e);
 			return Map.of("success", false, "created", 0, "skipped", 0,
-					"message", "입고 등록 중 오류가 발생했습니다. errorId=" + errorId);
+					"message", "입고 등록 중 오류가 발생했습니다. (원인: " + errorDetail + ")");
 		}
 	}
 
@@ -619,6 +620,22 @@ public class MaterialTransactionService {
 			return resolved;
 		}
 		return StringUtils.hasText(fallback) ? fallback : null;
+	}
+	
+	private String resolveErrorDetail(Exception e) {
+		if (e == null) {
+			return "알 수 없는 오류";
+		}
+		Throwable root = e;
+		while (root.getCause() != null && root.getCause() != root) {
+			root = root.getCause();
+		}
+		String message = root.getMessage();
+		String type = root.getClass().getSimpleName();
+		if (StringUtils.hasText(message)) {
+			return type + ": " + message;
+		}
+		return type;
 	}
 
 	private String selectStyleIdExpression(String orderStyleIdColumn, String specStyleIdColumn) {
