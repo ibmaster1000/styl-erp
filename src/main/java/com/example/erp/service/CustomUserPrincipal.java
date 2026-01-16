@@ -21,6 +21,7 @@ public class CustomUserPrincipal implements UserDetails {
     public String getName() { return user.getName(); }     // 사용자 이름
     public String getDept() { return user.getDept(); }     // 직책/부서(원하는 컬럼으로)
     public String getRole() { return user.getRole(); }     // ROLE_ADMIN 등
+    public String getEmpNo() { return user.getEmpNo(); }
 
     @Override public Collection<? extends GrantedAuthority> getAuthorities() { return authorities; }
     @Override public String getPassword() { return user.getPassword(); }

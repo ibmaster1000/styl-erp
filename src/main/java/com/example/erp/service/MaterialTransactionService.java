@@ -310,15 +310,12 @@ public class MaterialTransactionService {
 			return Collections.emptyList();
 		}
 
-		String moOrderCol = resolveMaterialOrdersOrderCodeColumn();
-		if (moOrderCol == null && hasColumn("material_orders", "m_order_code")) {
-			moOrderCol = "m_order_code";
-		}
+		String moOrderCol = findOrderCodeColumn("material_orders");
 
 		String inboundJoin = "";
 		String inboundSelect = "0 as inbound_qty, ";
 		if (moOrderCol != null && hasTable("material_inbounds")) {
-			String inboundOrderCol = resolveOrderCodeColumn("material_inbounds");
+			String inboundOrderCol = findOrderCodeColumn("material_inbounds");
 			if (inboundOrderCol != null) {
 				inboundJoin = """
 						left join (
@@ -335,7 +332,7 @@ public class MaterialTransactionService {
 		String outboundSelect = "0 as planned_out_qty, 0 as issued_out_qty, ";
 		if (includeOutbound) {
 			if (moOrderCol != null && hasTable("material_outbounds")) {
-				String outboundOrderCol = resolveOrderCodeColumn("material_outbounds");
+				String outboundOrderCol = findOrderCodeColumn("material_outbounds");
 				if (outboundOrderCol != null) {
 					outboundJoin = """
 						left join (
@@ -434,25 +431,13 @@ public class MaterialTransactionService {
 		return rows;
 	}
 	
-	private String resolveOrderCodeColumn(String tableName) {
-		List<String> candidates = List.of("m_order_code", "morder_code", "order_code", "material_order_code",
-				"m_order_id", "order_id");
-		for (String candidate : candidates) {
-			if (hasColumn(tableName, candidate)) {
-				return candidate;
-			}
+	private String findOrderCodeColumn(String tableName) {
+		List<String> candidates = List.of("m_order_code", "order_code", "morder_code", "m_order_no");
+		String column = findFirstExistingColumn(tableName, candidates);
+		if (column == null && hasTable(tableName)) {
+			throw new IllegalStateException(tableName + " 주문코드 컬럼을 찾을 수 없습니다");
 		}
-		return null;
-	}
-
-	private String resolveMaterialOrdersOrderCodeColumn() {
-		List<String> candidates = List.of("m_order_code", "order_code");
-		for (String candidate : candidates) {
-			if (hasColumn("material_orders", candidate)) {
-				return candidate;
-			}
-		}
-		return null;
+		return column;
 	}
 
 	private BigDecimal sumInboundForOrder(String mOrderCode) {

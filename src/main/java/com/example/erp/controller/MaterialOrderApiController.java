@@ -6,12 +6,14 @@ import com.example.erp.controller.dto.MaterialOrderSearchResponse;
 import com.example.erp.controller.dto.MaterialSpecMatrixResponse;
 import com.example.erp.controller.dto.MaterialSpecOptionsResponse;
 import com.example.erp.service.AgreementQueryService;
+import com.example.erp.service.CustomUserPrincipal;
 import com.example.erp.service.MaterialOrderService;
 import com.example.erp.service.MaterialSpecService;
 import com.example.erp.service.StyleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -77,9 +79,17 @@ public class MaterialOrderApiController {
     }
 
     @PostMapping("/request")
-    public ResponseEntity<Map<String, Object>> submitOrder(@RequestBody MaterialOrderRequest request) {
+    public ResponseEntity<Map<String, Object>> submitOrder(@RequestBody MaterialOrderRequest request,
+            @AuthenticationPrincipal CustomUserPrincipal principal) {
+        String orderedBy = principal != null ? principal.getEmpNo() : null;
+        if (!StringUtils.hasText(orderedBy)) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "로그인 사용자 정보가 없습니다."
+            ));
+        }
     	try {
-            Map<String, Object> result = materialOrderService.submitOrders(request, null);
+    		Map<String, Object> result = materialOrderService.submitOrders(request, orderedBy);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("material order submit failed", e);

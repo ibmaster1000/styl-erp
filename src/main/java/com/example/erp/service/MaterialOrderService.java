@@ -27,6 +27,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class MaterialOrderService {
@@ -210,6 +211,9 @@ public class MaterialOrderService {
 			return Map.of("success", false, "created", 0, "skipped", 0, "message", "발주 테이블이 없습니다.");
 		}
 
+		Long resolvedStylesId = resolveStylesId(request);
+		String resolvedStylesIdValue = resolvedStylesId != null ? String.valueOf(resolvedStylesId) : null;
+		
 		Long prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode());
 		if (prdAgreeId == null) {
 			throw new IllegalArgumentException("생산합의코드가 올바르지 않습니다.");
@@ -237,7 +241,7 @@ public class MaterialOrderService {
 			return Map.of("success", false, "created", 0, "skipped", 0, "message", "발주 정보 컬럼이 부족합니다.");
 		}
 
-		List<MaterialOrderItemView> specs = findMaterials(request.getStylesId(), request.getPrdAgreeCode(),
+		List<MaterialOrderItemView> specs = findMaterials(resolvedStylesIdValue, request.getPrdAgreeCode(),
 				request.getColorCode(), request.getSupplierCode());
 		BigDecimal productionQty = findProductionQty(request.getPrdAgreeCode(), request.getColorCode());
 
@@ -254,28 +258,13 @@ public class MaterialOrderService {
 		if (orderCodeDate == null) {
 			orderCodeDate = LocalDate.now();
 		}
-		String orderCodePrefix = "MO" + orderCodeDate.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE) + "-";
-		String orderCodeQuery = "select max(" + orderCodeColumn + ") from material_orders where " + orderCodeColumn
-				+ " like :orderCodePrefix";
-		String maxOrderCode = jdbcTemplate.queryForObject(orderCodeQuery,
-				new MapSqlParameterSource("orderCodePrefix", orderCodePrefix + "%"), String.class);
-		int orderSequence = 0;
-		if (StringUtils.hasText(maxOrderCode) && maxOrderCode.startsWith(orderCodePrefix)) {
-			String seqPart = maxOrderCode.substring(orderCodePrefix.length());
-			try {
-				orderSequence = Integer.parseInt(seqPart);
-			} catch (NumberFormatException ignored) {
-				orderSequence = 0;
-			}
-		}
-
-
+		
 		for (MaterialOrderItemView spec : specs) {
 			if (spec.getBomId() == null) {
 				skipped++;
 				continue;
 			}
-			if (isOrderExists(request.getStylesId(), prdAgreeId, request.getColorCode(),
+			if (isOrderExists(resolvedStylesIdValue, prdAgreeId, request.getColorCode(),
 					request.getSupplierCode(), spec.getBomId())) {
 				skipped++;
 				continue;
@@ -289,11 +278,10 @@ public class MaterialOrderService {
 			BigDecimal orderQty = applyOrderQtyRounding(spec.getOrderUom(), spec.getUom(), rawOrderQty);
 			BigDecimal unitPrice = safeDecimal(spec.getUnitPrice());
 			
-			orderSequence++;
-			String orderCode = orderCodePrefix + String.format("%03d", orderSequence);
+			String orderCode = generateOrderCode(orderCodeColumn, orderCodeDate);
 
 			MapSqlParameterSource params = new MapSqlParameterSource()
-					.addValue("mOrderCode", orderCode).addValue("stylesId", request.getStylesId())
+					.addValue("mOrderCode", orderCode).addValue("stylesId", resolvedStylesId)
 					.addValue("styleCode", request.getStyleCode()).addValue("prdAgreeId", prdAgreeId)
 					.addValue("colorCode", request.getColorCode()).addValue("bomId", spec.getBomId())
 					.addValue("vendorType", "CUSTOMER")
@@ -738,6 +726,57 @@ public class MaterialOrderService {
 		return column;
 	}
 
+	private Long resolveStylesId(MaterialOrderRequest request) {
+		Long resolved = parseLong(request.getStylesId());
+		if (resolved == null && StringUtils.hasText(request.getStyleCode())) {
+			resolved = resolveStylesIdByCode(request.getStyleCode());
+		}
+		if (resolved == null) {
+			throw new IllegalArgumentException("품번(styles_id)을 찾을 수 없습니다.");
+		}
+		return resolved;
+	}
+
+	private Long parseLong(String value) {
+		if (!StringUtils.hasText(value)) {
+			return null;
+		}
+		try {
+			return Long.parseLong(value.trim());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	private String generateOrderCode(String orderCodeColumn, LocalDate orderCodeDate) {
+		String prefix = "MO" + orderCodeDate.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE) + "-";
+		for (int attempt = 0; attempt < 5; attempt++) {
+			String suffix = randomAlphanumeric(6);
+			String orderCode = prefix + suffix;
+			if (!isOrderCodeDuplicate(orderCodeColumn, orderCode)) {
+				return orderCode;
+			}
+		}
+		throw new IllegalStateException("발주 코드 생성에 실패했습니다.");
+	}
+
+	private boolean isOrderCodeDuplicate(String orderCodeColumn, String orderCode) {
+		String sql = "select count(*) from material_orders where " + orderCodeColumn + " = :orderCode";
+		Integer count = jdbcTemplate.queryForObject(sql, new MapSqlParameterSource("orderCode", orderCode),
+				Integer.class);
+		return count != null && count > 0;
+	}
+
+	private String randomAlphanumeric(int length) {
+		StringBuilder builder = new StringBuilder(length);
+		String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+		for (int i = 0; i < length; i++) {
+			int index = ThreadLocalRandom.current().nextInt(chars.length());
+			builder.append(chars.charAt(index));
+		}
+		return builder.toString();
+	}
+	
 	private Long resolvePrdAgreeId(String agreementCode, String colorCode) {
 		if (!StringUtils.hasText(agreementCode) || !StringUtils.hasText(colorCode)
 				|| !hasTable("production_agreements")) {
