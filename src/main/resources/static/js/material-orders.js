@@ -270,10 +270,16 @@ document.addEventListener('DOMContentLoaded', () => {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
 			});
-			if (!response.ok) {
-				throw new Error('order');
+			let result = null;
+			try {
+				result = await response.json();
+			} catch (parseError) {
+				result = null;
 			}
-			const result = await response.json();
+			if (!response.ok) {
+				alert(result?.message || '발주 처리 중 오류가 발생했습니다.');
+				return;
+			}
 			if (result && result.success === false) {
 				alert(result.message || '발주 처리에 실패했습니다.');
 				return;

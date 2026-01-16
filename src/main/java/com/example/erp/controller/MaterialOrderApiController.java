@@ -9,6 +9,8 @@ import com.example.erp.service.AgreementQueryService;
 import com.example.erp.service.MaterialOrderService;
 import com.example.erp.service.MaterialSpecService;
 import com.example.erp.service.StyleService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +25,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/material-orders")
 public class MaterialOrderApiController {
+	
+    private static final Logger log = LoggerFactory.getLogger(MaterialOrderApiController.class);
 
     private final MaterialOrderService materialOrderService;
     private final MaterialSpecService materialSpecService;
@@ -74,7 +78,27 @@ public class MaterialOrderApiController {
 
     @PostMapping("/request")
     public ResponseEntity<Map<String, Object>> submitOrder(@RequestBody MaterialOrderRequest request) {
-        Map<String, Object> result = materialOrderService.submitOrders(request, null);
-        return ResponseEntity.ok(result);
+    	try {
+            Map<String, Object> result = materialOrderService.submitOrders(request, null);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("material order submit failed", e);
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "message", resolveErrorMessage(e)
+            ));
+        }
+    }
+
+    private String resolveErrorMessage(Exception e) {
+        Throwable cause = e;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        String message = cause.getMessage();
+        if (!StringUtils.hasText(message)) {
+            message = e.getMessage();
+        }
+        return StringUtils.hasText(message) ? message : "발주 처리 중 오류가 발생했습니다.";
     }
 }

@@ -310,35 +310,51 @@ public class MaterialTransactionService {
 			return Collections.emptyList();
 		}
 
-		String inboundJoin = "left join (select null as m_order_code, 0 as inbound_qty) mi on 1 = 0 ";
-		if (hasTable("material_inbounds")) {
-			inboundJoin = """
-					left join (
-						select mi2.m_order_code as m_order_code, coalesce(sum(mi2.received_qty), 0) as inbound_qty
-						from material_inbounds mi2
-						group by mi2.m_order_code
-					) mi on mi.m_order_code = mo.m_order_code
-					""";
+		String moOrderCol = resolveMaterialOrdersOrderCodeColumn();
+		if (moOrderCol == null && hasColumn("material_orders", "m_order_code")) {
+			moOrderCol = "m_order_code";
+		}
+
+		String inboundJoin = "";
+		String inboundSelect = "0 as inbound_qty, ";
+		if (moOrderCol != null && hasTable("material_inbounds")) {
+			String inboundOrderCol = resolveOrderCodeColumn("material_inbounds");
+			if (inboundOrderCol != null) {
+				inboundJoin = """
+						left join (
+							select %s as order_code, coalesce(sum(received_qty), 0) as inbound_qty
+							from material_inbounds
+							group by %s
+						) mi on mi.order_code = mo.%s
+						""".formatted(inboundOrderCol, inboundOrderCol, moOrderCol);
+				inboundSelect = "coalesce(mi.inbound_qty, 0) as inbound_qty, ";
+			}
 		}
 
 		String outboundJoin = "";
+		String outboundSelect = "0 as planned_out_qty, 0 as issued_out_qty, ";
 		if (includeOutbound) {
-			outboundJoin = "left join (select null as m_order_code, 0 as planned_qty, 0 as issued_qty) mo2 on 1 = 0 ";
-			if (hasTable("material_outbounds")) {
-				outboundJoin = """
-					left join (
-						select mo3.m_order_code as m_order_code,
-						       coalesce(sum(mo3.planned_out_qty), 0) as planned_qty,
-						       coalesce(sum(mo3.issued_out_qty), 0) as issued_qty
-						from material_outbounds mo3
-						group by mo3.m_order_code
-					) mo2 on mo2.m_order_code = mo.m_order_code
-					""";
+			if (moOrderCol != null && hasTable("material_outbounds")) {
+				String outboundOrderCol = resolveOrderCodeColumn("material_outbounds");
+				if (outboundOrderCol != null) {
+					outboundJoin = """
+						left join (
+							select %s as order_code,
+							       coalesce(sum(planned_out_qty), 0) as planned_qty,
+							       coalesce(sum(issued_out_qty), 0) as issued_qty
+							from material_outbounds
+							group by %s
+						) mo2 on mo2.order_code = mo.%s
+						""".formatted(outboundOrderCol, outboundOrderCol, moOrderCol);
+					outboundSelect = "coalesce(mo2.planned_qty, 0) as planned_out_qty, "
+							+ "coalesce(mo2.issued_qty, 0) as issued_out_qty, ";
+				}
 			}
 		}
 
 		StringBuilder sql = new StringBuilder()
-				.append("select mo.m_order_code as m_order_code, ")
+				.append(moOrderCol != null ? "select mo." + moOrderCol + " as m_order_code, "
+						: "select null as m_order_code, ")
 				.append("mo.bom_id as bom_id, ")
 				.append("mo.styles_id as styles_id, ")
 				.append("s.style_code as style_code, ")
@@ -353,10 +369,8 @@ public class MaterialTransactionService {
 				.append("ms.order_uom as order_uom, ")
 				.append("mo.unit_price as unit_price, ")
 				.append("mo.order_amount as order_amount, ")
-				.append("coalesce(mi.inbound_qty, 0) as inbound_qty, ")
-				.append(includeOutbound ? "coalesce(mo2.planned_qty, 0) as planned_out_qty, "
-						+ "coalesce(mo2.issued_qty, 0) as issued_out_qty, "
-						: "0 as planned_out_qty, 0 as issued_out_qty, ")
+				.append(inboundSelect)
+				.append(includeOutbound ? outboundSelect : "0 as planned_out_qty, 0 as issued_out_qty, ")
 				.append("ms.remark as remark ")
 				.append("from material_orders mo ")
 				.append("join material_specs ms on mo.bom_id = ms.bom_id ")
@@ -372,7 +386,7 @@ public class MaterialTransactionService {
 			sql.append("and s.style_code = :styleCode ");
 		}
 
-		sql.append("order by mo.m_order_code asc");
+		sql.append(moOrderCol != null ? "order by mo." + moOrderCol + " asc" : "order by mo.bom_id asc");
 
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeId", prdAgreeId)
 				.addValue("colorCode", colorCode).addValue("stylesId", resolvedStyleId)
@@ -418,6 +432,27 @@ public class MaterialTransactionService {
 			view.setSupplierName(supplierNames.getOrDefault(view.getSupplierCode(), null));
 		}
 		return rows;
+	}
+	
+	private String resolveOrderCodeColumn(String tableName) {
+		List<String> candidates = List.of("m_order_code", "morder_code", "order_code", "material_order_code",
+				"m_order_id", "order_id");
+		for (String candidate : candidates) {
+			if (hasColumn(tableName, candidate)) {
+				return candidate;
+			}
+		}
+		return null;
+	}
+
+	private String resolveMaterialOrdersOrderCodeColumn() {
+		List<String> candidates = List.of("m_order_code", "order_code");
+		for (String candidate : candidates) {
+			if (hasColumn("material_orders", candidate)) {
+				return candidate;
+			}
+		}
+		return null;
 	}
 
 	private BigDecimal sumInboundForOrder(String mOrderCode) {
