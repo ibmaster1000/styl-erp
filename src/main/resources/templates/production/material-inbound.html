@@ -327,7 +327,7 @@
 					return;
 				}
 				list.forEach(item => {
-					const inboundQty = formatNumber(item.inboundQuantity);
+					const inboundQty = formatQuantity(item.inboundQuantity);
 					const row = document.createElement('tr');
 					row.dataset.mOrderCode = item.mOrderCode || '';
 					row.dataset.orderUom = item.orderUom || '';
@@ -341,15 +341,15 @@
 						<td>${item.materialUsage || '-'}</td>
 						<td>${item.spec || '-'}</td>
 						<td>${item.materialColor || '-'}</td>
-						<td>${item.uom || '-'}</td>
-						<td>${formatDecimal(item.qtyPerPiece)}</td>
+						<td></td>
+						<td>${formatQuantity(item.qtyPerPiece)}</td>
 						<td>${item.supplierName || item.supplierCode || '-'}</td>
 						<td>${item.productionManager || '-'}</td>
-						<td>${item.orderUom || '-'}</td>
-						<td>${formatDecimal(item.unitPrice)}</td>
-						<td>${formatDecimal(item.orderQuantity)}</td>
+						<td></td>
+						<td>${formatPrice(item.unitPrice)}</td>
+						<td>${formatQuantity(item.orderQuantity)}</td>
 						<td>${inboundQty}</td>
-						<td><input type="number" class="form-control form-control-sm mi-qty-input" min="0" step="0.01" value="0"></td>
+						<td><input type="number" class="form-control form-control-sm mi-qty-input" min="0" step="0.001" value="0"></td>
 					`;
 					tableBody.appendChild(row);
 				});
@@ -400,20 +400,16 @@
 					.catch(() => alert('입고 저장 중 오류가 발생했습니다.'));
 			});
 
-			function formatNumber(value) {
-				if (value === null || value === undefined) {
-					return '-';
-				}
+			function formatQuantity(value) {
 				const num = Number(value);
-				return isNaN(num) ? '-' : num.toLocaleString();
+				const safe = isNaN(num) ? 0 : num;
+				return safe.toLocaleString(undefined, {minimumFractionDigits: 3, maximumFractionDigits: 3});
 			}
 
-			function formatDecimal(value) {
-				if (value === null || value === undefined) {
-					return '-';
-				}
+			function formatPrice(value) {
 				const num = Number(value);
-				return isNaN(num) ? '-' : num.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
+				const safe = isNaN(num) ? 0 : num;
+				return safe.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
 			}
 			
 			verifyButton.addEventListener('click', verifyStyleCode);

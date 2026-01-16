@@ -341,6 +341,7 @@
 					row.dataset.orderUom = item.orderUom || '';
 					row.dataset.unitPrice = item.unitPrice || '';
 					row.dataset.available = available;
+					const plannedOutbound = formatQuantity(0);
 					row.innerHTML = `
 							<td>${item.styleCode || '-'}</td>
 							<td>${item.colorCode || '-'}</td>
@@ -350,24 +351,19 @@
 							<td>${item.materialUsage || '-'}</td>
 							<td>${item.spec || '-'}</td>
 							<td>${item.materialColor || '-'}</td>
-							<td>${item.uom || '-'}</td>
-							<td>${formatDecimal(item.qtyPerPiece)}</td>
+							<td></td>
+							<td>${formatQuantity(item.qtyPerPiece)}</td>
 							<td>${item.supplierName || item.supplierCode || '-'}</td>
 							<td>${item.productionManager || '-'}</td>
-							<td>${item.orderUom || '-'}</td>
-							<td>${formatDecimal(item.unitPrice)}</td>
-							<td>${formatDecimal(item.orderQuantity)}</td>
-							<td>${formatDecimal(item.inboundQuantity)}</td>
+							<td></td>
+							<td>${formatPrice(item.unitPrice)}</td>
+							<td>${formatQuantity(item.orderQuantity)}</td>
+							<td>${formatQuantity(item.inboundQuantity)}</td>
+							<td><span class="text-muted small">${plannedOutbound}</span></td>
 							<td>
 								<div class="d-flex flex-column gap-1">
-									<span class="text-muted small">${formatDecimal(item.plannedOutboundQuantity)}</span>
-									<input type="number" class="form-control form-control-sm mout-planned-input" min="0" step="0.01" value="0">
-								</div>
-							</td>
-							<td>
-								<div class="d-flex flex-column gap-1">
-									<span class="text-muted small">${formatDecimal(item.outboundQuantity)}</span>
-									<input type="number" class="form-control form-control-sm mout-issued-input" min="0" step="0.01" value="0">
+									<span class="text-muted small">${formatQuantity(item.outboundQuantity)}</span>
+									<input type="number" class="form-control form-control-sm mout-issued-input" min="0" step="0.001" value="0">
 								</div>
 							</td>
 							<td>${renderFactorySelect()}</td>
@@ -398,9 +394,8 @@
 				let hasValidationError = false;
 
 				rows.forEach(row => {
-					const planned = parseFloat(row.querySelector('.mout-planned-input')?.value || '0');
 					const issued = parseFloat(row.querySelector('.mout-issued-input')?.value || '0');
-					if (planned > 0 || issued > 0) {
+					if (issued > 0) {
 						const available = parseFloat(row.dataset.available || '0');
 						if (issued > available) {
 							hasValidationError = true;
@@ -414,7 +409,6 @@
 						}
 						items.push({
 							mOrderCode: row.dataset.mOrderCode || null,
-							plannedOutQuantity: isNaN(planned) ? 0 : planned,
 							issuedOutQuantity: isNaN(issued) ? 0 : issued,
 							orderUom: row.dataset.orderUom || null,
 							unitPrice: row.dataset.unitPrice ? Number(row.dataset.unitPrice) : null,
@@ -428,7 +422,7 @@
 					return;
 				}
 				if (items.length === 0) {
-					alert('기출고량/출고량을 입력하세요.');
+					alert('출고량을 입력하세요.');
 					return;
 				}
 
@@ -457,12 +451,16 @@
 					.catch(() => alert('출고 저장 중 오류가 발생했습니다.'));
 			});
 
-			function formatDecimal(value) {
-				if (value === null || value === undefined) {
-					return '-';
-				}
+			function formatQuantity(value) {
 				const num = Number(value);
-				return isNaN(num) ? '-' : num.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
+				const safe = isNaN(num) ? 0 : num;
+				return safe.toLocaleString(undefined, {minimumFractionDigits: 3, maximumFractionDigits: 3});
+			}
+
+			function formatPrice(value) {
+				const num = Number(value);
+				const safe = isNaN(num) ? 0 : num;
+				return safe.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2});
 			}
 
 			function safeNumber(value) {

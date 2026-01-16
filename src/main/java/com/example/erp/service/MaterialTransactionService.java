@@ -192,9 +192,8 @@ public class MaterialTransactionService {
 				skipped++;
 				continue;
 			}
-			BigDecimal planned = safeDecimal(line.getPlannedOutQuantity());
 			BigDecimal issued = safeDecimal(line.getIssuedOutQuantity());
-			if (planned.compareTo(BigDecimal.ZERO) <= 0 && issued.compareTo(BigDecimal.ZERO) <= 0) {
+			if (issued.compareTo(BigDecimal.ZERO) <= 0) {
 				skipped++;
 				continue;
 			}
@@ -213,7 +212,7 @@ public class MaterialTransactionService {
 
 			MapSqlParameterSource params = new MapSqlParameterSource()
 					.addValue("mOrderCode", line.getMOrderCode())
-					.addValue("plannedOutQty", planned)
+					.addValue("plannedOutQty", BigDecimal.ZERO)
 					.addValue("issuedOutQty", issued)
 					.addValue("producerType", "CUSTOMER")
 					.addValue("producerCode", line.getFactoryCode())
@@ -314,17 +313,39 @@ public class MaterialTransactionService {
 
 		String inboundJoin = "";
 		String inboundSelect = "0 as inbound_qty, ";
-		if (moOrderCol != null && hasTable("material_inbounds")) {
-			String inboundOrderCol = findOrderCodeColumn("material_inbounds");
-			if (inboundOrderCol != null) {
+		if (includeOutbound) {
+			if (moOrderCol != null && hasTable("material_inbounds")) {
+				String inboundOrderCol = findOrderCodeColumn("material_inbounds");
+				if (inboundOrderCol != null) {
+					inboundJoin = """
+							left join (
+								select %s as order_code, coalesce(sum(received_qty), 0) as inbound_qty
+								from material_inbounds
+								group by %s
+							) mi on mi.order_code = mo.%s
+							""".formatted(inboundOrderCol, inboundOrderCol, moOrderCol);
+					inboundSelect = "coalesce(mi.inbound_qty, 0) as inbound_qty, ";
+				}
+			}
+		} else {
+			String agreementCodeCol = findFirstExistingColumn("production_agreements",
+					List.of("agreement_code", "prd_agree_code", "prd_agree_no"));
+			String agreementColorCol = findFirstExistingColumn("production_agreements",
+					List.of("color_code", "color"));
+			String agreementQtyCol = findFirstExistingColumn("production_agreements", List.of("quantity", "qty"));
+			if (agreementCodeCol != null && agreementColorCol != null && agreementQtyCol != null) {
 				inboundJoin = """
 						left join (
-							select %s as order_code, coalesce(sum(received_qty), 0) as inbound_qty
-							from material_inbounds
-							group by %s
-						) mi on mi.order_code = mo.%s
-						""".formatted(inboundOrderCol, inboundOrderCol, moOrderCol);
-				inboundSelect = "coalesce(mi.inbound_qty, 0) as inbound_qty, ";
+							select coalesce(sum(%s), 0) as agreement_qty
+							from production_agreements
+							where %s = :prdAgreeCode
+							  and %s = :colorCode
+						) pa on 1=1
+						""".formatted(agreementQtyCol, agreementCodeCol, agreementColorCol);
+				String lossRateCol = findFirstExistingColumn("material_specs", List.of("loss_rate", "loss"));
+				String lossExpr = lossRateCol != null ? "coalesce(ms." + lossRateCol + ", 0)" : "0";
+				inboundSelect = "coalesce(pa.agreement_qty, 0) * coalesce(ms.qty_per_piece, 0) "
+						+ "* (1 + (" + lossExpr + " / 100.0)) as inbound_qty, ";
 			}
 		}
 
@@ -337,13 +358,12 @@ public class MaterialTransactionService {
 					outboundJoin = """
 						left join (
 							select %s as order_code,
-							       coalesce(sum(planned_out_qty), 0) as planned_qty,
 							       coalesce(sum(issued_out_qty), 0) as issued_qty
 							from material_outbounds
 							group by %s
 						) mo2 on mo2.order_code = mo.%s
 						""".formatted(outboundOrderCol, outboundOrderCol, moOrderCol);
-					outboundSelect = "coalesce(mo2.planned_qty, 0) as planned_out_qty, "
+					outboundSelect = "0 as planned_out_qty, "
 							+ "coalesce(mo2.issued_qty, 0) as issued_out_qty, ";
 				}
 			}
@@ -355,6 +375,7 @@ public class MaterialTransactionService {
 				.append("mo.bom_id as bom_id, ")
 				.append("mo.styles_id as styles_id, ")
 				.append("s.style_code as style_code, ")
+				.append("s.product_emp_no as production_emp_no, ")
 				.append("ms.category as category, ")
 				.append("ms.material_name as material_name, ")
 				.append("ms.material_usage as material_usage, ")
@@ -387,6 +408,7 @@ public class MaterialTransactionService {
 
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeId", prdAgreeId)
 				.addValue("colorCode", colorCode).addValue("stylesId", resolvedStyleId)
+				.addValue("prdAgreeCode", prdAgreeCode)
 				.addValue("styleCode", styleCode);
 
 		List<MaterialTransactionLineView> rows = new ArrayList<>();
@@ -413,7 +435,7 @@ public class MaterialTransactionService {
 					.setQtyPerPiece(rs.getBigDecimal("qty_per_piece"))
 					.setSupplierCode(supplierCode)
 					.setSupplierName(null)
-					.setProductionManager(null)
+					.setProductionManager(rs.getString("production_emp_no"))
 					.setOrderUom(rs.getString("order_uom"))
 					.setUnitPrice(rs.getBigDecimal("unit_price"))
 					.setOrderQuantity(rs.getBigDecimal("order_amount"))
