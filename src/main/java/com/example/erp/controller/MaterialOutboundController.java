@@ -10,6 +10,8 @@ import com.example.erp.domain.User;
 import com.example.erp.repository.UserRepository;
 import com.example.erp.service.MaterialOrderService;
 import com.example.erp.service.MaterialTransactionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,7 +31,8 @@ import java.util.Map;
 @Controller
 @RequestMapping("/production/material-outbound")
 public class MaterialOutboundController extends PageViewSupport {
-
+	
+	private static final Logger log = LoggerFactory.getLogger(MaterialOutboundController.class);
     private final MaterialTransactionService materialTransactionService;
     private final MaterialOrderService materialOrderService;
     private final UserRepository userRepository;
@@ -66,11 +69,19 @@ public class MaterialOutboundController extends PageViewSupport {
 
 	@GetMapping("/list")
 	@ResponseBody
-	public List<MaterialTransactionLineView> fetchList(@RequestParam(name = "stylesId", required = false) String stylesId,
+	public ResponseEntity<?> fetchList(@RequestParam(name = "stylesId", required = false) String stylesId,
 			@RequestParam(name = "styleCode", required = false) String styleCode,
 			@RequestParam(name = "prdAgreeCode", required = false) String prdAgreeCode,
 			@RequestParam(name = "colorCode", required = false) String colorCode) {
-		return materialTransactionService.findMaterials(stylesId, styleCode, prdAgreeCode, colorCode);
+		try {
+			List<MaterialTransactionLineView> result =
+					materialTransactionService.findMaterials(stylesId, styleCode, prdAgreeCode, colorCode);
+			return ResponseEntity.ok(result);
+		} catch (Exception e) {
+			log.error("원부자재 출고 조회 중 오류가 발생했습니다.", e);
+			String message = "조회 중 오류가 발생했습니다. (원인: " + e.getMessage() + ")";
+			return ResponseEntity.status(500).body(Map.of("message", message));
+		}
 	}
 
     @PostMapping("/save")
@@ -78,8 +89,14 @@ public class MaterialOutboundController extends PageViewSupport {
     public ResponseEntity<Map<String, Object>> saveOutbound(@RequestBody MaterialTransactionSaveRequest request,
             Principal principal) {
         String empNo = resolveEmpNo(principal);
-        Map<String, Object> result = materialTransactionService.saveOutbound(request, empNo);
-        return ResponseEntity.ok(result);
+        try {
+            Map<String, Object> result = materialTransactionService.saveOutbound(request, empNo);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("원부자재 출고 저장 중 오류가 발생했습니다.", e);
+            String message = "출고 등록에 실패했습니다. (원인: " + e.getMessage() + ")";
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
+        }
     }
 
     private String resolveEmpNo(Principal principal) {

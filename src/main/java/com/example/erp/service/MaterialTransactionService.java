@@ -7,6 +7,8 @@ import com.example.erp.controller.dto.SimpleCodeView;
 import com.example.erp.domain.ProductionAgreement;
 import com.example.erp.repository.ProductionAgreementRepository;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +28,8 @@ import java.util.Set;
 
 @Service
 public class MaterialTransactionService {
-
+	
+	private static final Logger log = LoggerFactory.getLogger(MaterialTransactionService.class);
 	private final NamedParameterJdbcTemplate jdbcTemplate;
 	private final ProductionAgreementRepository productionAgreementRepository;
 
@@ -365,6 +368,8 @@ public class MaterialTransactionService {
 						""".formatted(outboundOrderCol, outboundOrderCol, moOrderCol);
 					outboundSelect = "0 as planned_out_qty, "
 							+ "coalesce(mo2.issued_qty, 0) as issued_out_qty, ";
+				} else {
+					log.warn("material_outbounds 주문코드 컬럼을 찾지 못해 출고 집계를 0 처리합니다.");
 				}
 			}
 		}
@@ -457,7 +462,7 @@ public class MaterialTransactionService {
 		List<String> candidates = List.of("m_order_code", "order_code", "morder_code", "m_order_no");
 		String column = findFirstExistingColumn(tableName, candidates);
 		if (column == null && hasTable(tableName)) {
-			throw new IllegalStateException(tableName + " 주문코드 컬럼을 찾을 수 없습니다");
+			log.warn("{} 주문코드 컬럼을 찾을 수 없습니다.", tableName);
 		}
 		return column;
 	}

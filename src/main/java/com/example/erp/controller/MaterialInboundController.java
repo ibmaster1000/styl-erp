@@ -9,6 +9,8 @@ import com.example.erp.domain.User;
 import com.example.erp.repository.UserRepository;
 import com.example.erp.service.MaterialOrderService;
 import com.example.erp.service.MaterialTransactionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,6 +31,7 @@ import java.util.Map;
 @RequestMapping("/production/material-inbound")
 public class MaterialInboundController extends PageViewSupport {
 
+	private static final Logger log = LoggerFactory.getLogger(MaterialInboundController.class);
     private final MaterialTransactionService materialTransactionService;
     private final MaterialOrderService materialOrderService;
     private final UserRepository userRepository;
@@ -75,8 +78,14 @@ public class MaterialInboundController extends PageViewSupport {
     public ResponseEntity<Map<String, Object>> saveInbound(@RequestBody MaterialTransactionSaveRequest request,
             Principal principal) {
         String empNo = resolveEmpNo(principal);
-        Map<String, Object> result = materialTransactionService.saveInbound(request, empNo);
-        return ResponseEntity.ok(result);
+        try {
+            Map<String, Object> result = materialTransactionService.saveInbound(request, empNo);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("원부자재 입고 저장 중 오류가 발생했습니다.", e);
+            String message = "입고 등록에 실패했습니다. (원인: " + e.getMessage() + ")";
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
+        }
     }
 
     private String resolveEmpNo(Principal principal) {
