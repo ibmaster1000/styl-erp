@@ -27,7 +27,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 @Service
 public class MaterialOrderService {
@@ -244,6 +243,32 @@ public class MaterialOrderService {
 
 		int created = 0;
 		int skipped = 0;
+		LocalDate orderCodeDate = null;
+		try {
+			if (StringUtils.hasText(request.getOrderDate())) {
+				orderCodeDate = LocalDate.parse(request.getOrderDate());
+			}
+		} catch (Exception ignored) {
+			orderCodeDate = null;
+		}
+		if (orderCodeDate == null) {
+			orderCodeDate = LocalDate.now();
+		}
+		String orderCodePrefix = "MO" + orderCodeDate.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE) + "-";
+		String orderCodeQuery = "select max(" + orderCodeColumn + ") from material_orders where " + orderCodeColumn
+				+ " like :orderCodePrefix";
+		String maxOrderCode = jdbcTemplate.queryForObject(orderCodeQuery,
+				new MapSqlParameterSource("orderCodePrefix", orderCodePrefix + "%"), String.class);
+		int orderSequence = 0;
+		if (StringUtils.hasText(maxOrderCode) && maxOrderCode.startsWith(orderCodePrefix)) {
+			String seqPart = maxOrderCode.substring(orderCodePrefix.length());
+			try {
+				orderSequence = Integer.parseInt(seqPart);
+			} catch (NumberFormatException ignored) {
+				orderSequence = 0;
+			}
+		}
+
 
 		for (MaterialOrderItemView spec : specs) {
 			if (spec.getBomId() == null) {
@@ -263,9 +288,12 @@ public class MaterialOrderService {
 			BigDecimal rawOrderQty = productionQty.multiply(qtyPerPiece).multiply(multiplier);
 			BigDecimal orderQty = applyOrderQtyRounding(spec.getOrderUom(), spec.getUom(), rawOrderQty);
 			BigDecimal unitPrice = safeDecimal(spec.getUnitPrice());
+			
+			orderSequence++;
+			String orderCode = orderCodePrefix + String.format("%03d", orderSequence);
 
 			MapSqlParameterSource params = new MapSqlParameterSource()
-					.addValue("mOrderCode", UUID.randomUUID().toString()).addValue("stylesId", request.getStylesId())
+					.addValue("mOrderCode", orderCode).addValue("stylesId", request.getStylesId())
 					.addValue("styleCode", request.getStyleCode()).addValue("prdAgreeId", prdAgreeId)
 					.addValue("colorCode", request.getColorCode()).addValue("bomId", spec.getBomId())
 					.addValue("vendorType", "CUSTOMER")
