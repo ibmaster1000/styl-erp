@@ -53,177 +53,107 @@ public class MaterialTransactionService {
 
 	@Transactional
 	public Map<String, Object> saveInbound(MaterialTransactionSaveRequest request, String empNo) {
+		// ---- 0) 공통 누락/오류 수집 ----
 		Set<String> missingFields = new LinkedHashSet<>();
-		if (request == null || CollectionUtils.isEmpty(request.getItems())) {
+		List<Map<String, Object>> lineErrors = new ArrayList<>();
+
+		if (request == null) {
+			return Map.of("success", false, "message", "입고 등록 실패 (요청 본문이 없습니다.)",
+					"missingFields", List.of("request"));
+		}
+
+		if (CollectionUtils.isEmpty(request.getItems())) {
 			missingFields.add("items");
 		}
 		if (!StringUtils.hasText(empNo)) {
 			missingFields.add("empNo");
 		}
-		if (request == null || !StringUtils.hasText(request.getColorCode())) {
+		if (!StringUtils.hasText(request.getColorCode())) {
 			missingFields.add("colorCode");
 		}
+		if (!StringUtils.hasText(request.getPrdAgreeCode())) {
+			missingFields.add("prdAgreeCode");
+		}
 
-		// 1) prdAgreeId 해석 (agreement_code + color_code -> prd_agree_id)
-		Long prdAgreeId = request != null ? resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode()) : null;
+		// 1) prdAgreeId 해석
+		Long prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode());
 		if (prdAgreeId == null) {
 			missingFields.add("prdAgreeId");
 		}
 
-		// 2) stylesId 해석 (없으면 styleCode로 조회)
-		// - 이 클래스의 resolveStyleId(String stylesId, String styleCode)는 String을 반환하므로
-		//   여기서는 String으로 먼저 해석 후 Long으로 파싱한다.
-		String resolvedStyleIdStr = request != null ? resolveStyleId(request.getStylesId(), request.getStyleCode()) : null;
-
+		// 2) stylesId 해석 (stylesId가 없으면 styleCode로 조회)
+		String resolvedStyleIdStr = resolveStyleId(request.getStylesId(), request.getStyleCode());
 		Long stylesId = null;
 		if (StringUtils.hasText(resolvedStyleIdStr)) {
-		    try {
-		        stylesId = Long.parseLong(resolvedStyleIdStr.trim());
-		    } catch (NumberFormatException ignore) {
-		        stylesId = null;
-		    }
+			try {
+				stylesId = Long.parseLong(resolvedStyleIdStr.trim());
+			} catch (NumberFormatException ignore) {
+				stylesId = null;
+			}
 		}
-
 		if (stylesId == null) {
 			missingFields.add("stylesId/styleCode");
 		}
 
-		if (request != null && !CollectionUtils.isEmpty(request.getItems())) {
+		// 3) 라인 단위 검증 (여기서 bomId는 절대 요구하지 말 것!)
+		if (!CollectionUtils.isEmpty(request.getItems())) {
+			int idx = 0;
 			for (MaterialTransactionSaveLine line : request.getItems()) {
+				idx++;
 				if (line == null) {
-					missingFields.add("items");
+					lineErrors.add(Map.of("index", idx, "error", "line is null"));
 					continue;
 				}
 				if (line.getMOrderId() == null) {
+					lineErrors.add(Map.of("index", idx, "error", "mOrderId 누락"));
 					missingFields.add("mOrderId");
 				}
-				if (line.getBomId() == null) {
-					missingFields.add("bomId");
-				}
-				BigDecimal receivedQty = line.getQuantity();
-				if (receivedQty == null || receivedQty.compareTo(BigDecimal.ZERO) <= 0) {
+				BigDecimal qty = line.getQuantity();
+				if (qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) {
+					lineErrors.add(Map.of("index", idx, "error", "receivedQty 누락/0이하", "mOrderId", line.getMOrderId()));
 					missingFields.add("receivedQty");
 				}
 			}
 		}
 
-		// 3) UI가 mOrderId를 안 보내는 케이스 대비: bomId -> m_order_id 매핑을 먼저 조회
-		Set<Long> bomIds = new LinkedHashSet<>();
-		if (request != null && !CollectionUtils.isEmpty(request.getItems())) {
-			for (MaterialTransactionSaveLine line : request.getItems()) {
-				if (line != null && line.getBomId() != null) {
-					bomIds.add(line.getBomId());
-				}
-			}
+		// 4) DB 필수 컬럼 존재 여부(한 번에) 체크: material_inbounds & material_orders
+		List<String> inboundMissingCols = findMissingColumns("material_inbounds",
+				List.of("m_order_id", "styles_id", "prd_agree_id", "color_type", "color_code",
+						"material_spec_id", "producer_type", "producer_code", "warehouse_type", "warehouse_code",
+						"planned_qty", "received_qty", "order_uom", "unit_price", "created_by"));
+		if (!inboundMissingCols.isEmpty()) {
+			return Map.of(
+					"success", false,
+					"message", "입고 등록 실패 (material_inbounds 컬럼 누락: " + inboundMissingCols + ")",
+					"missingFields", inboundMissingCols
+			);
 		}
 
-		Map<Long, Long> orderIdByBomId = new LinkedHashMap<>();
-		if (!bomIds.isEmpty() && stylesId != null && prdAgreeId != null && request != null
-				&& StringUtils.hasText(request.getColorCode())) {
-			String sqlOrderMap = """
-					select mo.bom_id as bomId, max(mo.m_order_id) as mOrderId
-					from material_orders mo
-					where mo.styles_id = :stylesId
-					  and mo.prd_agree_id = :prdAgreeId
-					  and mo.color_code = :colorCode
-					  and mo.bom_id in (:bomIds)
-					group by mo.bom_id
-					""";
-			MapSqlParameterSource params = new MapSqlParameterSource()
-					.addValue("stylesId", stylesId)
-					.addValue("prdAgreeId", prdAgreeId)
-					.addValue("colorCode", request.getColorCode())
-					.addValue("bomIds", bomIds);
-
-			List<Map<String, Object>> rows = jdbcTemplate.queryForList(sqlOrderMap, params);
-			for (Map<String, Object> r : rows) {
-				Object b = r.get("bomId");
-				Object o = r.get("mOrderId");
-				if (b != null && o != null) {
-					Long bomId = ((Number) b).longValue();
-					Long mOrderId = ((Number) o).longValue();
-					orderIdByBomId.put(bomId, mOrderId);
-				}
-			}
+		// material_orders 쪽도 producer_code 기반으로 확인
+		List<String> orderMissingCols = findMissingColumns("material_orders",
+				List.of("m_order_id", "styles_id", "prd_agree_id", "color_type", "color_code",
+						"bom_id", "producer_code", "warehouse_type", "warehouse_code",
+						"order_amount", "order_uom", "unit_price"));
+		if (!orderMissingCols.isEmpty()) {
+			return Map.of(
+					"success", false,
+					"message", "입고 등록 실패 (material_orders 컬럼 누락: " + orderMissingCols + ")",
+					"missingFields", orderMissingCols
+			);
 		}
 
-		Map<Long, Map<String, Object>> orderInfoById = new LinkedHashMap<>();
-		Set<Long> resolvedOrderIds = new LinkedHashSet<>();
-		if (request != null && !CollectionUtils.isEmpty(request.getItems())) {
-			for (MaterialTransactionSaveLine line : request.getItems()) {
-				if (line == null) {
-					continue;
-				}
-				Long orderId = line.getMOrderId();
-				if (orderId == null && line.getBomId() != null) {
-					orderId = orderIdByBomId.get(line.getBomId());
-				}
-				if (orderId != null) {
-					resolvedOrderIds.add(orderId);
-				} else {
-					missingFields.add("mOrderId");
-				}
-			}
-		}
-
-		if (!resolvedOrderIds.isEmpty()) {
-			String orderInfoSql = """
-					select m_order_id,
-					       bom_id,
-					       producer_code,
-					       warehouse_code,
-					       order_uom,
-					       unit_price,
-					       order_amount,
-					       color_type
-					from material_orders
-					where m_order_id in (:mOrderIds)
-					""";
-			MapSqlParameterSource orderParams = new MapSqlParameterSource("mOrderIds", resolvedOrderIds);
-			List<Map<String, Object>> rows = jdbcTemplate.queryForList(orderInfoSql, orderParams);
-			for (Map<String, Object> row : rows) {
-				Object id = row.get("m_order_id");
-				if (id != null) {
-					orderInfoById.put(((Number) id).longValue(), row);
-				}
-			}
-
-			for (Long orderId : resolvedOrderIds) {
-				Map<String, Object> row = orderInfoById.get(orderId);
-				if (row == null) {
-					missingFields.add("mOrderId");
-					continue;
-				}
-				if (row.get("bom_id") == null) {
-					missingFields.add("material_spec_id");
-				}
-				if (row.get("order_amount") == null
-						|| ((Number) row.get("order_amount")).doubleValue() <= 0) {
-					missingFields.add("planned_qty");
-				}
-				if (row.get("color_type") == null) {
-					missingFields.add("color_type");
-				}
-				if (row.get("producer_code") == null) {
-					missingFields.add("producer_code");
-				}
-				if (row.get("warehouse_code") == null) {
-					missingFields.add("warehouse_code");
-				}
-				if (row.get("order_uom") == null) {
-					missingFields.add("order_uom");
-				}
-				if (row.get("unit_price") == null) {
-					missingFields.add("unit_price");
-				}
-			}
-		}
-
+		// 5) 기본 필드/해석 실패를 한 번에 반환
 		if (!missingFields.isEmpty()) {
-			return Map.of("success", false, "message", "입고 등록 실패", "missingFields", List.copyOf(missingFields));
+			String msg = "입고 등록 실패 (누락/해석 실패: " + String.join(", ", missingFields) + ")";
+			return Map.of(
+					"success", false,
+					"message", msg,
+					"missingFields", List.copyOf(missingFields),
+					"lineErrors", lineErrors
+			);
 		}
 
-		// 4) INSERT ... SELECT (producer_type 고정 CUSTOMER, producer_code는 mo.producer_code 사용)
+		// 6) INSERT ... SELECT (producer_code는 mo.producer_code 사용 / vendor 금지)
 		String insertSql = """
 				INSERT INTO material_inbounds (
 				    inbound_datetime,
@@ -264,59 +194,80 @@ public class MaterialTransactionService {
 				    :remark
 				FROM material_orders mo
 				WHERE mo.m_order_id = :mOrderId
+				  AND mo.styles_id = :stylesId
+				  AND mo.prd_agree_id = :prdAgreeId
+				  AND mo.color_code = :colorCode
 				""";
 
 		int created = 0;
 		int skipped = 0;
 
-		try {
-			for (MaterialTransactionSaveLine line : request.getItems()) {
-				if (line == null) {
-					skipped++;
-					continue;
-				}
+		for (int i = 0; i < request.getItems().size(); i++) {
+			MaterialTransactionSaveLine line = request.getItems().get(i);
+			int idx = i + 1;
 
-				// mOrderId가 안 오면 bomId로 자동 해석
-				Long mOrderId = line.getMOrderId();
-				if (mOrderId == null && line.getBomId() != null) {
-					mOrderId = orderIdByBomId.get(line.getBomId());
-				}
-				if (mOrderId == null) {
-					skipped++;
-					continue;
-				}
+			if (line == null) {
+				skipped++;
+				lineErrors.add(Map.of("index", idx, "error", "line is null"));
+				continue;
+			}
 
-				BigDecimal receivedQty = line.getQuantity();
-				if (receivedQty == null) {
-					skipped++;
-					continue;
-				}
+			Long mOrderId = line.getMOrderId();
+			BigDecimal receivedQty = line.getQuantity();
+			if (mOrderId == null || receivedQty == null || receivedQty.compareTo(BigDecimal.ZERO) <= 0) {
+				skipped++;
+				lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "qty", receivedQty, "error", "필수값 누락/0이하"));
+				continue;
+			}
 
-				String remark = StringUtils.hasText(line.getRemark()) ? line.getRemark().trim() : "";
+			String remark = StringUtils.hasText(line.getRemark()) ? line.getRemark().trim() : "";
 
+			try {
 				MapSqlParameterSource p = new MapSqlParameterSource()
 						.addValue("mOrderId", mOrderId)
+						.addValue("stylesId", stylesId)
+						.addValue("prdAgreeId", prdAgreeId)
+						.addValue("colorCode", request.getColorCode())
 						.addValue("receivedQty", receivedQty)
 						.addValue("createdBy", empNo)
 						.addValue("remark", remark);
 
 				int affected = jdbcTemplate.update(insertSql, p);
-				if (affected > 0) created++;
-				else skipped++;
+				if (affected > 0) {
+					created++;
+				} else {
+					skipped++;
+					lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "error", "insert 0 rows (조건 불일치 가능)"));
+				}
+			} catch (org.springframework.dao.DataIntegrityViolationException e) {
+				skipped++;
+				String root = (e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : e.getMessage());
+				lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "error", "DataIntegrityViolation", "detail", root));
+			} catch (Exception e) {
+				skipped++;
+				String root = (e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+				lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "error", "Exception", "detail", root));
 			}
-		} catch (org.springframework.dao.DataIntegrityViolationException e) {
-			String root = (e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : e.getMessage());
-			throw new RuntimeException("입고 등록(DataIntegrityViolation) 실패: " + root, e);
-		} catch (Exception e) {
-			String root = (e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
-			throw new RuntimeException("입고 등록 실패: " + root, e);
 		}
 
+		boolean success = created > 0;
+		String message;
+		if (success) {
+			message = "입고 등록 완료 (created=" + created + ", skipped=" + skipped + ")";
+		} else {
+			message = "입고 등록 실패 (created=0, skipped=" + skipped + ") - lineErrors 확인";
+		}
+
+		// lineErrors가 너무 길면 프론트/로그 폭발 방지: 최대 20건만 반환
+		List<Map<String, Object>> lineErrorsLimited =
+				lineErrors.size() > 20 ? lineErrors.subList(0, 20) : lineErrors;
+
 		return Map.of(
-				"success", created > 0,
+				"success", success,
 				"created", created,
 				"skipped", skipped,
-				"message", created > 0 ? "입고 등록이 완료되었습니다." : "입고 등록에 실패했습니다. (모든 항목이 스킵되었습니다.)"
+				"message", message,
+				"lineErrors", lineErrorsLimited
 		);
 	}
 

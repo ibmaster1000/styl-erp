@@ -363,7 +363,7 @@
 				});
 			}
 
-			saveButton.addEventListener('click', () => {
+			saveButton.addEventListener('click', async () => {
 				const rows = Array.from(tableBody.querySelectorAll('tr[data-m-order-id]'));
 				const items = [];
 				rows.forEach(row => {
@@ -391,30 +391,32 @@
 					items
 				};
 
-				fetch('/production/material-inbound/save', {
-					method: 'POST',
-					headers: {'Content-Type': 'application/json'},
-					body: JSON.stringify(payload)
-				})
-					.then(async res => {
-						const data = await res.json().catch(() => ({}));
-						if (!res.ok) {
-							const errorMessage = data?.message || '입고 등록에 실패했습니다.';
-							throw new Error(errorMessage);
-						}
-						return data;
-					})
-					.then(data => {
-						if (data.success) {
-							alert(data.message || '입고가 등록되었습니다.');
-							loadMaterials(styleCodeInput.value.trim());
-						} else {
-							alert(data.message || '입고 등록에 실패했습니다.');
-						}
-					})
-					.catch((e) => {
-						alert(e?.message || '입고 등록에 실패했습니다.');
+				try {
+					const res = await fetch('/production/material-inbound/save', {
+						method: 'POST',
+						headers: {'Content-Type': 'application/json'},
+						body: JSON.stringify(payload)
 					});
+					const json = await res.json();
+
+					if (!json.success) {
+						let msg = json.message || '입고 등록 실패';
+						if (json.missingFields && Array.isArray(json.missingFields) && json.missingFields.length) {
+							msg += `\n\n[missingFields]\n- ${json.missingFields.join('\n- ')}`;
+						}
+						if (json.lineErrors && Array.isArray(json.lineErrors) && json.lineErrors.length) {
+							const preview = json.lineErrors.slice(0, 5).map(e => JSON.stringify(e)).join('\n');
+							msg += `\n\n[lineErrors sample]\n${preview}`;
+						}
+						alert(msg);
+						return;
+					}
+
+					alert(json.message || '입고 등록 완료');
+					window.location.reload();
+				} catch (e) {
+					alert(e?.message || '입고 등록에 실패했습니다.');
+				}
 			});
 
 			function formatQuantity(value) {
