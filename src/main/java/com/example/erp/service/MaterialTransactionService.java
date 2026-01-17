@@ -58,22 +58,10 @@ public class MaterialTransactionService {
 		}
 
 		final String producerType = "CUSTOMER";
-		String requestProducerCode = null;
-		try {
-			org.springframework.beans.BeanWrapper wrapper = new org.springframework.beans.BeanWrapperImpl(request);
-			if (wrapper.isReadableProperty("producerCode")) {
-				Object value = wrapper.getPropertyValue("producerCode");
-				if (value != null) {
-					requestProducerCode = value.toString();
-				}
-			}
-		} catch (Exception e) {
-			log.debug("요청에서 producer 정보를 확인하지 못했습니다.", e);
-		}
 		String producerCodeLookupSql = """
-				SELECT COALESCE(mo.vendor_code, ms.supplier_code) AS producer_code
+				SELECT COALESCE(mo.producer_code, mo.vendor_code, ms.producer_code, ms.supplier_code) AS producer_code
 				FROM material_orders mo
-				JOIN material_specs ms ON mo.bom_id = ms.bom_id
+				LEFT JOIN material_specs ms ON ms.bom_id = mo.bom_id
 				WHERE mo.m_order_id = :mOrderId
 				""";
 
@@ -123,23 +111,25 @@ public class MaterialTransactionService {
 		int skipped = 0;
 		for (MaterialTransactionSaveLine line : request.getItems()) {
 			if (line == null || line.getMOrderId() == null) {
-				skipped++;
-				continue;
+				throw new IllegalArgumentException("mOrderId 값이 필요합니다.");
 			}
 
-			BigDecimal receivedQty = safeDecimal(line.getQuantity());
+			BigDecimal receivedQty = line.getQuantity();
+			if (receivedQty == null) {
+				throw new IllegalArgumentException("receivedQty 값이 필요합니다. mOrderId=" + line.getMOrderId());
+			}
 			if (receivedQty.compareTo(BigDecimal.ZERO) <= 0) {
 				skipped++;
 				continue;
 			}
 
-			String orderUom = StringUtils.hasText(line.getOrderUom()) ? line.getOrderUom() : "EA";
-			String producerCode = StringUtils.hasText(requestProducerCode) ? requestProducerCode : null;
-			if (!StringUtils.hasText(producerCode)) {
-				MapSqlParameterSource lookupParams = new MapSqlParameterSource().addValue("mOrderId", line.getMOrderId());
-				producerCode = jdbcTemplate.query(producerCodeLookupSql, lookupParams,
-						rs -> rs.next() ? rs.getString("producer_code") : null);
+			if (!StringUtils.hasText(line.getOrderUom())) {
+				throw new IllegalArgumentException("orderUom 값이 필요합니다. mOrderId=" + line.getMOrderId());
 			}
+			String orderUom = line.getOrderUom();
+			MapSqlParameterSource lookupParams = new MapSqlParameterSource().addValue("mOrderId", line.getMOrderId());
+			String producerCode = jdbcTemplate.query(producerCodeLookupSql, lookupParams,
+					rs -> rs.next() ? rs.getString("producer_code") : null);
 			if (!StringUtils.hasText(producerCode)) {
 				throw new IllegalArgumentException("producerCode 값을 찾을 수 없습니다. mOrderId=" + line.getMOrderId());
 			}
@@ -153,12 +143,10 @@ public class MaterialTransactionService {
 				if (affected > 0) {
 					created++;
 				} else {
-					skipped++;
+					throw new RuntimeException("입고 대상 발주가 없습니다. mOrderId=" + line.getMOrderId());
 				}
 			} catch (org.springframework.dao.DataIntegrityViolationException e) {
-				throw new RuntimeException("입고 등록에 실패했습니다. (원인: " + e.getMostSpecificCause().getMessage() + ")", e);
-			} catch (Exception e) {
-				throw new RuntimeException("입고 등록에 실패했습니다. (원인: " + e.getMessage() + ")", e);
+				throw new RuntimeException("Inbound insert failed: " + e.getMostSpecificCause().getMessage(), e);
 			}
 		}
 
