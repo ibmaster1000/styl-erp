@@ -133,7 +133,7 @@ public class MaterialTransactionService {
 		List<String> orderMissingCols = findMissingColumns("material_orders",
 				List.of("m_order_id", "styles_id", "prd_agree_id", "color_type", "color_code",
 						"bom_id", "producer_code", "warehouse_type", "warehouse_code",
-						"order_amount", "order_uom", "unit_price"));
+						"order_amount", "unit_price"));
 		if (!orderMissingCols.isEmpty()) {
 			return Map.of(
 					"success", false,
@@ -179,12 +179,20 @@ public class MaterialTransactionService {
 				orderUomExpr = null;
 			}
 		}
+		
+		if (!hasMoOrderUom && !hasMsOrderUom && !hasMsUom) {
+			return Map.of(
+					"success", false,
+					"message", "입고 등록 실패 (order_uom 소스 컬럼이 없습니다: material_orders.order_uom 또는 material_specs.order_uom 또는 material_specs.uom 필요)",
+					"missingFields", List.of("order_uom_source")
+			);
+		}
 
 		if (orderUomExpr == null) {
 			return Map.of(
 					"success", false,
-					"message", "입고 등록 실패 (발주단위를 채울 소스 컬럼이 없습니다: material_specs.order_uom 또는 material_specs.uom 필요)",
-					"missingFields", List.of("material_specs.order_uom")
+					"message", "입고 등록 실패 (order_uom 소스 컬럼이 없습니다: material_orders.order_uom 또는 material_specs.order_uom 또는 material_specs.uom 필요)",
+					"missingFields", List.of("order_uom_source")
 			);
 		}
 
