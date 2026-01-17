@@ -57,16 +57,10 @@ public class MaterialTransactionService {
 			return Map.of("success", false, "created", 0, "skipped", 0, "message", "입고 항목이 없습니다.");
 		}
 
-		String producerType = null;
+		final String producerType = "CUSTOMER";
 		String producerCode = null;
 		try {
 			org.springframework.beans.BeanWrapper wrapper = new org.springframework.beans.BeanWrapperImpl(request);
-			if (wrapper.isReadableProperty("producerType")) {
-				Object value = wrapper.getPropertyValue("producerType");
-				if (value != null) {
-					producerType = value.toString();
-				}
-			}
 			if (wrapper.isReadableProperty("producerCode")) {
 				Object value = wrapper.getPropertyValue("producerCode");
 				if (value != null) {
@@ -76,10 +70,7 @@ public class MaterialTransactionService {
 		} catch (Exception e) {
 			log.debug("요청에서 producer 정보를 확인하지 못했습니다.", e);
 		}
-
-		if (!StringUtils.hasText(producerType)) {
-			throw new IllegalArgumentException("producerType 값이 필요합니다.");
-		}
+		
 		if (!StringUtils.hasText(producerCode)) {
 			throw new IllegalArgumentException("producerCode 값이 필요합니다.");
 		}
@@ -112,7 +103,7 @@ public class MaterialTransactionService {
 				    mo.color_type,
 				    mo.color_code,
 				    mo.bom_id,
-				    :producerType,
+				    'CUSTOMER',
 				    :producerCode,
 				    mo.warehouse_type,
 				    mo.warehouse_code,
@@ -142,7 +133,7 @@ public class MaterialTransactionService {
 
 			String orderUom = StringUtils.hasText(line.getOrderUom()) ? line.getOrderUom() : "EA";
 			MapSqlParameterSource params = new MapSqlParameterSource().addValue("mOrderId", line.getMOrderId())
-					.addValue("producerType", producerType).addValue("producerCode", producerCode)
+					.addValue("producerCode", producerCode)
 					.addValue("receivedQty", receivedQty).addValue("orderUom", orderUom).addValue("createdBy", empNo)
 					.addValue("remark", line.getRemark());
 
