@@ -244,6 +244,15 @@
 				messageBox.innerHTML = '';
 			}
 
+			function pick(obj, ...keys) {
+				for (const key of keys) {
+					if (obj && obj[key] !== undefined && obj[key] !== null && obj[key] !== '') {
+						return obj[key];
+					}
+				}
+				return null;
+			}
+
 			async function verifyStyleCode() {
 				clearMessage();
 				const styleCode = styleCodeInput.value.trim();
@@ -337,8 +346,12 @@
 					const requiredQty = formatQuantity(item.requiredQuantity ?? item.inboundQuantity ?? item.orderQuantity);
 					const inboundQty = requiredQty;
 					const row = document.createElement('tr');
-					row.dataset.mOrderId = item.mOrderId || '';
-					row.dataset.orderUom = item.orderUom || '';
+					const mOrderId = pick(item, 'mOrderId', 'm_order_id');
+					const bomId = pick(item, 'bomId', 'bom_id');
+					const orderUom = pick(item, 'orderUom', 'order_uom');
+					row.dataset.mOrderId = String(mOrderId || '');
+					row.dataset.bomId = String(bomId || '');
+					row.dataset.orderUom = String(orderUom || '');
 					row.dataset.unitPrice = item.unitPrice || '';
 					row.innerHTML = `
 						<td>${item.styleCode || '-'}</td>
@@ -353,7 +366,7 @@
 						<td>${formatQuantity(item.qtyPerPiece)}</td>
 						<td>${item.supplierName || item.supplierCode || '-'}</td>
 						<td>${item.productionManager || '-'}</td>
-						<td>${item.orderUom || '-'}</td>
+						<td>${orderUom || '-'}</td>
 						<td>${formatPrice(item.unitPrice)}</td>
 						<td>${requiredQty}</td>
 						<td>${inboundQty}</td>
@@ -364,18 +377,27 @@
 			}
 
 			saveButton.addEventListener('click', async () => {
-				const rows = Array.from(tableBody.querySelectorAll('tr[data-m-order-id]'));
+				const rows = Array.from(tableBody.querySelectorAll('tr'));
 				const items = [];
 				rows.forEach(row => {
 					const qty = parseFloat(row.querySelector('.mi-qty-input')?.value || '0');
-					if (!isNaN(qty) && qty > 0) {
-						items.push({
-							mOrderId: row.dataset.mOrderId || null,
-							quantity: qty,
-							orderUom: row.dataset.orderUom || null,
-							unitPrice: row.dataset.unitPrice ? Number(row.dataset.unitPrice) : null
-						});
+					if (isNaN(qty) || qty <= 0) {
+						return;
 					}
+					const mOrderId = row.dataset.mOrderId ? Number(row.dataset.mOrderId) : null;
+					const bomId = row.dataset.bomId ? Number(row.dataset.bomId) : null;
+					const safeMOrderId = isNaN(mOrderId) ? null : mOrderId;
+					const safeBomId = isNaN(bomId) ? null : bomId;
+					if (!safeMOrderId && !safeBomId) {
+						return;
+					}
+					items.push({
+						mOrderId: safeMOrderId,
+						bomId: safeBomId,
+						quantity: qty,
+						orderUom: row.dataset.orderUom || null,
+						unitPrice: row.dataset.unitPrice ? Number(row.dataset.unitPrice) : null
+					});
 				});
 
 				if (items.length === 0) {
