@@ -84,6 +84,10 @@
 			background-color: #e5e7eb !important;
 		}
 
+		.selected-row td {
+			background-color: #e9ecef !important;
+		}
+
 		.wo-row-disabled {
 			opacity: 0.5;
 		}
@@ -165,12 +169,24 @@
 							</tr>
 						</thead>
 						<tbody id="wo-left-body">
-							<tr>
-								<td colspan="6" class="wo-placeholder">품번/색상/생산합의 조건을 선택한 뒤 조회하세요.</td>
+							<tr th:if="${#lists.isEmpty(list)}">
+								<td colspan="6" class="wo-placeholder">품번/생산합의 조건을 선택한 뒤 조회하세요.</td>
+							</tr>
+							<tr th:each="item : ${list}"
+								th:attr="data-style-code=${item.styleCode},data-prd-agree-code=${item.prdAgreeCode}">
+								<td th:text="${item.styleCode}">-</td>
+								<td th:text="${item.prdAgreeCode}">-</td>
+								<td th:text="${item.colorCode}">-</td>
+								<td th:text="${item.agreementQuantity}">0</td>
+								<td>-</td>
+								<td>-</td>
 							</tr>
 						</tbody>
 					</table>
 				</div>
+				<nav class="mt-2" aria-label="작업지시 페이징">
+					<ul class="pagination pagination-sm justify-content-center mb-0" id="wo-pagination"></ul>
+				</nav>
 			</div>
 			<div class="wo-panel">
 				<div class="d-flex justify-content-between align-items-center mb-2">
@@ -206,8 +222,10 @@
 		</div>
 	</div>
 
-	<script>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
 		document.addEventListener('DOMContentLoaded', () => {
+			const initialHeaderPage = /*[[${headerPage}]]*/ null;
 			const styleIdInput = document.getElementById('wo-styles-id');
 			const styleCodeInput = document.getElementById('wo-style-input');
 			const colorSelect = document.getElementById('wo-color-select');
@@ -215,9 +233,13 @@
 			const searchButton = document.getElementById('wo-search-button');
 			const verifyButton = document.getElementById('wo-verify-button');
 			const leftBody = document.getElementById('wo-left-body');
+			const rightBody = document.getElementById('wo-right-body');
+			const pagination = document.getElementById('wo-pagination');
 			const messageBox = document.getElementById('wo-search-message');
 			let styleVerified = false;
 			let cachedAgreements = [];
+			let currentPage = 1;
+			let currentFilters = {styleCode: '', prdAgreeCode: ''};
 
 			styleCodeInput.addEventListener('input', () => {
 				styleIdInput.value = '';
@@ -228,15 +250,11 @@
 				colorSelect.disabled = true;
 				agreeSelect.disabled = true;
 				clearMessage();
-				resetTable('품번/색상/생산합의 조건을 선택한 뒤 조회하세요.');
+				resetTable('품번/생산합의 조건을 선택한 뒤 조회하세요.');
+				resetRightTable();
 			});
 
 			colorSelect.addEventListener('change', () => {
-				if (!colorSelect.value) {
-					renderSelectOptions(agreeSelect, [], '생산합의 코드를 선택하세요');
-					agreeSelect.disabled = true;
-					return;
-				}
 				renderSelectOptions(agreeSelect, cachedAgreements, '생산합의 코드를 선택하세요');
 				agreeSelect.disabled = false;
 			});
@@ -257,6 +275,11 @@
 
 			function resetTable(message) {
 				leftBody.innerHTML = `<tr><td colspan="6" class="wo-placeholder">${message}</td></tr>`;
+				pagination.innerHTML = '';
+			}
+
+			function resetRightTable() {
+				rightBody.innerHTML = '<tr><td colspan="7" class="wo-placeholder">좌측 목록을 선택하면 입력 항목이 표시됩니다.</td></tr>';
 			}
 
 			function setMessage(type, text) {
@@ -309,7 +332,7 @@
 				}
 				if (cachedAgreements.length === 1) {
 					agreeSelect.value = cachedAgreements[0];
-					await loadAgreements(styleCode);
+					await loadHeaderPage(1);
 				}
 			}
 
@@ -320,9 +343,9 @@
 					styleIdInput.value = data.stylesId || '';
 					renderSelectOptions(colorSelect, data.colors, '색상을 선택하세요');
 					cachedAgreements = data.agreements || [];
-					renderSelectOptions(agreeSelect, [], '생산합의 코드를 선택하세요');
+					renderSelectOptions(agreeSelect, cachedAgreements, '생산합의 코드를 선택하세요');
 					colorSelect.disabled = false;
-					agreeSelect.disabled = true;
+					agreeSelect.disabled = false;
 					return data;
 				} catch (e) {
 					renderSelectOptions(colorSelect, [], '색상을 선택하세요');
@@ -336,30 +359,38 @@
 			searchButton.addEventListener('click', async () => {
 				clearMessage();
 				const styleCode = styleCodeInput.value.trim();
-				if (!styleVerified) {
+				if (styleCode && !styleVerified) {
 					setMessage('danger', '품번 확인 후 조회하세요.');
 					resetTable('품번을 확인한 뒤 조회하세요.');
 					return;
 				}
-				if (!styleCode || !colorSelect.value || !agreeSelect.value) {
-					setMessage('danger', '품번/색상/생산합의코드를 선택하세요.');
-					resetTable('품번/색상/생산합의 조건을 선택한 뒤 조회하세요.');
-					return;
-				}
-				await loadAgreements(styleCode);
+				await loadHeaderPage(1);
 			});
 
-			async function loadAgreements(styleCode) {
-				const url = `/production/work-orders/list?styleCode=${encodeURIComponent(styleCode)}&prdAgreeCode=${encodeURIComponent(agreeSelect.value)}&colorCode=${encodeURIComponent(colorSelect.value)}`;
+			async function loadHeaderPage(page) {
+				const styleCode = styleCodeInput.value.trim();
+				const prdAgreeCode = agreeSelect.value;
+				currentFilters = {styleCode, prdAgreeCode};
+				const params = new URLSearchParams();
+				if (styleCode) {
+					params.append('styleCode', styleCode);
+				}
+				if (prdAgreeCode) {
+					params.append('prdAgreeCode', prdAgreeCode);
+				}
+				params.append('page', String(page));
+				params.append('size', '25');
+				const url = `/production/work-orders/list?${params.toString()}`;
 				try {
 					const res = await fetch(url);
 					const data = await res.json().catch(() => ({}));
 					if (!res.ok) {
 						throw new Error(data?.message || '조회 중 오류가 발생했습니다.');
 					}
-					renderTable(data);
-					if (data && data.length > 0) {
-						setMessage('success', `총 ${data.length}건 조회되었습니다.`);
+					renderTable(data?.items || []);
+					renderPagination(data);
+					if (data?.items && data.items.length > 0) {
+						setMessage('success', `총 ${data.total ?? data.items.length}건 조회되었습니다.`);
 						return;
 					}
 					setMessage('warning', '조회된 데이터가 없습니다.');
@@ -369,6 +400,7 @@
 						? rawMessage
 						: `조회 중 오류가 발생했습니다. (원인: ${rawMessage || '알 수 없는 오류'})`;
 					renderTable([]);
+					renderPagination({page: 1, totalPages: 0});
 					setMessage('danger', message);
 				}
 			}
@@ -381,6 +413,8 @@
 				}
 				list.forEach(item => {
 					const row = document.createElement('tr');
+					row.dataset.styleCode = item.styleCode || '';
+					row.dataset.prdAgreeCode = item.prdAgreeCode || '';
 					const statusLabel = item.status || (item.ordered ? 'ACTIVE' : '-');
 					row.innerHTML = `
 							<td>${item.styleCode || '-'}</td>
@@ -390,7 +424,92 @@
 							<td>${item.producerName || item.producerCode || '-'}</td>
 							<td>${statusLabel}</td>
 						`;
+					row.addEventListener('click', () => selectLeftRow(row));
 					leftBody.appendChild(row);
+				});
+			}
+
+			function renderPagination(pageData) {
+				if (!pagination) {
+					return;
+				}
+				const page = Number(pageData?.page || 1);
+				const totalPages = Number(pageData?.totalPages || 0);
+				currentPage = page;
+				pagination.innerHTML = '';
+				if (totalPages <= 1) {
+					return;
+				}
+
+				const makePageItem = (label, targetPage, disabled, active) => {
+					const li = document.createElement('li');
+					li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+					const button = document.createElement('button');
+					button.type = 'button';
+					button.className = 'page-link';
+					button.textContent = label;
+					if (!disabled && !active) {
+						button.addEventListener('click', () => loadHeaderPage(targetPage));
+					}
+					li.appendChild(button);
+					return li;
+				};
+
+				pagination.appendChild(makePageItem('이전', page - 1, page <= 1, false));
+				for (let i = 1; i <= totalPages; i += 1) {
+					pagination.appendChild(makePageItem(String(i), i, false, i === page));
+				}
+				pagination.appendChild(makePageItem('다음', page + 1, page >= totalPages, false));
+			}
+
+			function selectLeftRow(row) {
+				leftBody.querySelectorAll('tr').forEach(item => item.classList.remove('selected-row'));
+				row.classList.add('selected-row');
+				loadDetails(row.dataset.styleCode, row.dataset.prdAgreeCode);
+			}
+
+			async function loadDetails(styleCode, prdAgreeCode) {
+				rightBody.innerHTML = '<tr><td colspan="7" class="wo-placeholder">작업지시 목록을 불러오는 중입니다.</td></tr>';
+				const params = new URLSearchParams();
+				if (styleIdInput.value) {
+					params.append('stylesId', styleIdInput.value);
+				}
+				if (styleCode) {
+					params.append('styleCode', styleCode);
+				}
+				if (prdAgreeCode) {
+					params.append('prdAgreeCode', prdAgreeCode);
+				}
+				try {
+					const res = await fetch(`/production/work-orders/details?${params.toString()}`);
+					const data = await res.json();
+					if (!res.ok) {
+						throw new Error(data?.message || '조회 중 오류가 발생했습니다.');
+					}
+					renderRightTable(data);
+				} catch (e) {
+					rightBody.innerHTML = '<tr><td colspan="7" class="wo-placeholder">작업지시 목록을 불러오지 못했습니다.</td></tr>';
+				}
+			}
+
+			function renderRightTable(list) {
+				rightBody.innerHTML = '';
+				if (!list || list.length === 0) {
+					resetRightTable();
+					return;
+				}
+				list.forEach(item => {
+					const row = document.createElement('tr');
+					row.innerHTML = `
+							<td>${item.styleCode || '-'}</td>
+							<td>${item.prdAgreeCode || '-'}</td>
+							<td>${item.colorCode || '-'}</td>
+							<td>${formatQuantity(item.agreementQuantity)}</td>
+							<td>${item.producerName || item.producerCode || '-'}</td>
+							<td>${item.dueDate || '-'}</td>
+							<td>${item.deliveryPlaceName || item.deliveryPlaceCode || '-'}</td>
+						`;
+					rightBody.appendChild(row);
 				});
 			}
 
@@ -401,6 +520,16 @@
 			}
 
 			verifyButton.addEventListener('click', verifyStyleCode);
+
+			if (initialHeaderPage?.items) {
+				renderTable(initialHeaderPage.items);
+				renderPagination(initialHeaderPage);
+			}
+			if (!initialHeaderPage?.items || initialHeaderPage.items.length === 0) {
+				resetTable('조회된 데이터가 없습니다.');
+			}
+			resetRightTable();
 		});
+		/*]]>*/
 	</script>
 </div>

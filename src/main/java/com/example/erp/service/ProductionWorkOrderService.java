@@ -130,6 +130,196 @@ public class ProductionWorkOrderService {
 
         return rows;
     }
+    
+    public Map<String, Object> findAgreementHeaderPage(String styleCode, String prdAgreeCode, int page, int size) {
+        if (!hasTable("production_agreements") || !hasTable("styles")) {
+            return Map.of("items", Collections.emptyList(), "page", 1, "size", size, "total", 0, "totalPages", 0);
+        }
+
+        String agreementColumn = findFirstExistingColumn("production_agreements",
+                List.of("agreement_code", "prd_agree_code", "prd_agree_no"));
+        String colorColumn = findFirstExistingColumn("production_agreements", List.of("color_code", "color"));
+        String qtyColumn = findFirstExistingColumn("production_agreements", List.of("quantity", "agree_qty", "order_qty"));
+        String prdAgreeIdColumn = findFirstExistingColumn("production_agreements", List.of("prd_agree_id",
+                "prd_agree_no", "prd_agree_seq"));
+        String stylesIdColumn = findFirstExistingColumn("production_agreements", List.of("styles_id", "style_id"));
+        String stylesIdColumnInStyles = findFirstExistingColumn("styles", List.of("styles_id", "style_id", "id"));
+        String styleCodeColumn = findFirstExistingColumn("styles", List.of("style_code", "styles_code"));
+
+        if (agreementColumn == null || colorColumn == null || qtyColumn == null || prdAgreeIdColumn == null
+                || stylesIdColumn == null || stylesIdColumnInStyles == null || styleCodeColumn == null) {
+            return Map.of("items", Collections.emptyList(), "page", 1, "size", size, "total", 0, "totalPages", 0);
+        }
+
+        int safeSize = size > 0 ? size : 25;
+        int safePage = Math.max(page, 1);
+        int offset = (safePage - 1) * safeSize;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("size", safeSize)
+                .addValue("offset", offset);
+
+        StringBuilder countSql = new StringBuilder()
+                .append("select count(*) from (")
+                .append("select s.").append(styleCodeColumn).append(" as style_code, ")
+                .append("pa.").append(agreementColumn).append(" as agreement_code ")
+                .append("from production_agreements pa ")
+                .append("join styles s on s.").append(stylesIdColumnInStyles)
+                .append(" = pa.").append(stylesIdColumn).append(" ");
+        appendHeaderFilters(countSql, params, "s", styleCodeColumn, "pa", agreementColumn, styleCode, prdAgreeCode);
+        countSql.append("group by s.").append(styleCodeColumn).append(", pa.").append(agreementColumn).append(") t");
+
+        Integer totalCount = jdbcTemplate.queryForObject(countSql.toString(), params, Integer.class);
+        int total = totalCount != null ? totalCount : 0;
+        int totalPages = safeSize > 0 ? (int) Math.ceil(total / (double) safeSize) : 0;
+
+        StringBuilder latestSql = new StringBuilder()
+                .append("select pa_latest.").append(stylesIdColumn).append(" as styles_id, ")
+                .append("pa_latest.").append(agreementColumn).append(" as agreement_code, ")
+                .append("pa_latest.").append(colorColumn).append(" as color_code, ")
+                .append("pa_latest.").append(prdAgreeIdColumn).append(" as prd_agree_id ")
+                .append("from production_agreements pa_latest ")
+                .append("join styles s_latest on s_latest.").append(stylesIdColumnInStyles)
+                .append(" = pa_latest.").append(stylesIdColumn).append(" ");
+        appendHeaderFilters(latestSql, params, "s_latest", styleCodeColumn, "pa_latest", agreementColumn, styleCode,
+                prdAgreeCode);
+        latestSql.append("and pa_latest.").append(prdAgreeIdColumn).append(" = (")
+                .append("select max(pa_inner.").append(prdAgreeIdColumn).append(") from production_agreements pa_inner ")
+                .append("where pa_inner.").append(stylesIdColumn).append(" = pa_latest.")
+                .append(stylesIdColumn).append(" ")
+                .append("and pa_inner.").append(agreementColumn).append(" = pa_latest.")
+                .append(agreementColumn).append(")");
+
+        StringBuilder sql = new StringBuilder()
+                .append("select s.").append(styleCodeColumn).append(" as style_code, ")
+                .append("pa.").append(agreementColumn).append(" as agreement_code, ")
+                .append("coalesce(sum(pa.").append(qtyColumn).append("), 0) as agreement_qty, ")
+                .append("latest.color_code as color_code, ")
+                .append("max(pa.").append(prdAgreeIdColumn).append(") as prd_agree_id ")
+                .append("from production_agreements pa ")
+                .append("join styles s on s.").append(stylesIdColumnInStyles)
+                .append(" = pa.").append(stylesIdColumn).append(" ")
+                .append("join (").append(latestSql).append(") latest on latest.styles_id = pa.")
+                .append(stylesIdColumn).append(" and latest.agreement_code = pa.").append(agreementColumn).append(" ");
+        appendHeaderFilters(sql, params, "s", styleCodeColumn, "pa", agreementColumn, styleCode, prdAgreeCode);
+        sql.append("group by s.").append(styleCodeColumn).append(", pa.").append(agreementColumn)
+                .append(", latest.color_code ")
+                .append("order by max(pa.").append(prdAgreeIdColumn).append(") desc ")
+                .append("limit :size offset :offset");
+
+        List<WorkOrderAgreementRow> items = jdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> {
+            WorkOrderAgreementRow row = new WorkOrderAgreementRow();
+            row.setStyleCode(rs.getString("style_code"));
+            row.setPrdAgreeCode(rs.getString("agreement_code"));
+            row.setColorCode(rs.getString("color_code"));
+            row.setAgreementQuantity(rs.getBigDecimal("agreement_qty"));
+            Object prdAgreeValue = rs.getObject("prd_agree_id");
+            if (prdAgreeValue != null) {
+                row.setPrdAgreeId(((Number) prdAgreeValue).longValue());
+            }
+            return row;
+        });
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("items", items);
+        result.put("page", safePage);
+        result.put("size", safeSize);
+        result.put("total", total);
+        result.put("totalPages", totalPages);
+        return result;
+    }
+
+    public List<WorkOrderAgreementRow> findAgreementRowsByAgreement(String stylesId, String styleCode,
+            String prdAgreeCode) {
+        if (!StringUtils.hasText(prdAgreeCode)) {
+            return Collections.emptyList();
+        }
+        if (!hasTable("production_agreements") || !hasTable("styles")) {
+            return Collections.emptyList();
+        }
+
+        String resolvedStyleId = resolveStyleId(stylesId, styleCode);
+
+        String prdAgreeIdColumn = findFirstExistingColumn("production_agreements", List.of("prd_agree_id",
+                "prd_agree_no", "prd_agree_seq"));
+
+        StringBuilder sql = new StringBuilder()
+                .append("select s.style_code as style_code, ")
+                .append("pa.agreement_code as agreement_code, ")
+                .append("pa.color_code as color_code, ")
+                .append("coalesce(sum(pa.quantity), 0) as agreement_qty ");
+        if (prdAgreeIdColumn != null) {
+            sql.append(", max(pa.").append(prdAgreeIdColumn).append(") as prd_agree_id ");
+        }
+        sql.append(" ")
+                .append("from production_agreements pa ")
+                .append("join styles s on s.styles_id = pa.styles_id ")
+                .append("where pa.agreement_code = :agreementCode ");
+
+        if (StringUtils.hasText(resolvedStyleId)) {
+            sql.append("and pa.styles_id = :stylesId ");
+        } else if (StringUtils.hasText(styleCode)) {
+            sql.append("and s.style_code = :styleCode ");
+        }
+
+        sql.append("group by s.style_code, pa.agreement_code, pa.color_code ")
+                .append("order by s.style_code asc, pa.agreement_code asc, pa.color_code asc");
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("agreementCode", prdAgreeCode)
+                .addValue("stylesId", resolvedStyleId)
+                .addValue("styleCode", styleCode);
+
+        List<WorkOrderAgreementRow> rows = jdbcTemplate.query(sql.toString(), params, (rs, rowNum) -> {
+            WorkOrderAgreementRow row = new WorkOrderAgreementRow();
+            row.setStyleCode(rs.getString("style_code"));
+            row.setPrdAgreeCode(rs.getString("agreement_code"));
+            row.setColorCode(rs.getString("color_code"));
+            row.setAgreementQuantity(rs.getBigDecimal("agreement_qty"));
+            if (prdAgreeIdColumn != null) {
+                Object prdAgreeValue = rs.getObject("prd_agree_id");
+                if (prdAgreeValue != null) {
+                    row.setPrdAgreeId(((Number) prdAgreeValue).longValue());
+                }
+            }
+            return row;
+        });
+
+        if (rows.isEmpty() || !hasTable("production_jobs")) {
+            return rows;
+        }
+
+        Map<String, ExistingJob> existingOrders = loadExistingJobsByAgreement(prdAgreeCode, styleCode, resolvedStyleId);
+        Set<String> producerCodes = existingOrders.values().stream()
+                .map(ExistingJob::producerCode)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+        Set<String> deliveryCodes = existingOrders.values().stream()
+                .map(ExistingJob::deliveryPlaceCode)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+
+        Map<String, String> producerNames = findCodeNames("CUSTOMER", producerCodes);
+        Map<String, String> deliveryNames = findCodeNames("WAREHOUSE", deliveryCodes);
+
+        for (WorkOrderAgreementRow row : rows) {
+            String key = buildKey(row.getStyleCode(), row.getPrdAgreeCode(), row.getColorCode());
+            ExistingJob existing = existingOrders.get(key);
+            if (existing != null) {
+                row.setStatus(existing.status());
+                if (STATUS_ACTIVE.equalsIgnoreCase(existing.status())) {
+                    row.setOrdered(true);
+                }
+                row.setProducerCode(existing.producerCode());
+                row.setProducerName(producerNames.get(existing.producerCode()));
+                row.setDueDate(existing.dueDate());
+                row.setDeliveryPlaceCode(existing.deliveryPlaceCode());
+                row.setDeliveryPlaceName(deliveryNames.get(existing.deliveryPlaceCode()));
+            }
+        }
+
+        return rows;
+    }
 
     @Transactional
     public Map<String, Object> saveDraftWorkOrder(WorkOrderSaveRequest request, String empNo) {
@@ -368,6 +558,80 @@ public class ProductionWorkOrderService {
             result.put(key, new ExistingJob(producerCode, dueDate, deliveryPlace, status));
         });
         return result;
+    }
+    
+    private Map<String, ExistingJob> loadExistingJobsByAgreement(String prdAgreeCode, String styleCode,
+            String stylesId) {
+        String agreementColumn = findFirstExistingColumn("production_jobs", List.of("agreement_code", "prd_agree_code"));
+        String colorColumn = findFirstExistingColumn("production_jobs", List.of("color_code"));
+        String styleColumn = findFirstExistingColumn("production_jobs", List.of("style_code", "styles_code"));
+        String styleIdColumn = findFirstExistingColumn("production_jobs", List.of("styles_id", "style_id"));
+        String producerColumn = findFirstExistingColumn("production_jobs", List.of("factory_code", "producer_code"));
+        String dueDateColumn = findFirstExistingColumn("production_jobs", List.of("due_date", "delivery_due_date",
+                "delivery_date"));
+        String deliveryColumn = findFirstExistingColumn("production_jobs", List.of("delivery_location",
+                "delivery_place_code", "delivery_place", "warehouse_code"));
+        String statusColumn = findFirstExistingColumn("production_jobs", List.of("status"));
+
+        if (agreementColumn == null || colorColumn == null) {
+            return Collections.emptyMap();
+        }
+
+        StringBuilder sql = new StringBuilder()
+                .append("select ")
+                .append(styleColumn != null ? styleColumn + " as style_code, " : "null as style_code, ")
+                .append(agreementColumn).append(" as agreement_code, ")
+                .append(colorColumn).append(" as color_code ")
+                .append(statusColumn != null ? ", " + statusColumn + " as status" : ", null as status")
+                .append(producerColumn != null ? ", " + producerColumn + " as producer_code" : ", null as producer_code")
+                .append(dueDateColumn != null ? ", " + dueDateColumn + " as due_date" : ", null as due_date")
+                .append(deliveryColumn != null ? ", " + deliveryColumn + " as delivery_place" : ", null as delivery_place")
+                .append(" from production_jobs ")
+                .append("where ").append(agreementColumn).append(" = :agreementCode ");
+
+        if (styleColumn != null) {
+            sql.append("and ").append(styleColumn).append(" = :styleCode ");
+        } else if (styleIdColumn != null && StringUtils.hasText(stylesId)) {
+            sql.append("and ").append(styleIdColumn).append(" = :stylesId ");
+        }
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("agreementCode", prdAgreeCode)
+                .addValue("styleCode", styleCode)
+                .addValue("stylesId", stylesId);
+
+        Map<String, ExistingJob> result = new HashMap<>();
+        jdbcTemplate.query(sql.toString(), params, rs -> {
+            String sCode = rs.getString("style_code");
+            String agreement = rs.getString("agreement_code");
+            String color = rs.getString("color_code");
+            String key = buildKey(sCode != null ? sCode : styleCode, agreement, color);
+            String producerCode = rs.getString("producer_code");
+            String deliveryPlace = rs.getString("delivery_place");
+            String dueDate = formatDateTime(rs.getObject("due_date"));
+            String status = rs.getString("status");
+            result.put(key, new ExistingJob(producerCode, dueDate, deliveryPlace, status));
+        });
+        return result;
+    }
+
+    private void appendHeaderFilters(StringBuilder sql, MapSqlParameterSource params, String styleAlias,
+            String styleCodeColumn, String agreementAlias, String agreementColumn, String styleCode,
+            String prdAgreeCode) {
+        sql.append("where 1=1 ");
+        if (StringUtils.hasText(styleCode)) {
+            sql.append("and ").append(styleAlias).append(".").append(styleCodeColumn).append(" like :styleCode ");
+            if (!params.hasValue("styleCode")) {
+                params.addValue("styleCode", "%" + styleCode + "%");
+            }
+        }
+        if (StringUtils.hasText(prdAgreeCode)) {
+            sql.append("and ").append(agreementAlias).append(".").append(agreementColumn)
+                    .append(" like :prdAgreeCode ");
+            if (!params.hasValue("prdAgreeCode")) {
+                params.addValue("prdAgreeCode", "%" + prdAgreeCode + "%");
+            }
+        }
     }
 
     private String findExistingJobStatus(String agreementColumn, String colorColumn, String styleColumn,

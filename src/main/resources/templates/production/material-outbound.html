@@ -141,42 +141,6 @@
 			width: 200px;
 			overflow: visible;
 		}
-
-		.mout-factory-dropdown {
-			position: absolute;
-			top: calc(100% + 4px);
-			left: 0;
-			right: 0;
-			z-index: 10;
-			background: #ffffff;
-			border: 1px solid #e5e7eb;
-			border-radius: 8px;
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-			max-height: 180px;
-			overflow-y: auto;
-			display: none;
-			padding: 4px 0;
-		}
-
-		.mout-factory-dropdown.show {
-			display: block;
-		}
-
-		.mout-factory-option {
-			padding: 6px 10px;
-			font-size: 12px;
-			cursor: pointer;
-		}
-
-		.mout-factory-option:hover {
-			background: #f3f4f6;
-		}
-
-		.mout-factory-empty {
-			padding: 6px 10px;
-			font-size: 12px;
-			color: #6b7280;
-		}
 	</style>
 
 	<div class="mb-3">
@@ -264,10 +228,43 @@
 		</div>
 	</div>
 
+	<div class="modal fade" id="factoryModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">생산처 등록</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<table class="table table-bordered align-middle mb-0">
+						<thead class="table-light">
+							<tr>
+								<th>코드</th>
+								<th>상호</th>
+							</tr>
+						</thead>
+						<tbody id="factory-modal-body">
+							<tr th:if="${#lists.isEmpty(factories)}">
+								<td colspan="2" class="text-center text-muted">등록된 생산처가 없습니다.</td>
+							</tr>
+							<tr th:each="factory : ${factories}"
+								th:attr="data-factory-code=${factory.code},data-factory-name=${factory.name}">
+								<td th:text="${factory.code}">-</td>
+								<td th:text="${factory.name}">-</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
+					<button type="button" class="btn btn--primary" id="factory-select-button">선택</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<script th:inline="javascript">
 		/*<![CDATA[*/
-		const factoryOptions = /*[[${factories}]]*/[];
-
 		document.addEventListener('DOMContentLoaded', () => {
 			const styleIdInput = document.getElementById('mout-styles-id');
 			const styleCodeInput = document.getElementById('mout-style-input');
@@ -278,7 +275,15 @@
 			const saveButton = document.getElementById('mout-save-button');
 			const tableBody = document.getElementById('mout-table-body');
 			const messageBox = document.getElementById('mout-search-message');
+			const factoryModalElement = document.getElementById('factoryModal');
+			const factoryModalBody = document.getElementById('factory-modal-body');
+			const factorySelectButton = document.getElementById('factory-select-button');
+			const factoryModal = factoryModalElement && window.bootstrap
+				? new window.bootstrap.Modal(factoryModalElement)
+				: null;
 			let styleVerified = false;
+			let activeFactoryRow = null;
+			let selectedFactory = null;
 
 			styleCodeInput.addEventListener('input', () => {
 				styleIdInput.value = '';
@@ -426,7 +431,7 @@
 				}
 				list.forEach(item => {
 					const stock = safeNumber(item.inventoryQuantity ?? item.inventory_qty ?? item.inboundQuantity);
-										const available = Math.max(stock, 0);
+					const available = Math.max(stock, 0);
 					const requiredQty = formatQuantity(item.requiredQuantity ?? item.orderQuantity);
 					const row = document.createElement('tr');
 					row.dataset.mOrderId = item.mOrderId || '';
@@ -482,92 +487,94 @@
 											<i class="bi bi-search"></i>
 										</button>
 									</div>
-									<div class="mout-factory-dropdown"></div>
+									<span class="text-muted small mout-factory-name"></span>
 								</div>
 							`;
-			}
-
-			function normalizeFactoryOptions() {
-				return (factoryOptions || []).map(opt => ({
-					code: opt.code || opt.code_value || '',
-					name: opt.name || opt.code_name || opt.code || ''
-				})).filter(opt => opt.code);
-			}
-
-			const normalizedFactories = normalizeFactoryOptions();
-
-			function filterFactories(keyword) {
-				if (!keyword) {
-					return normalizedFactories;
-				}
-				const lower = keyword.toLowerCase();
-				return normalizedFactories.filter(opt =>
-					opt.code.toLowerCase().includes(lower) ||
-					(opt.name || '').toLowerCase().includes(lower)
-				);
-			}
-
-			function closeFactoryDropdowns() {
-				document.querySelectorAll('.mout-factory-dropdown.show').forEach(dropdown => {
-					dropdown.classList.remove('show');
-				});
 			}
 
 			function attachFactorySearch(row) {
 				const wrapper = row.querySelector('.mout-factory-wrapper');
 				const input = row.querySelector('.mout-factory-input');
 				const button = row.querySelector('.mout-factory-search');
-				const dropdown = row.querySelector('.mout-factory-dropdown');
+				const nameLabel = row.querySelector('.mout-factory-name');
 
-				if (!wrapper || !input || !button || !dropdown) {
+				if (!wrapper || !input || !button) {
 					return;
 				}
-				const renderOptions = (keyword) => {
-					dropdown.innerHTML = '';
-					const matches = filterFactories(keyword);
-					if (matches.length === 0) {
-						dropdown.innerHTML = '<div class="mout-factory-empty">조회된 생산처가 없습니다.</div>';
-						return;
-					}
-					matches.forEach(opt => {
-						const optionEl = document.createElement('div');
-						optionEl.className = 'mout-factory-option';
-						optionEl.textContent = opt.name ? `${opt.code} (${opt.name})` : opt.code;
-						optionEl.addEventListener('click', () => {
-							input.value = opt.code;
-							closeFactoryDropdowns();
-						});
-						dropdown.appendChild(optionEl);
-					});
-				};
-
 				button.addEventListener('click', (event) => {
 					event.preventDefault();
 					event.stopPropagation();
-					if (normalizedFactories.length === 0) {
-						renderOptions('');
-						dropdown.classList.add('show');
-						return;
+					activeFactoryRow = row;
+					selectedFactory = null;
+					clearFactorySelection();
+					if (factoryModal) {
+						factoryModal.show();
 					}
-					closeFactoryDropdowns();
-					renderOptions(input.value);
-					dropdown.classList.add('show');
-				});
-
-				input.addEventListener('input', () => {
-					if (dropdown.classList.contains('show')) {
-						renderOptions(input.value);
-					}
-				});
-
-				wrapper.addEventListener('click', (event) => {
-					event.stopPropagation();
 				});
 			}
 
-			document.addEventListener('click', () => {
-				closeFactoryDropdowns();
-			});
+			function clearFactorySelection() {
+				if (!factoryModalBody) {
+					return;
+				}
+				factoryModalBody.querySelectorAll('tr').forEach(row => row.classList.remove('table-active'));
+			}
+
+			function applyFactorySelection() {
+				if (!activeFactoryRow || !selectedFactory) {
+					return;
+				}
+				const input = activeFactoryRow.querySelector('.mout-factory-input');
+				const nameLabel = activeFactoryRow.querySelector('.mout-factory-name');
+				if (input) {
+					input.value = selectedFactory.code;
+				}
+				if (nameLabel) {
+					nameLabel.textContent = selectedFactory.name || '';
+				}
+			}
+
+			if (factoryModalBody) {
+				factoryModalBody.addEventListener('click', (event) => {
+					const row = event.target.closest('tr[data-factory-code]');
+					if (!row) {
+						return;
+					}
+					clearFactorySelection();
+					row.classList.add('table-active');
+					selectedFactory = {
+						code: row.dataset.factoryCode || '',
+						name: row.dataset.factoryName || ''
+					};
+				});
+
+				factoryModalBody.addEventListener('dblclick', (event) => {
+					const row = event.target.closest('tr[data-factory-code]');
+					if (!row) {
+						return;
+					}
+					clearFactorySelection();
+					row.classList.add('table-active');
+					selectedFactory = {
+						code: row.dataset.factoryCode || '',
+						name: row.dataset.factoryName || ''
+					};
+					applyFactorySelection();
+					if (factoryModal) {
+						factoryModal.hide();
+					}
+				});
+			}
+
+			if (factorySelectButton) {
+				factorySelectButton.addEventListener('click', () => {
+					applyFactorySelection();
+					if (factoryModal) {
+						factoryModal.hide();
+					}
+				});
+			}
+
 
 			saveButton.addEventListener('click', () => {
 				const rows = Array.from(tableBody.querySelectorAll('tr[data-m-order-id]'));

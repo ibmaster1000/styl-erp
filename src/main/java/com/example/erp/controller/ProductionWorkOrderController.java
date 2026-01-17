@@ -46,7 +46,14 @@ public class ProductionWorkOrderController extends PageViewSupport {
 
     @GetMapping
     public String view(Model model) {
-        populate(model, "작업지시", "work-instructions", "production/work-orders", Collections.emptyList());
+    	Map<String, Object> headerPage = productionWorkOrderService.findAgreementHeaderPage(null, null, 1, 25);
+        Object items = headerPage.getOrDefault("items", Collections.emptyList());
+        populate(model, "작업지시", "work-instructions", "production/work-orders", items);
+        model.addAttribute("headerPage", headerPage);
+        model.addAttribute("page", headerPage.get("page"));
+        model.addAttribute("size", headerPage.get("size"));
+        model.addAttribute("total", headerPage.get("total"));
+        model.addAttribute("totalPages", headerPage.get("totalPages"));
         return "layout/layout";
     }
     @GetMapping("/styles")
@@ -64,16 +71,32 @@ public class ProductionWorkOrderController extends PageViewSupport {
 
     @GetMapping("/list")
     @ResponseBody
-    public ResponseEntity<?> fetchList(@RequestParam(name = "stylesId", required = false) String stylesId,
-            @RequestParam(name = "styleCode", required = false) String styleCode,
+    public ResponseEntity<?> fetchList(@RequestParam(name = "styleCode", required = false) String styleCode,
             @RequestParam(name = "prdAgreeCode", required = false) String prdAgreeCode,
-            @RequestParam(name = "colorCode", required = false) String colorCode) {
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "25") int size) {
         try {
-            List<WorkOrderAgreementRow> result =
-                    productionWorkOrderService.findAgreementRows(stylesId, styleCode, prdAgreeCode, colorCode);
+        	Map<String, Object> result =
+                    productionWorkOrderService.findAgreementHeaderPage(styleCode, prdAgreeCode, page, size);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             log.error("작업지시 목록 조회 중 오류가 발생했습니다.", e);
+            String message = "조회 중 오류가 발생했습니다. (원인: " + e.getMessage() + ")";
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
+        }
+    }
+    
+    @GetMapping("/details")
+    @ResponseBody
+    public ResponseEntity<?> fetchDetails(@RequestParam(name = "stylesId", required = false) String stylesId,
+            @RequestParam(name = "styleCode", required = false) String styleCode,
+            @RequestParam(name = "prdAgreeCode", required = false) String prdAgreeCode) {
+        try {
+            List<WorkOrderAgreementRow> result =
+                    productionWorkOrderService.findAgreementRowsByAgreement(stylesId, styleCode, prdAgreeCode);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("작업지시 상세 조회 중 오류가 발생했습니다.", e);
             String message = "조회 중 오류가 발생했습니다. (원인: " + e.getMessage() + ")";
             return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
         }
