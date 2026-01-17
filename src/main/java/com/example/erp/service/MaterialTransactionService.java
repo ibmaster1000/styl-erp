@@ -58,22 +58,24 @@ public class MaterialTransactionService {
 		}
 
 		final String producerType = "CUSTOMER";
-		String producerCode = null;
+		String requestProducerCode = null;
 		try {
 			org.springframework.beans.BeanWrapper wrapper = new org.springframework.beans.BeanWrapperImpl(request);
 			if (wrapper.isReadableProperty("producerCode")) {
 				Object value = wrapper.getPropertyValue("producerCode");
 				if (value != null) {
-					producerCode = value.toString();
+					requestProducerCode = value.toString();
 				}
 			}
 		} catch (Exception e) {
 			log.debug("요청에서 producer 정보를 확인하지 못했습니다.", e);
 		}
-		
-		if (!StringUtils.hasText(producerCode)) {
-			throw new IllegalArgumentException("producerCode 값이 필요합니다.");
-		}
+		String producerCodeLookupSql = """
+				SELECT COALESCE(mo.vendor_code, ms.supplier_code) AS producer_code
+				FROM material_orders mo
+				JOIN material_specs ms ON mo.bom_id = ms.bom_id
+				WHERE mo.m_order_id = :mOrderId
+				""";
 
 		String sql = """
 				INSERT INTO material_inbounds (
@@ -103,7 +105,7 @@ public class MaterialTransactionService {
 				    mo.color_type,
 				    mo.color_code,
 				    mo.bom_id,
-				    'CUSTOMER',
+				    :producerType,
 				    :producerCode,
 				    mo.warehouse_type,
 				    mo.warehouse_code,
@@ -132,8 +134,17 @@ public class MaterialTransactionService {
 			}
 
 			String orderUom = StringUtils.hasText(line.getOrderUom()) ? line.getOrderUom() : "EA";
+			String producerCode = StringUtils.hasText(requestProducerCode) ? requestProducerCode : null;
+			if (!StringUtils.hasText(producerCode)) {
+				MapSqlParameterSource lookupParams = new MapSqlParameterSource().addValue("mOrderId", line.getMOrderId());
+				producerCode = jdbcTemplate.query(producerCodeLookupSql, lookupParams,
+						rs -> rs.next() ? rs.getString("producer_code") : null);
+			}
+			if (!StringUtils.hasText(producerCode)) {
+				throw new IllegalArgumentException("producerCode 값을 찾을 수 없습니다. mOrderId=" + line.getMOrderId());
+			}
 			MapSqlParameterSource params = new MapSqlParameterSource().addValue("mOrderId", line.getMOrderId())
-					.addValue("producerCode", producerCode)
+					.addValue("producerType", producerType).addValue("producerCode", producerCode)
 					.addValue("receivedQty", receivedQty).addValue("orderUom", orderUom).addValue("createdBy", empNo)
 					.addValue("remark", line.getRemark());
 
