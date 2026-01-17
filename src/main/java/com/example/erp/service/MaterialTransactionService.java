@@ -57,15 +57,27 @@ public class MaterialTransactionService {
 			return Map.of("success", false, "created", 0, "skipped", 0, "message", "입고 항목이 없습니다.");
 		}
 
+		// producer_type은 무조건 CUSTOMER 고정
 		final String producerType = "CUSTOMER";
-		String producerCodeLookupSql = """
-				SELECT COALESCE(mo.producer_code, mo.vendor_code, ms.producer_code, ms.supplier_code) AS producer_code
-				FROM material_orders mo
-				LEFT JOIN material_specs ms ON ms.bom_id = mo.bom_id
-				WHERE mo.m_order_id = :mOrderId
-				""";
 
-		String sql = """
+		// 화면은 prdAgreeCode를 주지만, material_orders는 prd_agree_id(BIGINT) 기반이므로 먼저 ID로 해석
+		Long prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode());
+		if (prdAgreeId == null) {
+			return Map.of("success", false, "created", 0, "skipped", request.getItems().size(), "message",
+					"입고 등록에 실패했습니다. (원인: 생산합의 ID(prdAgreeId)를 해석할 수 없습니다.)");
+		}
+
+		if (!StringUtils.hasText(request.getColorCode())) {
+			return Map.of("success", false, "created", 0, "skipped", request.getItems().size(), "message",
+					"입고 등록에 실패했습니다. (원인: colorCode 값이 필요합니다.)");
+		}
+
+		if (!StringUtils.hasText(request.getStylesId())) {
+			return Map.of("success", false, "created", 0, "skipped", request.getItems().size(), "message",
+					"입고 등록에 실패했습니다. (원인: stylesId 값이 필요합니다.)");
+		}
+
+		String insertSql = """
 				INSERT INTO material_inbounds (
 				    inbound_datetime,
 				    m_order_id,
@@ -93,8 +105,8 @@ public class MaterialTransactionService {
 				    mo.color_type,
 				    mo.color_code,
 				    mo.bom_id,
-				    :producerType,
-				    :producerCode,
+				    'CUSTOMER',
+				    COALESCE(mo.producer_code, mo.vendor_code),
 				    mo.warehouse_type,
 				    mo.warehouse_code,
 				    mo.order_amount,
@@ -111,45 +123,75 @@ public class MaterialTransactionService {
 		int skipped = 0;
 		for (MaterialTransactionSaveLine line : request.getItems()) {
 			if (line == null) {
-				throw new IllegalArgumentException("입고 항목이 없습니다.");
-			}
-			if (line.getMOrderId() == null) {
-				throw new IllegalArgumentException("mOrderId 값이 필요합니다.");
+				skipped++;
+				continue;
 			}
 
-			BigDecimal receivedQty = line.getQuantity();
-			if (receivedQty == null) {
-				throw new IllegalArgumentException("receivedQty 값이 필요합니다. mOrderId=" + line.getMOrderId());
-			}
+			BigDecimal receivedQty = safeDecimal(line.getQuantity());
 			if (receivedQty.compareTo(BigDecimal.ZERO) <= 0) {
 				skipped++;
 				continue;
 			}
 
-			if (!StringUtils.hasText(line.getOrderUom())) {
-				throw new IllegalArgumentException("orderUom 값이 필요합니다. mOrderId=" + line.getMOrderId());
+			Long mOrderId = line.getMOrderId();
+
+			// mOrderId가 안 넘어오는 케이스 보정: bom_id로 역조회해서 m_order_id 채우기
+			if (mOrderId == null) {
+				Long bomId = null;
+				try {
+					org.springframework.beans.BeanWrapper lw = new org.springframework.beans.BeanWrapperImpl(line);
+					if (lw.isReadableProperty("bomId") && lw.getPropertyValue("bomId") != null) {
+						bomId = Long.valueOf(lw.getPropertyValue("bomId").toString());
+					} else if (lw.isReadableProperty("materialSpecId")
+							&& lw.getPropertyValue("materialSpecId") != null) {
+						bomId = Long.valueOf(lw.getPropertyValue("materialSpecId").toString());
+					}
+				} catch (Exception ignore) {
+					// ignore
+				}
+
+				if (bomId != null) {
+					String resolveSql = """
+							select mo.m_order_id
+							from material_orders mo
+							where mo.prd_agree_id = :prdAgreeId
+							  and mo.color_code = :colorCode
+							  and mo.styles_id = :stylesId
+							  and mo.bom_id = :bomId
+							order by mo.m_order_id desc
+							limit 1
+							""";
+					MapSqlParameterSource resolveParams = new MapSqlParameterSource().addValue("prdAgreeId", prdAgreeId)
+							.addValue("colorCode", request.getColorCode()).addValue("stylesId", request.getStylesId())
+							.addValue("bomId", bomId);
+
+					List<Long> found = jdbcTemplate.query(resolveSql, resolveParams, (rs, rowNum) -> rs.getLong(1));
+					if (!found.isEmpty()) {
+						mOrderId = found.get(0);
+					}
+				}
 			}
-			String orderUom = line.getOrderUom();
-			MapSqlParameterSource lookupParams = new MapSqlParameterSource().addValue("mOrderId", line.getMOrderId());
-			String producerCode = jdbcTemplate.query(producerCodeLookupSql, lookupParams,
-					rs -> rs.next() ? rs.getString("producer_code") : null);
-			if (!StringUtils.hasText(producerCode)) {
-				throw new IllegalArgumentException("producerCode 값을 찾을 수 없습니다. mOrderId=" + line.getMOrderId());
+			if (mOrderId == null) {
+				skipped++;
+				continue;
 			}
-			MapSqlParameterSource params = new MapSqlParameterSource().addValue("mOrderId", line.getMOrderId())
-					.addValue("producerType", producerType).addValue("producerCode", producerCode)
+			String orderUom = StringUtils.hasText(line.getOrderUom()) ? line.getOrderUom() : "EA";
+
+			MapSqlParameterSource params = new MapSqlParameterSource().addValue("mOrderId", mOrderId)
 					.addValue("receivedQty", receivedQty).addValue("orderUom", orderUom).addValue("createdBy", empNo)
 					.addValue("remark", line.getRemark());
 
 			try {
-				int affected = jdbcTemplate.update(sql, params);
+				int affected = jdbcTemplate.update(insertSql, params);
 				if (affected > 0) {
 					created++;
 				} else {
-					throw new RuntimeException("입고 대상 발주가 없습니다. mOrderId=" + line.getMOrderId());
+					skipped++;
 				}
 			} catch (org.springframework.dao.DataIntegrityViolationException e) {
-				throw new RuntimeException("Inbound insert failed: " + e.getMostSpecificCause().getMessage(), e);
+				throw new RuntimeException("입고 등록에 실패했습니다. (원인: " + e.getMostSpecificCause().getMessage() + ")", e);
+			} catch (Exception e) {
+				throw new RuntimeException("입고 등록에 실패했습니다. (원인: " + e.getMessage() + ")", e);
 			}
 		}
 
