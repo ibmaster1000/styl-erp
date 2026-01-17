@@ -53,31 +53,27 @@ public class MaterialTransactionService {
 
 	@Transactional
 	public Map<String, Object> saveInbound(MaterialTransactionSaveRequest request, String empNo) {
+		Set<String> missingFields = new LinkedHashSet<>();
 		if (request == null || CollectionUtils.isEmpty(request.getItems())) {
-			return Map.of("success", false, "created", 0, "skipped", 0, "message", "입고 항목이 없습니다.");
+			missingFields.add("items");
 		}
-
 		if (!StringUtils.hasText(empNo)) {
-			return Map.of("success", false, "created", 0, "skipped", request.getItems().size(), "message",
-					"입고 등록에 실패했습니다. (원인: 로그인 사용자(empNo)가 없습니다.)");
+			missingFields.add("empNo");
 		}
-
-		if (!StringUtils.hasText(request.getColorCode())) {
-			return Map.of("success", false, "created", 0, "skipped", request.getItems().size(), "message",
-					"입고 등록에 실패했습니다. (원인: colorCode 값이 필요합니다.)");
+		if (request == null || !StringUtils.hasText(request.getColorCode())) {
+			missingFields.add("colorCode");
 		}
 
 		// 1) prdAgreeId 해석 (agreement_code + color_code -> prd_agree_id)
-		Long prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode());
+		Long prdAgreeId = request != null ? resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode()) : null;
 		if (prdAgreeId == null) {
-			return Map.of("success", false, "created", 0, "skipped", request.getItems().size(), "message",
-					"입고 등록에 실패했습니다. (원인: 생산합의 ID(prdAgreeId)를 해석할 수 없습니다.)");
+			missingFields.add("prdAgreeId");
 		}
 
 		// 2) stylesId 해석 (없으면 styleCode로 조회)
 		// - 이 클래스의 resolveStyleId(String stylesId, String styleCode)는 String을 반환하므로
 		//   여기서는 String으로 먼저 해석 후 Long으로 파싱한다.
-		String resolvedStyleIdStr = resolveStyleId(request.getStylesId(), request.getStyleCode());
+		String resolvedStyleIdStr = request != null ? resolveStyleId(request.getStylesId(), request.getStyleCode()) : null;
 
 		Long stylesId = null;
 		if (StringUtils.hasText(resolvedStyleIdStr)) {
@@ -89,22 +85,41 @@ public class MaterialTransactionService {
 		}
 
 		if (stylesId == null) {
-		    return Map.of("success", false, "created", 0, "skipped", request.getItems().size(), "message",
-		            "입고 등록에 실패했습니다. (원인: stylesId를 해석할 수 없습니다. stylesId=" + request.getStylesId()
-		                    + ", styleCode=" + request.getStyleCode() + ")");
+			missingFields.add("stylesId/styleCode");
 		}
 
+		if (request != null && !CollectionUtils.isEmpty(request.getItems())) {
+			for (MaterialTransactionSaveLine line : request.getItems()) {
+				if (line == null) {
+					missingFields.add("items");
+					continue;
+				}
+				if (line.getMOrderId() == null) {
+					missingFields.add("mOrderId");
+				}
+				if (line.getBomId() == null) {
+					missingFields.add("bomId");
+				}
+				BigDecimal receivedQty = line.getQuantity();
+				if (receivedQty == null || receivedQty.compareTo(BigDecimal.ZERO) <= 0) {
+					missingFields.add("receivedQty");
+				}
+			}
+		}
 
 		// 3) UI가 mOrderId를 안 보내는 케이스 대비: bomId -> m_order_id 매핑을 먼저 조회
 		Set<Long> bomIds = new LinkedHashSet<>();
-		for (MaterialTransactionSaveLine line : request.getItems()) {
-			if (line != null && line.getBomId() != null) {
-				bomIds.add(line.getBomId());
+		if (request != null && !CollectionUtils.isEmpty(request.getItems())) {
+			for (MaterialTransactionSaveLine line : request.getItems()) {
+				if (line != null && line.getBomId() != null) {
+					bomIds.add(line.getBomId());
+				}
 			}
 		}
 
 		Map<Long, Long> orderIdByBomId = new LinkedHashMap<>();
-		if (!bomIds.isEmpty()) {
+		if (!bomIds.isEmpty() && stylesId != null && prdAgreeId != null && request != null
+				&& StringUtils.hasText(request.getColorCode())) {
 			String sqlOrderMap = """
 					select mo.bom_id as bomId, max(mo.m_order_id) as mOrderId
 					from material_orders mo
@@ -132,7 +147,83 @@ public class MaterialTransactionService {
 			}
 		}
 
-		// 4) INSERT ... SELECT (producer_type 고정 CUSTOMER, producer_code는 mo.vendor_code 사용)
+		Map<Long, Map<String, Object>> orderInfoById = new LinkedHashMap<>();
+		Set<Long> resolvedOrderIds = new LinkedHashSet<>();
+		if (request != null && !CollectionUtils.isEmpty(request.getItems())) {
+			for (MaterialTransactionSaveLine line : request.getItems()) {
+				if (line == null) {
+					continue;
+				}
+				Long orderId = line.getMOrderId();
+				if (orderId == null && line.getBomId() != null) {
+					orderId = orderIdByBomId.get(line.getBomId());
+				}
+				if (orderId != null) {
+					resolvedOrderIds.add(orderId);
+				} else {
+					missingFields.add("mOrderId");
+				}
+			}
+		}
+
+		if (!resolvedOrderIds.isEmpty()) {
+			String orderInfoSql = """
+					select m_order_id,
+					       bom_id,
+					       producer_code,
+					       warehouse_code,
+					       order_uom,
+					       unit_price,
+					       order_amount,
+					       color_type
+					from material_orders
+					where m_order_id in (:mOrderIds)
+					""";
+			MapSqlParameterSource orderParams = new MapSqlParameterSource("mOrderIds", resolvedOrderIds);
+			List<Map<String, Object>> rows = jdbcTemplate.queryForList(orderInfoSql, orderParams);
+			for (Map<String, Object> row : rows) {
+				Object id = row.get("m_order_id");
+				if (id != null) {
+					orderInfoById.put(((Number) id).longValue(), row);
+				}
+			}
+
+			for (Long orderId : resolvedOrderIds) {
+				Map<String, Object> row = orderInfoById.get(orderId);
+				if (row == null) {
+					missingFields.add("mOrderId");
+					continue;
+				}
+				if (row.get("bom_id") == null) {
+					missingFields.add("material_spec_id");
+				}
+				if (row.get("order_amount") == null
+						|| ((Number) row.get("order_amount")).doubleValue() <= 0) {
+					missingFields.add("planned_qty");
+				}
+				if (row.get("color_type") == null) {
+					missingFields.add("color_type");
+				}
+				if (row.get("producer_code") == null) {
+					missingFields.add("producer_code");
+				}
+				if (row.get("warehouse_code") == null) {
+					missingFields.add("warehouse_code");
+				}
+				if (row.get("order_uom") == null) {
+					missingFields.add("order_uom");
+				}
+				if (row.get("unit_price") == null) {
+					missingFields.add("unit_price");
+				}
+			}
+		}
+
+		if (!missingFields.isEmpty()) {
+			return Map.of("success", false, "message", "입고 등록 실패", "missingFields", List.copyOf(missingFields));
+		}
+
+		// 4) INSERT ... SELECT (producer_type 고정 CUSTOMER, producer_code는 mo.producer_code 사용)
 		String insertSql = """
 				INSERT INTO material_inbounds (
 				    inbound_datetime,
@@ -162,7 +253,7 @@ public class MaterialTransactionService {
 				    mo.color_code,
 				    mo.bom_id,
 				    'CUSTOMER',
-				    mo.vendor_code,
+				    mo.producer_code,
 				    mo.warehouse_type,
 				    mo.warehouse_code,
 				    mo.order_amount,
@@ -233,16 +324,20 @@ public class MaterialTransactionService {
 	public Map<String, Object> saveOutbound(MaterialTransactionSaveRequest request, String empNo) {
 		try {
 			if (!hasTable("material_outbounds")) {
-				return Map.of("success", false, "created", 0, "skipped", 0, "message", "출고 테이블이 없습니다.");
+				return Map.of("success", false, "message", "출고 등록 실패", "missingFields",
+						List.of("material_outbounds"));
+			}
+			if (request == null) {
+				return Map.of("success", false, "message", "출고 등록 실패", "missingFields",
+						List.of("items", "colorCode", "prdAgreeId", "stylesId/styleCode"));
 			}
 			if (CollectionUtils.isEmpty(request.getItems())) {
-				return Map.of("success", false, "created", 0, "skipped", 0, "message", "출고 항목이 없습니다.");
+				return Map.of("success", false, "message", "출고 등록 실패", "missingFields", List.of("items"));
 			}
 			List<String> missingColumns = findMissingColumns("material_outbounds",
 					List.of("m_order_id", "issued_out_qty", "receiver_code", "receiver_type"));
 			if (!missingColumns.isEmpty()) {
-				return Map.of("success", false, "created", 0, "skipped", 0, "message",
-						"출고 컬럼이 부족합니다. missingColumns=" + missingColumns);
+				return Map.of("success", false, "message", "출고 등록 실패", "missingFields", missingColumns);
 			}
 
 			boolean hasPlannedOutQty = hasColumn("material_outbounds", "planned_out_qty");
@@ -250,10 +345,85 @@ public class MaterialTransactionService {
 			boolean hasCreatedBy = hasColumn("material_outbounds", "created_by");
 			boolean hasRemark = hasColumn("material_outbounds", "remark");
 
+			Set<String> missingFields = new LinkedHashSet<>();
+			if (!StringUtils.hasText(empNo)) {
+				missingFields.add("empNo");
+			}
+			if (!StringUtils.hasText(request.getColorCode())) {
+				missingFields.add("colorCode");
+			}
 			Long prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode());
+			if (prdAgreeId == null) {
+				missingFields.add("prdAgreeId");
+			}
+
+			String resolvedStyleId = resolveStyleId(request.getStylesId(), request.getStyleCode());
+			if (!StringUtils.hasText(resolvedStyleId)) {
+				missingFields.add("stylesId/styleCode");
+			}
+
+			Set<String> receiverCodes = new LinkedHashSet<>();
 			int created = 0;
 			int skipped = 0;
 			for (MaterialTransactionSaveLine line : request.getItems()) {
+				if (line == null) {
+					missingFields.add("items");
+					continue;
+				}
+				if (line.getMOrderId() == null) {
+					missingFields.add("mOrderId");
+				}
+				BigDecimal issued = line.getIssuedOutQuantity();
+				if (issued == null || issued.compareTo(BigDecimal.ZERO) <= 0) {
+					missingFields.add("issuedQty");
+				}
+				if (!StringUtils.hasText(line.getFactoryCode())) {
+					missingFields.add("receiver_code");
+				} else {
+					receiverCodes.add(line.getFactoryCode());
+				}
+				if (issued != null && issued.compareTo(BigDecimal.ZERO) > 0 && line.getMOrderId() != null) {
+					BigDecimal available = sumInboundForOrder(line.getMOrderId())
+							.subtract(sumIssuedForOrder(line.getMOrderId()));
+					if (available.compareTo(issued) < 0) {
+						missingFields.add("issuedQtyExceedsAvailable");
+					}
+				}
+			}
+
+			if (!receiverCodes.isEmpty() && hasTable("codes")) {
+				String codeColumn = findFirstExistingColumn("codes", List.of("code", "id_code"));
+				String codeTypeColumn = findFirstExistingColumn("codes", List.of("code_type", "id_code_type"));
+				if (codeColumn != null && codeTypeColumn != null) {
+					String receiverSql = """
+							select %s as code_value
+							from codes
+							where %s = 'CUSTOMER'
+							  and %s in (:codes)
+							""".formatted(codeColumn, codeTypeColumn, codeColumn);
+					MapSqlParameterSource params = new MapSqlParameterSource("codes", receiverCodes);
+					List<String> existing = jdbcTemplate.query(receiverSql, params,
+							(rs, rowNum) -> rs.getString("code_value"));
+					Set<String> existingSet = new LinkedHashSet<>(existing);
+					for (String code : receiverCodes) {
+						if (!existingSet.contains(code)) {
+							missingFields.add("receiver_code");
+							break;
+						}
+					}
+				}
+			}
+
+			if (!missingFields.isEmpty()) {
+				return Map.of("success", false, "message", "출고 등록 실패", "missingFields",
+						List.copyOf(missingFields));
+			}
+
+			for (MaterialTransactionSaveLine line : request.getItems()) {
+				if (line == null) {
+					skipped++;
+					continue;
+				}
 				if (line.getMOrderId() == null) {
 					skipped++;
 					continue;
@@ -443,7 +613,7 @@ public class MaterialTransactionService {
 				.append("ms.material_usage as material_usage, ").append("ms.spec as spec, ")
 				.append("ms.material_color as material_color, ").append("ms.uom as uom, ")
 				.append("ms.qty_per_piece as qty_per_piece, ")
-				.append("coalesce(mo.vendor_code, ms.supplier_code) as supplier_code, ")
+				.append("mo.producer_code as producer_code, ")
 				.append("ms.order_uom as order_uom, ").append("mo.unit_price as unit_price, ")
 				.append("mo.order_amount as order_amount, ").append(requiredSelect).append(inboundSelect)
 				.append(includeOutbound ? outboundSelect : "0 as planned_out_qty, 0 as issued_out_qty, ")
@@ -469,11 +639,11 @@ public class MaterialTransactionService {
 				colorCode, resolvedStyleId);
 
 		List<MaterialTransactionLineView> rows = new ArrayList<>();
-		List<String> supplierCodes = new ArrayList<>();
+		List<String> producerCodes = new ArrayList<>();
 		jdbcTemplate.query(sql.toString(), params, rs -> {
-			String supplierCode = rs.getString("supplier_code");
-			if (StringUtils.hasText(supplierCode)) {
-				supplierCodes.add(supplierCode);
+			String producerCode = rs.getString("producer_code");
+			if (StringUtils.hasText(producerCode)) {
+				producerCodes.add(producerCode);
 			}
 			MaterialTransactionLineView view = new MaterialTransactionLineView()
 					.setMOrderId(rs.getObject("m_order_id") != null ? rs.getLong("m_order_id") : null)
@@ -484,7 +654,7 @@ public class MaterialTransactionService {
 					.setCategory(rs.getString("category")).setMaterialName(rs.getString("material_name"))
 					.setMaterialUsage(rs.getString("material_usage")).setSpec(rs.getString("spec"))
 					.setMaterialColor(rs.getString("material_color")).setUom(rs.getString("uom"))
-					.setQtyPerPiece(rs.getBigDecimal("qty_per_piece")).setSupplierCode(supplierCode)
+					.setQtyPerPiece(rs.getBigDecimal("qty_per_piece")).setSupplierCode(producerCode)
 					.setSupplierName(null).setProductionManager(rs.getString("production_emp_no"))
 					.setOrderUom(rs.getString("order_uom")).setUnitPrice(rs.getBigDecimal("unit_price"))
 					.setOrderQuantity(rs.getBigDecimal("order_amount"))
@@ -495,9 +665,9 @@ public class MaterialTransactionService {
 			rows.add(view);
 		});
 
-		Map<String, String> supplierNames = findSupplierNames(new LinkedHashSet<>(supplierCodes));
+		Map<String, String> producerNames = findProducerNames(new LinkedHashSet<>(producerCodes));
 		for (MaterialTransactionLineView view : rows) {
-			view.setSupplierName(supplierNames.getOrDefault(view.getSupplierCode(), null));
+			view.setSupplierName(producerNames.getOrDefault(view.getSupplierCode(), null));
 		}
 		return rows;
 	}
@@ -541,8 +711,8 @@ public class MaterialTransactionService {
 		return value != null ? value : BigDecimal.ZERO;
 	}
 
-	private Map<String, String> findSupplierNames(Set<String> supplierCodes) {
-		if (supplierCodes == null || supplierCodes.isEmpty() || !hasTable("codes")) {
+	private Map<String, String> findProducerNames(Set<String> producerCodes) {
+		if (producerCodes == null || producerCodes.isEmpty() || !hasTable("codes")) {
 			return Collections.emptyMap();
 		}
 
@@ -571,7 +741,7 @@ public class MaterialTransactionService {
 			sql.append("and ").append(deletedColumn).append(" = false ");
 		}
 
-		MapSqlParameterSource params = new MapSqlParameterSource("codes", supplierCodes);
+		MapSqlParameterSource params = new MapSqlParameterSource("codes", producerCodes);
 		return jdbcTemplate.query(sql.toString(), params, rs -> {
 			Map<String, String> result = new LinkedHashMap<>();
 			while (rs.next()) {
