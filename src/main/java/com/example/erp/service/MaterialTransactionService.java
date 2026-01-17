@@ -152,6 +152,41 @@ public class MaterialTransactionService {
 					"lineErrors", lineErrors
 			);
 		}
+		
+		boolean hasMoOrderUom = hasColumn("material_orders", "order_uom");
+		boolean hasMsOrderUom = hasColumn("material_specs", "order_uom");
+		boolean hasMsUom = hasColumn("material_specs", "uom");
+
+		String orderUomExpr;
+		if (hasMoOrderUom) {
+			if (hasMsOrderUom && hasMsUom) {
+				orderUomExpr = "coalesce(mo.order_uom, ms.order_uom, ms.uom)";
+			} else if (hasMsOrderUom) {
+				orderUomExpr = "coalesce(mo.order_uom, ms.order_uom)";
+			} else if (hasMsUom) {
+				orderUomExpr = "coalesce(mo.order_uom, ms.uom)";
+			} else {
+				orderUomExpr = "mo.order_uom";
+			}
+		} else {
+			if (hasMsOrderUom && hasMsUom) {
+				orderUomExpr = "coalesce(ms.order_uom, ms.uom)";
+			} else if (hasMsOrderUom) {
+				orderUomExpr = "ms.order_uom";
+			} else if (hasMsUom) {
+				orderUomExpr = "ms.uom";
+			} else {
+				orderUomExpr = null;
+			}
+		}
+
+		if (orderUomExpr == null) {
+			return Map.of(
+					"success", false,
+					"message", "입고 등록 실패 (발주단위를 채울 소스 컬럼이 없습니다: material_specs.order_uom 또는 material_specs.uom 필요)",
+					"missingFields", List.of("material_specs.order_uom")
+			);
+		}
 
 		// 6) INSERT ... SELECT (producer_code는 mo.producer_code 사용 / vendor 금지)
 		String insertSql = """
@@ -188,16 +223,17 @@ public class MaterialTransactionService {
 				    mo.warehouse_code,
 				    mo.order_amount,
 				    :receivedQty,
-				    mo.order_uom,
+				    %s,
 				    mo.unit_price,
 				    :createdBy,
 				    :remark
 				FROM material_orders mo
+				left join material_specs ms on ms.bom_id = mo.bom_id
 				WHERE mo.m_order_id = :mOrderId
 				  AND mo.styles_id = :stylesId
 				  AND mo.prd_agree_id = :prdAgreeId
 				  AND mo.color_code = :colorCode
-				""";
+				""".formatted(orderUomExpr);
 
 		int created = 0;
 		int skipped = 0;
