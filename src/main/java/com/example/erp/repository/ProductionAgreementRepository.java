@@ -49,7 +49,6 @@ public interface ProductionAgreementRepository extends JpaRepository<ProductionA
 			       pa.agreement_code as agreementCode,
 			       pa.color_code as colorCode,
 			       coalesce(min(color_codes.code_name),
-			                min(nullif(trim(pa.color), '')),
 			                pa.color_code) as colorName,
 			       sum(pa.quantity) as totalQuantity,
 			       coalesce(nullif(min(trim(pa.production_manager)), ''), s.product_emp_no) as productionManager,
