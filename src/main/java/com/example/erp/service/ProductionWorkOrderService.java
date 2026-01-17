@@ -30,7 +30,6 @@ public class ProductionWorkOrderService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final String STATUS_DRAFT = "NEW";
     private static final String STATUS_ACTIVE = "ACTIVE";
-    private static final String COLOR_TYPE_DEFAULT = "COLOR";
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
@@ -370,7 +369,6 @@ public class ProductionWorkOrderService {
                 "delivery_place_code", "delivery_place", "warehouse_code"));
         String statusColumn = findFirstExistingColumn("production_jobs", List.of("status"));
         String prdAgreeIdColumn = findFirstExistingColumn("production_jobs", List.of("prd_agree_id"));
-        String colorTypeColumn = findFirstExistingColumn("production_jobs", List.of("color_type"));
         String createdDateColumn = findFirstExistingColumn("production_jobs",
                 List.of("created_date", "created_at", "created_datetime"));
         String updatedDateColumn = findFirstExistingColumn("production_jobs",
@@ -395,7 +393,7 @@ public class ProductionWorkOrderService {
         }
         LocalDateTime dueDate = parseDateTime(request.getDueDate());
         if (dueDate == null || dueDate.toLocalDate().isBefore(LocalDate.now())) {
-            return Map.of("success", false, "message", "납기일은 오늘 이후만 선택할 수 있습니다.");
+        	return Map.of("success", false, "message", "납기일은 오늘 이후(오늘 포함)만 선택 가능합니다.");
         }
         Long prdAgreeId = request.getPrdAgreeId();
         if (prdAgreeId == null) {
@@ -413,7 +411,6 @@ public class ProductionWorkOrderService {
                 .addValue("deliveryPlace", request.getDeliveryPlaceCode())
                 .addValue("status", STATUS_DRAFT)
                 .addValue("prdAgreeId", prdAgreeId)
-                .addValue("colorType", COLOR_TYPE_DEFAULT)
                 .addValue("nowDate", Timestamp.valueOf(LocalDateTime.now()))
                 .addValue("updatedBy", empNo)
                 .addValue("createdBy", empNo);
@@ -448,10 +445,6 @@ public class ProductionWorkOrderService {
             columns.add(prdAgreeIdColumn);
             values.add(":prdAgreeId");
         }
-        if (colorTypeColumn != null) {
-            columns.add(colorTypeColumn);
-            values.add(":colorType");
-        }
         if (createdDateColumn != null) {
             columns.add(createdDateColumn);
             values.add(":nowDate");
@@ -472,9 +465,6 @@ public class ProductionWorkOrderService {
             updates.add(statusColumn + " = :status");
             if (prdAgreeIdColumn != null) {
                 updates.add(prdAgreeIdColumn + " = :prdAgreeId");
-            }
-            if (colorTypeColumn != null) {
-                updates.add(colorTypeColumn + " = :colorType");
             }
             if (updatedDateColumn != null) {
                 updates.add(updatedDateColumn + " = :nowDate");

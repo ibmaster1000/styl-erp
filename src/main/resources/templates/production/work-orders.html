@@ -85,7 +85,7 @@
 		}
 
 		.wo-col-style {
-			width: 120px;
+			width: 110px;
 		}
 
 		.wo-col-agreement {
@@ -137,6 +137,21 @@
 
 		.wo-input-group .btn {
 			white-space: nowrap;
+			flex: 0 0 auto;
+		}
+
+		.wo-cell-picker {
+			display: flex;
+			gap: 6px;
+			align-items: center;
+		}
+
+		.wo-cell-picker .form-control {
+			flex: 1 1 auto;
+			min-width: 0;
+		}
+
+		.wo-cell-picker .btn {
 			flex: 0 0 auto;
 		}
 
@@ -619,23 +634,23 @@
 						dueDateValue = todayStr;
 					}
 					row.innerHTML = `
-							<td>${item.styleCode || '-'}</td>
-							<td>${item.prdAgreeCode || '-'}</td>
-							<td>${item.colorCode || '-'}</td>
-							<td>${formatQuantity(item.agreementQuantity)}</td>
-							<td>
-								<div class="input-group input-group-sm wo-input-group">
+					<td class="wo-col-style">${item.styleCode || '-'}</td>
+												<td class="wo-col-agreement">${item.prdAgreeCode || '-'}</td>
+												<td class="wo-col-color">${item.colorCode || '-'}</td>
+												<td class="wo-col-qty">${formatQuantity(item.agreementQuantity)}</td>
+												<td class="wo-col-producer">
+													<div class="input-group input-group-sm wo-input-group wo-cell-picker">
 									<input type="text" class="form-control wo-factory-input" placeholder="생산처"
 										value="${item.producerCode || ''}">
 									<button type="button" class="btn btn--outline wo-factory-button">🔍</button>
 								</div>
 							</td>
-							<td>
+							<td class="wo-col-due">
 								<input type="date" class="form-control form-control-sm wo-due-date"
 									value="${dueDateValue}">
 							</td>
-							<td>
-								<div class="input-group input-group-sm wo-input-group">
+							<td class="wo-col-delivery">
+															<div class="input-group input-group-sm wo-input-group wo-cell-picker">
 									<input type="text" class="form-control wo-warehouse-input" placeholder="창고"
 										value="${item.deliveryPlaceCode || ''}">
 									<button type="button" class="btn btn--outline wo-warehouse-button">🔍</button>
@@ -734,7 +749,7 @@
 				}
 				const hasPastDueDate = lines.some(line => line.dueDate < todayStr);
 				if (hasPastDueDate) {
-					setMessage('danger', '납기일은 오늘 이후만 선택할 수 있습니다.');
+					setMessage('danger', '납기일은 오늘 이후(오늘 포함)만 선택 가능합니다.');
 					return;
 				}
 				try {
