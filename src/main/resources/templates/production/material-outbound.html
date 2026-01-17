@@ -249,7 +249,7 @@
 							<th>단가</th>
 							<th>발주량</th>
 							<th>입고량</th>
-							<th>기출고량</th>
+							<th>재고량</th>
 							<th>출고량</th>
 							<th class="mout-producer-col">생산처</th>
 						</tr>
@@ -425,16 +425,15 @@
 					return;
 				}
 				list.forEach(item => {
-					const inbound = safeNumber(item.inboundQuantity);
-					const outbound = safeNumber(item.outboundQuantity);
-					const available = Math.max(inbound - outbound, 0);
+					const stock = safeNumber(item.inventoryQuantity ?? item.inventory_qty ?? item.inboundQuantity);
+										const available = Math.max(stock, 0);
 					const requiredQty = formatQuantity(item.requiredQuantity ?? item.orderQuantity);
 					const row = document.createElement('tr');
 					row.dataset.mOrderId = item.mOrderId || '';
 					row.dataset.orderUom = item.orderUom || '';
 					row.dataset.unitPrice = item.unitPrice || '';
 					row.dataset.available = available;
-					const plannedOutbound = formatQuantity(0);
+					const inventoryQty = formatQuantity(stock);
 					row.innerHTML = `
 							<td>${item.styleCode || '-'}</td>
 							<td class="mout-color-col">${item.colorCode || '-'}</td>
@@ -452,7 +451,7 @@
 							<td>${formatPrice(item.unitPrice)}</td>
 							<td>${requiredQty}</td>
 							<td>${formatQuantity(item.inboundQuantity)}</td>
-							<td><span class="text-muted small">${plannedOutbound}</span></td>
+							<td><span class="text-muted small">${inventoryQty}</span></td>
 							<td>
 								<div class="d-flex flex-column gap-1">
 									<span class="text-muted small">${formatQuantity(item.outboundQuantity)}</span>

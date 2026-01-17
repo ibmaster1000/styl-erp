@@ -25,6 +25,7 @@ public class MaterialTransactionLineView {
 	private BigDecimal orderQuantity;
 	private BigDecimal requiredQuantity;
 	private BigDecimal inboundQuantity;
+	private BigDecimal inventoryQuantity;
 	private BigDecimal plannedOutboundQuantity;
 	private BigDecimal outboundQuantity;
 	private String remark;
@@ -172,6 +173,11 @@ public class MaterialTransactionLineView {
 		this.inboundQuantity = inboundQuantity;
 		return this;
 	}
+	
+	public MaterialTransactionLineView setInventoryQuantity(BigDecimal inventoryQuantity) {
+		this.inventoryQuantity = inventoryQuantity;
+		return this;
+	}
 
 	public MaterialTransactionLineView setPlannedOutboundQuantity(BigDecimal plannedOutboundQuantity) {
 		this.plannedOutboundQuantity = plannedOutboundQuantity;
@@ -276,6 +282,10 @@ public class MaterialTransactionLineView {
 		return inboundQuantity;
 	}
 
+	public BigDecimal getInventoryQuantity() {
+		return inventoryQuantity;
+	}
+	
 	public BigDecimal getPlannedOutboundQuantity() {
 		return plannedOutboundQuantity;
 	}

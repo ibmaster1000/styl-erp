@@ -164,7 +164,7 @@
 							<th>발주단위</th>
 							<th>단가</th>
 							<th>발주량</th>
-							<th>기입고량</th>
+							<th>재고량</th>
 							<th>입고량</th>
 						</tr>
 					</thead>
@@ -344,7 +344,7 @@
 				}
 				list.forEach(item => {
 					const requiredQty = formatQuantity(item.requiredQuantity ?? item.inboundQuantity ?? item.orderQuantity);
-					const inboundQty = requiredQty;
+					const inventoryQty = formatQuantity(pick(item, 'inventoryQuantity', 'inventory_qty'));
 					const row = document.createElement('tr');
 					const mOrderId = pick(item, 'mOrderId', 'm_order_id');
 					const bomId = pick(item, 'bomId', 'bom_id');
@@ -369,7 +369,7 @@
 						<td>${orderUom || '-'}</td>
 						<td>${formatPrice(item.unitPrice)}</td>
 						<td>${requiredQty}</td>
-						<td>${inboundQty}</td>
+						<td>${inventoryQty}</td>
 						<td><input type="number" class="form-control form-control-sm mi-qty-input" min="0" step="0.001" value="0"></td>
 					`;
 					tableBody.appendChild(row);

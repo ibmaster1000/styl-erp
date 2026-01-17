@@ -327,6 +327,24 @@ public class MaterialTransactionService {
 				int affected = jdbcTemplate.update(insertSql, p);
 				if (affected > 0) {
 					created++;
+					InventoryKey inventoryKey = findInventoryKey(mOrderId, stylesId, prdAgreeId, request.getColorCode());
+					if (inventoryKey == null) {
+						log.warn("입고 inventory 키 조회 실패. mOrderId={}, stylesId={}, prdAgreeId={}, colorCode={}",
+								mOrderId, stylesId, prdAgreeId, request.getColorCode());
+					} else {
+						String inventoryError = applyInventoryDelta(inventoryKey, receivedQty);
+						if (inventoryError != null) {
+							LinkedHashMap<String, Object> err = new LinkedHashMap<>();
+							err.put("index", idx);
+							err.put("mOrderId", mOrderId);
+							err.put("bomId", line.getBomId());
+							err.put("error", "inventoryUpsertFailed");
+							err.put("detail", inventoryError);
+							lineErrors.add(err);
+							log.warn("입고 inventory 갱신 실패. mOrderId={}, bomId={}, detail={}", mOrderId,
+									line.getBomId(), inventoryError);
+						}
+					}
 				} else {
 					skipped++;
 					LinkedHashMap<String, Object> err = new LinkedHashMap<>();
@@ -417,6 +435,7 @@ public class MaterialTransactionService {
 			}
 
 			Set<String> receiverCodes = new LinkedHashSet<>();
+			List<Map<String, Object>> lineErrors = new ArrayList<>();
 			int created = 0;
 			int skipped = 0;
 			for (MaterialTransactionSaveLine line : request.getItems()) {
@@ -472,7 +491,9 @@ public class MaterialTransactionService {
 				return Map.of("success", false, "message", "출고 등록 실패", "missingFields", List.copyOf(missingFields));
 			}
 
-			for (MaterialTransactionSaveLine line : request.getItems()) {
+			for (int i = 0; i < request.getItems().size(); i++) {
+				MaterialTransactionSaveLine line = request.getItems().get(i);
+				int idx = i + 1;
 				if (line == null) {
 					skipped++;
 					continue;
@@ -539,13 +560,38 @@ public class MaterialTransactionService {
 				int affected = jdbcTemplate.update(sql, params);
 				if (affected > 0) {
 					created++;
+					InventoryKey inventoryKey = findInventoryKey(line.getMOrderId(), resolvedStyleId, prdAgreeId,
+							request.getColorCode());
+					if (inventoryKey == null) {
+						log.warn("출고 inventory 키 조회 실패. mOrderId={}, stylesId={}, prdAgreeId={}, colorCode={}",
+								line.getMOrderId(), resolvedStyleId, prdAgreeId, request.getColorCode());
+					} else {
+						String inventoryError = applyInventoryDelta(inventoryKey, issued.negate());
+						if (inventoryError != null) {
+							LinkedHashMap<String, Object> err = new LinkedHashMap<>();
+							err.put("index", idx);
+							err.put("mOrderId", line.getMOrderId());
+							err.put("error", "inventoryDecrementFailed");
+							err.put("detail", inventoryError);
+							lineErrors.add(err);
+							log.warn("출고 inventory 차감 실패. mOrderId={}, detail={}", line.getMOrderId(),
+									inventoryError);
+						}
+					}
 				} else {
 					skipped++;
 				}
 			}
 
-			return Map.of("success", created > 0, "created", created, "skipped", skipped, "message",
-					created > 0 ? "출고가 등록되었습니다." : "출고 등록에 실패했습니다.");
+			Map<String, Object> result = new LinkedHashMap<>();
+			result.put("success", created > 0);
+			result.put("created", created);
+			result.put("skipped", skipped);
+			result.put("message", created > 0 ? "출고가 등록되었습니다." : "출고 등록에 실패했습니다.");
+			if (!lineErrors.isEmpty()) {
+				result.put("lineErrors", lineErrors.size() > 20 ? lineErrors.subList(0, 20) : lineErrors);
+			}
+			return result;
 		} catch (Exception e) {
 			String errorId = UUID.randomUUID().toString();
 			log.error("출고 저장 중 오류가 발생했습니다. errorId={}", errorId, e);
@@ -659,6 +705,21 @@ public class MaterialTransactionService {
 			}
 		}
 
+		boolean hasInventory = hasTable("material_inventory") && hasColumn("material_inventory", "material_spec_id")
+				&& hasColumn("material_inventory", "warehouse_type") && hasColumn("material_inventory", "warehouse_code")
+				&& hasColumn("material_inventory", "qty");
+		String inventoryJoin = "";
+		String inventorySelect = "0 as inventory_qty, ";
+		if (hasInventory) {
+			inventoryJoin = """
+					left join material_inventory inv
+					  on inv.material_spec_id = mo.bom_id
+					 and inv.warehouse_type = mo.warehouse_type
+					 and inv.warehouse_code = mo.warehouse_code
+					""";
+			inventorySelect = "coalesce(inv.qty, 0) as inventory_qty, ";
+		}
+
 		StringBuilder sql = new StringBuilder().append("select mo.m_order_id as m_order_id, ")
 				.append("mo.bom_id as bom_id, ").append("mo.styles_id as styles_id, ")
 				.append("s.style_code as style_code, ").append("coalesce(s.product_emp_no, '') as production_emp_no, ")
@@ -668,11 +729,11 @@ public class MaterialTransactionService {
 				.append("ms.qty_per_piece as qty_per_piece, ").append("mo.producer_code as producer_code, ")
 				.append("ms.order_uom as order_uom, ").append("mo.unit_price as unit_price, ")
 				.append("mo.order_amount as order_amount, ").append(requiredSelect).append(inboundSelect)
-				.append(includeOutbound ? outboundSelect : "0 as planned_out_qty, 0 as issued_out_qty, ")
+				.append(inventorySelect).append(includeOutbound ? outboundSelect : "0 as planned_out_qty, 0 as issued_out_qty, ")
 				.append("ms.remark as remark ").append("from material_orders mo ")
 				.append("join material_specs ms on mo.bom_id = ms.bom_id ")
 				.append("left join styles s on s.styles_id = mo.styles_id ").append(requiredJoin).append(inboundJoin)
-				.append(outboundJoin).append("where mo.prd_agree_id = :prdAgreeId ")
+				.append(inventoryJoin).append(outboundJoin).append("where mo.prd_agree_id = :prdAgreeId ")
 				.append("and mo.color_code = :colorCode ");
 
 		String resolvedStyleId = resolveStyleId(stylesId, styleCode);
@@ -712,6 +773,7 @@ public class MaterialTransactionService {
 					.setOrderQuantity(rs.getBigDecimal("order_amount"))
 					.setRequiredQuantity(rs.getBigDecimal("required_qty"))
 					.setInboundQuantity(rs.getBigDecimal("inbound_qty"))
+					.setInventoryQuantity(rs.getBigDecimal("inventory_qty"))
 					.setPlannedOutboundQuantity(rs.getBigDecimal("planned_out_qty"))
 					.setOutboundQuantity(rs.getBigDecimal("issued_out_qty")).setRemark(rs.getString("remark"));
 			rows.add(view);
@@ -761,6 +823,96 @@ public class MaterialTransactionService {
 
 	private BigDecimal safeDecimal(BigDecimal value) {
 		return value != null ? value : BigDecimal.ZERO;
+	}
+
+	private InventoryKey findInventoryKey(Long mOrderId, Object stylesId, Long prdAgreeId, String colorCode) {
+		if (mOrderId == null || stylesId == null || prdAgreeId == null || !StringUtils.hasText(colorCode)) {
+			return null;
+		}
+		String sql = """
+				select
+				  mo.bom_id as materialSpecId,
+				  mo.warehouse_type as warehouseType,
+				  mo.warehouse_code as warehouseCode
+				from material_orders mo
+				where mo.m_order_id = :mOrderId
+				  and mo.styles_id = :stylesId
+				  and mo.prd_agree_id = :prdAgreeId
+				  and mo.color_code = :colorCode
+				limit 1
+				""";
+		MapSqlParameterSource params = new MapSqlParameterSource().addValue("mOrderId", mOrderId)
+				.addValue("stylesId", stylesId).addValue("prdAgreeId", prdAgreeId).addValue("colorCode", colorCode);
+		List<InventoryKey> keys = new ArrayList<>();
+		jdbcTemplate.query(sql, params, rs -> {
+			Long materialSpecId = rs.getObject("materialSpecId") != null ? rs.getLong("materialSpecId") : null;
+			String warehouseType = rs.getString("warehouseType");
+			String warehouseCode = rs.getString("warehouseCode");
+			if (materialSpecId != null && StringUtils.hasText(warehouseType) && StringUtils.hasText(warehouseCode)) {
+				keys.add(new InventoryKey(materialSpecId, warehouseType, warehouseCode));
+			}
+		});
+		return keys.isEmpty() ? null : keys.get(0);
+	}
+
+	private String applyInventoryDelta(InventoryKey inventoryKey, BigDecimal deltaQty) {
+		if (inventoryKey == null || deltaQty == null || deltaQty.compareTo(BigDecimal.ZERO) == 0) {
+			return null;
+		}
+		if (!hasTable("material_inventory")) {
+			return null;
+		}
+		if (!hasColumn("material_inventory", "material_spec_id") || !hasColumn("material_inventory", "warehouse_type")
+				|| !hasColumn("material_inventory", "warehouse_code") || !hasColumn("material_inventory", "qty")) {
+			return null;
+		}
+		MapSqlParameterSource params = new MapSqlParameterSource().addValue("materialSpecId", inventoryKey.materialSpecId)
+				.addValue("warehouseType", inventoryKey.warehouseType)
+				.addValue("warehouseCode", inventoryKey.warehouseCode).addValue("deltaQty", deltaQty);
+		String updateSql = """
+				update material_inventory
+				   set qty = qty + :deltaQty,
+				       updated_at = now()
+				 where material_spec_id = :materialSpecId
+				   and warehouse_type = :warehouseType
+				   and warehouse_code = :warehouseCode
+				""";
+		String insertSql = """
+				insert into material_inventory(material_spec_id, warehouse_type, warehouse_code, qty, updated_at)
+				values(:materialSpecId, :warehouseType, :warehouseCode, :deltaQty, now())
+				""";
+		try {
+			int updated = jdbcTemplate.update(updateSql, params);
+			if (updated > 0) {
+				return null;
+			}
+			try {
+				jdbcTemplate.update(insertSql, params);
+				return null;
+			} catch (Exception insertException) {
+				String detail = resolveErrorDetail(insertException);
+				log.warn("inventory insert 실패. materialSpecId={}, warehouseType={}, warehouseCode={}, detail={}",
+						inventoryKey.materialSpecId, inventoryKey.warehouseType, inventoryKey.warehouseCode, detail);
+				try {
+					int retry = jdbcTemplate.update(updateSql, params);
+					if (retry > 0) {
+						return null;
+					}
+				} catch (Exception retryException) {
+					String retryDetail = resolveErrorDetail(retryException);
+					log.warn("inventory update 재시도 실패. materialSpecId={}, warehouseType={}, warehouseCode={}, detail={}",
+							inventoryKey.materialSpecId, inventoryKey.warehouseType, inventoryKey.warehouseCode,
+							retryDetail);
+					return retryDetail;
+				}
+				return detail;
+			}
+		} catch (Exception e) {
+			String detail = resolveErrorDetail(e);
+			log.warn("inventory update 실패. materialSpecId={}, warehouseType={}, warehouseCode={}, detail={}",
+					inventoryKey.materialSpecId, inventoryKey.warehouseType, inventoryKey.warehouseCode, detail);
+			return detail;
+		}
 	}
 
 	private Map<String, String> findProducerNames(Set<String> producerCodes) {
@@ -1021,5 +1173,17 @@ public class MaterialTransactionService {
 			log.warn("{} 누락 컬럼 감지. missingColumns={}, columns={}", tableName, missing, existing);
 		}
 		return missing;
+	}
+
+	private static final class InventoryKey {
+		private final Long materialSpecId;
+		private final String warehouseType;
+		private final String warehouseCode;
+
+		private InventoryKey(Long materialSpecId, String warehouseType, String warehouseCode) {
+			this.materialSpecId = materialSpecId;
+			this.warehouseType = warehouseType;
+			this.warehouseCode = warehouseCode;
+		}
 	}
 }
