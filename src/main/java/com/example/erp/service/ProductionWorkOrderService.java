@@ -27,8 +27,10 @@ public class ProductionWorkOrderService {
 
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final String STATUS_DRAFT = "DRAFT";
+    private static final String STATUS_DRAFT = "NEW";
     private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final String FACTORY_TYPE_CUSTOMER = "CUSTOMER";
+    private static final String COLOR_TYPE_DEFAULT = "COLOR";
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
@@ -323,6 +325,27 @@ public class ProductionWorkOrderService {
 
     @Transactional
     public Map<String, Object> saveDraftWorkOrder(WorkOrderSaveRequest request, String empNo) {
+        List<WorkOrderSaveRequest.WorkOrderSaveLine> lines = normalizeLines(request);
+        if (lines.isEmpty()) {
+            return Map.of("success", false, "message", "작업지시 대상이 없습니다.");
+        }
+        int saved = 0;
+        List<String> errors = new ArrayList<>();
+        for (WorkOrderSaveRequest.WorkOrderSaveLine line : lines) {
+            Map<String, Object> result = saveDraftWorkOrderLine(line, empNo);
+            if (Boolean.TRUE.equals(result.get("success"))) {
+                saved += 1;
+            } else {
+                errors.add(String.valueOf(result.getOrDefault("message", "작업지시 저장에 실패했습다.")));
+            }
+        }
+        if (!errors.isEmpty()) {
+            return Map.of("success", false, "savedCount", saved, "message", errors.get(0));
+        }
+        return Map.of("success", true, "savedCount", saved, "message", "작업지시 기본정보가 저장되었습니다.");
+    }
+
+    private Map<String, Object> saveDraftWorkOrderLine(WorkOrderSaveRequest.WorkOrderSaveLine request, String empNo) {
         if (!hasTable("production_jobs")) {
             return Map.of("success", false, "message", "작업지시 테이블이 없습니다.");
         }
@@ -341,12 +364,18 @@ public class ProductionWorkOrderService {
         String styleIdColumn = findFirstExistingColumn("production_jobs", List.of("styles_id", "style_id"));
         String qtyColumn = findFirstExistingColumn("production_jobs", List.of("quantity", "order_qty", "agree_qty"));
         String producerColumn = findFirstExistingColumn("production_jobs", List.of("factory_code", "producer_code"));
+        String factoryTypeColumn = findFirstExistingColumn("production_jobs", List.of("factory_type"));
         String dueDateColumn = findFirstExistingColumn("production_jobs", List.of("due_date", "delivery_due_date",
                 "delivery_date"));
         String deliveryColumn = findFirstExistingColumn("production_jobs", List.of("delivery_location",
                 "delivery_place_code", "delivery_place", "warehouse_code"));
         String statusColumn = findFirstExistingColumn("production_jobs", List.of("status"));
         String prdAgreeIdColumn = findFirstExistingColumn("production_jobs", List.of("prd_agree_id"));
+        String colorTypeColumn = findFirstExistingColumn("production_jobs", List.of("color_type"));
+        String createdDateColumn = findFirstExistingColumn("production_jobs",
+                List.of("created_date", "created_at", "created_datetime"));
+        String updatedDateColumn = findFirstExistingColumn("production_jobs",
+                List.of("updated_date", "updated_at", "updated_datetime"));
 
         if (agreementColumn == null || colorColumn == null || producerColumn == null || dueDateColumn == null
                 || deliveryColumn == null || statusColumn == null) {
@@ -378,10 +407,13 @@ public class ProductionWorkOrderService {
                 .addValue("colorCode", request.getColorCode())
                 .addValue("agreementQty", agreementQty)
                 .addValue("producerCode", request.getProducerCode())
+                .addValue("factoryType", FACTORY_TYPE_CUSTOMER)
                 .addValue("dueDate", dueDate != null ? Timestamp.valueOf(dueDate) : null)
                 .addValue("deliveryPlace", request.getDeliveryPlaceCode())
                 .addValue("status", STATUS_DRAFT)
                 .addValue("prdAgreeId", prdAgreeId)
+                .addValue("colorType", COLOR_TYPE_DEFAULT)
+                .addValue("nowDate", Timestamp.valueOf(LocalDateTime.now()))
                 .addValue("updatedBy", empNo)
                 .addValue("createdBy", empNo);
 
@@ -405,6 +437,10 @@ public class ProductionWorkOrderService {
         }
         columns.add(producerColumn);
         values.add(":producerCode");
+        if (factoryTypeColumn != null) {
+            columns.add(factoryTypeColumn);
+            values.add(":factoryType");
+        }
         columns.add(dueDateColumn);
         values.add(":dueDate");
         columns.add(deliveryColumn);
@@ -415,6 +451,18 @@ public class ProductionWorkOrderService {
             columns.add(prdAgreeIdColumn);
             values.add(":prdAgreeId");
         }
+        if (colorTypeColumn != null) {
+            columns.add(colorTypeColumn);
+            values.add(":colorType");
+        }
+        if (createdDateColumn != null) {
+            columns.add(createdDateColumn);
+            values.add(":nowDate");
+        }
+        if (updatedDateColumn != null) {
+            columns.add(updatedDateColumn);
+            values.add(":nowDate");
+        }
 
         if (StringUtils.hasText(existingStatus)) {
             List<String> updates = new ArrayList<>();
@@ -422,11 +470,20 @@ public class ProductionWorkOrderService {
                 updates.add(qtyColumn + " = :agreementQty");
             }
             updates.add(producerColumn + " = :producerCode");
+            if (factoryTypeColumn != null) {
+                updates.add(factoryTypeColumn + " = :factoryType");
+            }
             updates.add(dueDateColumn + " = :dueDate");
             updates.add(deliveryColumn + " = :deliveryPlace");
             updates.add(statusColumn + " = :status");
             if (prdAgreeIdColumn != null) {
                 updates.add(prdAgreeIdColumn + " = :prdAgreeId");
+            }
+            if (colorTypeColumn != null) {
+                updates.add(colorTypeColumn + " = :colorType");
+            }
+            if (updatedDateColumn != null) {
+                updates.add(updatedDateColumn + " = :nowDate");
             }
 
             StringBuilder updateSql = new StringBuilder()
@@ -830,5 +887,29 @@ public class ProductionWorkOrderService {
     }
 
     private record ExistingJob(String producerCode, String dueDate, String deliveryPlaceCode, String status) {
+    }
+
+    private List<WorkOrderSaveRequest.WorkOrderSaveLine> normalizeLines(WorkOrderSaveRequest request) {
+        if (request == null) {
+            return Collections.emptyList();
+        }
+        if (request.getLines() != null && !request.getLines().isEmpty()) {
+            return request.getLines();
+        }
+        WorkOrderSaveRequest.WorkOrderSaveLine line = new WorkOrderSaveRequest.WorkOrderSaveLine();
+        line.setStyleCode(request.getStyleCode());
+        line.setPrdAgreeCode(request.getPrdAgreeCode());
+        line.setColorCode(request.getColorCode());
+        line.setAgreementQuantity(request.getAgreementQuantity());
+        line.setPrdAgreeId(request.getPrdAgreeId());
+        line.setProducerCode(request.getProducerCode());
+        line.setDueDate(request.getDueDate());
+        line.setDeliveryPlaceCode(request.getDeliveryPlaceCode());
+        if (!StringUtils.hasText(line.getStyleCode())
+                && !StringUtils.hasText(line.getPrdAgreeCode())
+                && !StringUtils.hasText(line.getColorCode())) {
+            return Collections.emptyList();
+        }
+        return List.of(line);
     }
 }

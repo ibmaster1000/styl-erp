@@ -189,34 +189,97 @@
 				</nav>
 			</div>
 			<div class="wo-panel">
-				<div class="d-flex justify-content-between align-items-center mb-2">
-					<div>
-						<h6 class="fw-bold mb-0">작업지시 입력/목록</h6>
-						<small class="text-muted">생산처/납기일/납품장소를 입력하세요.</small>
+				<form id="wo-save-form">
+					<div class="d-flex justify-content-between align-items-center mb-2">
+						<div>
+							<h6 class="fw-bold mb-0">작업지시 입력/목록</h6>
+							<small class="text-muted">생산처/납기일/납품장소를 입력하세요.</small>
+						</div>
+						<div class="actions">
+							<button type="submit" class="btn btn--primary" id="wo-save-button">저장</button>
+						</div>
 					</div>
-					<div class="actions">
-						<button type="button" class="btn btn--primary" id="wo-save-button">저장</button>
+					<div class="table-responsive">
+						<table class="table table-bordered align-middle wo-table data-table">
+							<thead class="table-light">
+								<tr>
+									<th>품번</th>
+									<th>생산합의코드</th>
+									<th>색상</th>
+									<th>합의량</th>
+									<th>생산처</th>
+									<th>납기일</th>
+									<th>납품장소</th>
+								</tr>
+							</thead>
+							<tbody id="wo-right-body">
+								<tr>
+									<td colspan="7" class="wo-placeholder">좌측 목록을 선택하면 입력 항목이 표시됩니다.</td>
+								</tr>
+							</tbody>
+						</table>
 					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="wo-factory-modal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">생산처 검색</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
-				<div class="table-responsive">
-					<table class="table table-bordered align-middle wo-table data-table">
+				<div class="modal-body">
+					<table class="table table-bordered align-middle mb-0">
 						<thead class="table-light">
 							<tr>
-								<th>품번</th>
-								<th>생산합의코드</th>
-								<th>색상</th>
-								<th>합의량</th>
-								<th>생산처</th>
-								<th>납기일</th>
-								<th>납품장소</th>
+								<th>코드</th>
+								<th>상호</th>
 							</tr>
 						</thead>
-						<tbody id="wo-right-body">
+						<tbody id="wo-factory-body">
 							<tr>
-								<td colspan="7" class="wo-placeholder">좌측 목록을 선택하면 입력 항목이 표시됩니다.</td>
+								<td colspan="2" class="text-center text-muted">등록된 생산처가 없습니다.</td>
 							</tr>
 						</tbody>
 					</table>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
+					<button type="button" class="btn btn--primary" id="wo-factory-select">선택</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="wo-warehouse-modal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">창고 검색</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<table class="table table-bordered align-middle mb-0">
+						<thead class="table-light">
+							<tr>
+								<th>코드</th>
+								<th>창고 명칭</th>
+								<th>비고</th>
+							</tr>
+						</thead>
+						<tbody id="wo-warehouse-body">
+							<tr>
+								<td colspan="3" class="text-center text-muted">등록된 창고가 없습니다.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
+					<button type="button" class="btn btn--primary" id="wo-warehouse-select">선택</button>
 				</div>
 			</div>
 		</div>
@@ -236,10 +299,26 @@
 			const rightBody = document.getElementById('wo-right-body');
 			const pagination = document.getElementById('wo-pagination');
 			const messageBox = document.getElementById('wo-search-message');
+			const saveForm = document.getElementById('wo-save-form');
+			const factoryModalElement = document.getElementById('wo-factory-modal');
+			const warehouseModalElement = document.getElementById('wo-warehouse-modal');
+			const factoryModalBody = document.getElementById('wo-factory-body');
+			const warehouseModalBody = document.getElementById('wo-warehouse-body');
+			const factorySelectButton = document.getElementById('wo-factory-select');
+			const warehouseSelectButton = document.getElementById('wo-warehouse-select');
+			const factoryModal = factoryModalElement && window.bootstrap
+				? new window.bootstrap.Modal(factoryModalElement)
+				: null;
+			const warehouseModal = warehouseModalElement && window.bootstrap
+				? new window.bootstrap.Modal(warehouseModalElement)
+				: null;
 			let styleVerified = false;
 			let cachedAgreements = [];
 			let currentPage = 1;
 			let currentFilters = {styleCode: '', prdAgreeCode: ''};
+			let activeInput = null;
+			let selectedFactoryRow = null;
+			let selectedWarehouseRow = null;
 
 			styleCodeInput.addEventListener('input', () => {
 				styleIdInput.value = '';
@@ -250,8 +329,6 @@
 				colorSelect.disabled = true;
 				agreeSelect.disabled = true;
 				clearMessage();
-				resetTable('품번/생산합의 조건을 선택한 뒤 조회하세요.');
-				resetRightTable();
 			});
 
 			colorSelect.addEventListener('change', () => {
@@ -329,10 +406,6 @@
 					colorSelect.value = selection.colors[0];
 					renderSelectOptions(agreeSelect, cachedAgreements, '생산합의 코드를 선택하세요');
 					agreeSelect.disabled = false;
-				}
-				if (cachedAgreements.length === 1) {
-					agreeSelect.value = cachedAgreements[0];
-					await loadHeaderPage(1);
 				}
 			}
 
@@ -424,7 +497,6 @@
 							<td>${item.producerName || item.producerCode || '-'}</td>
 							<td>${statusLabel}</td>
 						`;
-					row.addEventListener('click', () => selectLeftRow(row));
 					leftBody.appendChild(row);
 				});
 			}
@@ -500,17 +572,48 @@
 				}
 				list.forEach(item => {
 					const row = document.createElement('tr');
+					row.dataset.styleCode = item.styleCode || '';
+					row.dataset.prdAgreeCode = item.prdAgreeCode || '';
+					row.dataset.colorCode = item.colorCode || '';
+					row.dataset.prdAgreeId = item.prdAgreeId || '';
+					row.dataset.agreementQuantity = item.agreementQuantity || '';
+					const dueDateValue = normalizeDate(item.dueDate);
 					row.innerHTML = `
 							<td>${item.styleCode || '-'}</td>
 							<td>${item.prdAgreeCode || '-'}</td>
 							<td>${item.colorCode || '-'}</td>
 							<td>${formatQuantity(item.agreementQuantity)}</td>
-							<td>${item.producerName || item.producerCode || '-'}</td>
-							<td>${item.dueDate || '-'}</td>
-							<td>${item.deliveryPlaceName || item.deliveryPlaceCode || '-'}</td>
+							<td>
+								<div class="input-group input-group-sm wo-input-group">
+									<input type="text" class="form-control wo-factory-input" placeholder="생산처"
+										value="${item.producerCode || ''}">
+									<button type="button" class="btn btn--outline wo-factory-button">🔍</button>
+								</div>
+							</td>
+							<td>
+								<input type="date" class="form-control form-control-sm wo-due-date"
+									value="${dueDateValue}">
+							</td>
+							<td>
+								<div class="input-group input-group-sm wo-input-group">
+									<input type="text" class="form-control wo-warehouse-input" placeholder="창고"
+										value="${item.deliveryPlaceCode || ''}">
+									<button type="button" class="btn btn--outline wo-warehouse-button">🔍</button>
+								</div>
+							</td>
 						`;
 					rightBody.appendChild(row);
 				});
+			}
+
+			function normalizeDate(value) {
+				if (!value) {
+					return '';
+				}
+				if (value.includes('T')) {
+					return value.split('T')[0];
+				}
+				return value.length >= 10 ? value.slice(0, 10) : value;
 			}
 
 			function formatQuantity(value) {
@@ -520,6 +623,208 @@
 			}
 
 			verifyButton.addEventListener('click', verifyStyleCode);
+
+			leftBody.addEventListener('click', event => {
+				const targetRow = event.target.closest('tr');
+				if (!targetRow || !targetRow.dataset?.prdAgreeCode) {
+					return;
+				}
+				selectLeftRow(targetRow);
+			});
+
+			rightBody.addEventListener('click', event => {
+				const factoryButton = event.target.closest('.wo-factory-button');
+				const warehouseButton = event.target.closest('.wo-warehouse-button');
+				if (factoryButton) {
+					activeInput = factoryButton.closest('td').querySelector('.wo-factory-input');
+					openFactoryModal();
+				}
+				if (warehouseButton) {
+					activeInput = warehouseButton.closest('td').querySelector('.wo-warehouse-input');
+					openWarehouseModal();
+				}
+			});
+
+			saveForm.addEventListener('submit', async event => {
+				event.preventDefault();
+				const rows = Array.from(rightBody.querySelectorAll('tr')).filter(row => row.dataset?.prdAgreeCode);
+				if (rows.length === 0) {
+					setMessage('warning', '저장할 작업지시가 없습니다.');
+					return;
+				}
+				const lines = [];
+				for (const row of rows) {
+					const factoryInput = row.querySelector('.wo-factory-input');
+					const dueDateInput = row.querySelector('.wo-due-date');
+					const warehouseInput = row.querySelector('.wo-warehouse-input');
+					lines.push({
+						styleCode: row.dataset.styleCode || '',
+						prdAgreeCode: row.dataset.prdAgreeCode || '',
+						colorCode: row.dataset.colorCode || '',
+						prdAgreeId: row.dataset.prdAgreeId ? Number(row.dataset.prdAgreeId) : null,
+						agreementQuantity: row.dataset.agreementQuantity ? Number(row.dataset.agreementQuantity) : null,
+						producerCode: factoryInput?.value?.trim() || '',
+						dueDate: dueDateInput?.value || '',
+						deliveryPlaceCode: warehouseInput?.value?.trim() || ''
+					});
+				}
+				const hasMissing = lines.some(line => !line.producerCode || !line.dueDate || !line.deliveryPlaceCode);
+				if (hasMissing) {
+					setMessage('danger', '생산처/납기일/납품장소를 모두 입력하세요.');
+					return;
+				}
+				try {
+					const response = await fetch('/production/work-orders/save', {
+						method: 'POST',
+						headers: {'Content-Type': 'application/json'},
+						body: JSON.stringify({lines})
+					});
+					const data = await response.json().catch(() => ({}));
+					if (!response.ok || !data?.success) {
+						throw new Error(data?.message || '저장에 실패했습니다.');
+					}
+					setMessage('success', data?.message || '작업지시가 저장되었습니다.');
+					if (currentFilters) {
+						await loadHeaderPage(currentPage || 1);
+					}
+				} catch (error) {
+					setMessage('danger', error?.message || '저장 중 오류가 발생했습니다.');
+				}
+			});
+
+			function openFactoryModal() {
+				if (!factoryModal) {
+					return;
+				}
+				selectedFactoryRow = null;
+				renderFactoryRows([]);
+				loadCodeOptions('CUSTOMER').then(renderFactoryRows);
+				factoryModal.show();
+			}
+
+			function openWarehouseModal() {
+				if (!warehouseModal) {
+					return;
+				}
+				selectedWarehouseRow = null;
+				renderWarehouseRows([]);
+				loadCodeOptions('WAREHOUSE').then(renderWarehouseRows);
+				warehouseModal.show();
+			}
+
+			async function loadCodeOptions(codeType) {
+				try {
+					const res = await fetch(`/production/work-orders/codes?codeType=${encodeURIComponent(codeType)}`);
+					if (!res.ok) {
+						return [];
+					}
+					return await res.json();
+				} catch (e) {
+					return [];
+				}
+			}
+
+			function renderFactoryRows(list) {
+				factoryModalBody.innerHTML = '';
+				if (!list || list.length === 0) {
+					factoryModalBody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">등록된 생산처가 없습니다.</td></tr>';
+					return;
+				}
+				list.forEach(item => {
+					const row = document.createElement('tr');
+					row.dataset.code = item.code || '';
+					row.innerHTML = `
+						<td>${item.code || '-'}</td>
+						<td>${item.codeName || '-'}</td>
+					`;
+					factoryModalBody.appendChild(row);
+				});
+			}
+
+			function renderWarehouseRows(list) {
+				warehouseModalBody.innerHTML = '';
+				if (!list || list.length === 0) {
+					warehouseModalBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">등록된 창고가 없습니다.</td></tr>';
+					return;
+				}
+				list.forEach(item => {
+					const row = document.createElement('tr');
+					row.dataset.code = item.code || '';
+					row.innerHTML = `
+						<td>${item.code || '-'}</td>
+						<td>${item.codeName || '-'}</td>
+						<td>${item.remark || '-'}</td>
+					`;
+					warehouseModalBody.appendChild(row);
+				});
+			}
+
+			function applySelectedCode(selectedRow) {
+				if (!activeInput || !selectedRow) {
+					return;
+				}
+				activeInput.value = selectedRow.dataset.code || '';
+			}
+
+			if (factoryModalBody) {
+				factoryModalBody.addEventListener('click', event => {
+					const row = event.target.closest('tr');
+					if (!row) {
+						return;
+					}
+					factoryModalBody.querySelectorAll('tr').forEach(item => item.classList.remove('table-active'));
+					row.classList.add('table-active');
+					selectedFactoryRow = row;
+				});
+				factoryModalBody.addEventListener('dblclick', event => {
+					const row = event.target.closest('tr');
+					if (!row) {
+						return;
+					}
+					selectedFactoryRow = row;
+					applySelectedCode(selectedFactoryRow);
+					if (factoryModal) {
+						factoryModal.hide();
+					}
+				});
+			}
+
+			if (warehouseModalBody) {
+				warehouseModalBody.addEventListener('click', event => {
+					const row = event.target.closest('tr');
+					if (!row) {
+						return;
+					}
+					warehouseModalBody.querySelectorAll('tr').forEach(item => item.classList.remove('table-active'));
+					row.classList.add('table-active');
+					selectedWarehouseRow = row;
+				});
+				warehouseModalBody.addEventListener('dblclick', event => {
+					const row = event.target.closest('tr');
+					if (!row) {
+						return;
+					}
+					selectedWarehouseRow = row;
+					applySelectedCode(selectedWarehouseRow);
+					if (warehouseModal) {
+						warehouseModal.hide();
+					}
+				});
+			}
+
+			factorySelectButton.addEventListener('click', () => {
+				applySelectedCode(selectedFactoryRow);
+				if (factoryModal) {
+					factoryModal.hide();
+				}
+			});
+
+			warehouseSelectButton.addEventListener('click', () => {
+				applySelectedCode(selectedWarehouseRow);
+				if (warehouseModal) {
+					warehouseModal.hide();
+				}
+			});
 
 			if (initialHeaderPage?.items) {
 				renderTable(initialHeaderPage.items);

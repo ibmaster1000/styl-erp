@@ -2,11 +2,14 @@ package com.example.erp.controller;
 
 import com.example.erp.controller.dto.MaterialOrderSelection;
 import com.example.erp.controller.dto.MaterialOrderStyleResult;
+import com.example.erp.controller.dto.MaterialSpecCodeView;
 import com.example.erp.controller.dto.WorkOrderAgreementRow;
 import com.example.erp.controller.dto.WorkOrderSaveRequest;
 import com.example.erp.controller.support.PageViewSupport;
+import com.example.erp.domain.Code;
 import com.example.erp.domain.User;
 import com.example.erp.repository.UserRepository;
+import com.example.erp.service.CodeService;
 import com.example.erp.service.MaterialOrderService;
 import com.example.erp.service.ProductionWorkOrderService;
 import org.slf4j.Logger;
@@ -31,17 +34,20 @@ import java.util.Map;
 @RequestMapping("/production/work-orders")
 public class ProductionWorkOrderController extends PageViewSupport {
 	
-	private static final Logger log = LoggerFactory.getLogger(ProductionWorkOrderController.class);
+    private static final Logger log = LoggerFactory.getLogger(ProductionWorkOrderController.class);
 	private final MaterialOrderService materialOrderService;
     private final ProductionWorkOrderService productionWorkOrderService;
     private final UserRepository userRepository;
+    private final CodeService codeService;
 
     public ProductionWorkOrderController(MaterialOrderService materialOrderService,
             ProductionWorkOrderService productionWorkOrderService,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            CodeService codeService) {
         this.materialOrderService = materialOrderService;
         this.productionWorkOrderService = productionWorkOrderService;
         this.userRepository = userRepository;
+        this.codeService = codeService;
     }
 
     @GetMapping
@@ -102,6 +108,25 @@ public class ProductionWorkOrderController extends PageViewSupport {
         }
     }
 
+    @GetMapping("/codes")
+    @ResponseBody
+    public List<MaterialSpecCodeView> loadCodes(@RequestParam("codeType") String codeType,
+            @RequestParam(name = "keyword", required = false) String keyword) {
+        List<Code> codes = codeService.searchActiveCodes(codeType, null, null, null);
+        if (!StringUtils.hasText(keyword)) {
+            return codes.stream()
+                    .map(code -> new MaterialSpecCodeView(code.getCode(), code.getCodeName(), code.getDescription()))
+                    .toList();
+        }
+        String normalized = keyword.trim().toLowerCase();
+        return codes.stream()
+                .filter(code -> containsKeyword(code.getCode(), normalized)
+                        || containsKeyword(code.getCodeName(), normalized)
+                        || containsKeyword(code.getDescription(), normalized))
+                .map(code -> new MaterialSpecCodeView(code.getCode(), code.getCodeName(), code.getDescription()))
+                .toList();
+    }
+
     @PostMapping("/draft")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> saveDraft(@RequestBody WorkOrderSaveRequest request,
@@ -154,5 +179,12 @@ public class ProductionWorkOrderController extends PageViewSupport {
         return userRepository.findByUsername(principal.getName())
                 .map(User::getEmpNo)
                 .orElse(principal.getName());
+    }
+
+    private boolean containsKeyword(String value, String keyword) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+        return value.toLowerCase().contains(keyword);
     }
 }
