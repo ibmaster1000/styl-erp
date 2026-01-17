@@ -301,26 +301,36 @@
 
 				styleVerified = true;
 				setMessage('success', '품번이 확인되었습니다.');
-				loadSelectionOptions(styleCode);
+				const selection = await loadSelectionOptions(styleCode);
+				if (selection?.colors?.length === 1) {
+					colorSelect.value = selection.colors[0];
+					renderSelectOptions(agreeSelect, cachedAgreements, '생산합의 코드를 선택하세요');
+					agreeSelect.disabled = false;
+				}
+				if (cachedAgreements.length === 1) {
+					agreeSelect.value = cachedAgreements[0];
+					await loadAgreements(styleCode);
+				}
 			}
 
-			function loadSelectionOptions(styleCode) {
-				fetch(`/production/work-orders/options?styleCode=${encodeURIComponent(styleCode)}`)
-					.then(res => res.json())
-					.then(data => {
-						styleIdInput.value = data.stylesId || '';
-						renderSelectOptions(colorSelect, data.colors, '색상을 선택하세요');
-						cachedAgreements = data.agreements || [];
-						renderSelectOptions(agreeSelect, [], '생산합의 코드를 선택하세요');
-						colorSelect.disabled = false;
-						agreeSelect.disabled = true;
-					})
-					.catch(() => {
-						renderSelectOptions(colorSelect, [], '색상을 선택하세요');
-						renderSelectOptions(agreeSelect, [], '생산합의 코드를 선택하세요');
-						colorSelect.disabled = false;
-						agreeSelect.disabled = true;
-					});
+			async function loadSelectionOptions(styleCode) {
+				try {
+					const res = await fetch(`/production/work-orders/options?styleCode=${encodeURIComponent(styleCode)}`);
+					const data = await res.json();
+					styleIdInput.value = data.stylesId || '';
+					renderSelectOptions(colorSelect, data.colors, '색상을 선택하세요');
+					cachedAgreements = data.agreements || [];
+					renderSelectOptions(agreeSelect, [], '생산합의 코드를 선택하세요');
+					colorSelect.disabled = false;
+					agreeSelect.disabled = true;
+					return data;
+				} catch (e) {
+					renderSelectOptions(colorSelect, [], '색상을 선택하세요');
+					renderSelectOptions(agreeSelect, [], '생산합의 코드를 선택하세요');
+					colorSelect.disabled = false;
+					agreeSelect.disabled = true;
+					return null;
+				}
 			}
 
 			searchButton.addEventListener('click', async () => {

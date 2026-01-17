@@ -16,6 +16,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -112,6 +113,7 @@ public class MaterialTransactionService {
 			Long prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode());
 			int created = 0;
 			int skipped = 0;
+			List<Map<String, Object>> errors = new ArrayList<>();
 			for (MaterialTransactionSaveLine line : request.getItems()) {
 				BigDecimal qty = safeDecimal(line.getQuantity());
 				if (qty.compareTo(BigDecimal.ZERO) <= 0 || line.getMOrderId() == null) {
@@ -197,16 +199,46 @@ public class MaterialTransactionService {
 						+ "where mo.m_order_id = :mOrderId";
 				log.info("Executing inbound SQL: {} params: mOrderId={}, prdAgreeId={}, colorCode={}, stylesId={}",
 						sql, line.getMOrderId(), prdAgreeId, request.getColorCode(), request.getStylesId());
-				int affected = jdbcTemplate.update(sql, params);
-				if (affected > 0) {
-					created++;
-				} else {
+				try {
+					int affected = jdbcTemplate.update(sql, params);
+					if (affected > 0) {
+						created++;
+					} else {
+						skipped++;
+						errors.add(buildInboundError(line, qty, sql,
+								new IllegalStateException("입고 처리 대상이 없습니다.")));
+					}
+				} catch (Exception e) {
 					skipped++;
+					Map<String, Object> error = buildInboundError(line, qty, sql, e);
+					errors.add(error);
+					log.error("입고 저장 실패. mOrderId={}, qty={}, sqlState={}, errorCode={}, message={}",
+							line.getMOrderId(), qty, error.get("sqlState"), error.get("errorCode"),
+							error.get("errorMessage"), e);
 				}
 			}
 
-			return Map.of("success", created > 0, "created", created, "skipped", skipped,
-					"message", created > 0 ? "입고가 등록되었습니다." : "입고 등록에 실패했습니다.");
+			boolean hasErrors = !errors.isEmpty();
+			String message;
+			if (created > 0 && !hasErrors) {
+				message = "입고가 등록되었습니다.";
+			} else if (created > 0) {
+				message = buildInboundSummaryMessage("입고 등록 중 일부 항목이 실패했습니다.", errors);
+			} else if (hasErrors) {
+				message = buildInboundSummaryMessage("입고 등록에 실패했습니다.", errors);
+			} else {
+				message = "입고 등록에 실패했습니다.";
+			}
+
+			Map<String, Object> result = new LinkedHashMap<>();
+			result.put("success", created > 0 && !hasErrors);
+			result.put("created", created);
+			result.put("skipped", skipped);
+			result.put("message", message);
+			if (hasErrors) {
+				result.put("errors", errors);
+			}
+			return result;
 		} catch (Exception e) {
 			String errorId = UUID.randomUUID().toString();
 			String errorDetail = resolveErrorDetail(e);
@@ -636,6 +668,88 @@ public class MaterialTransactionService {
 			return type + ": " + message;
 		}
 		return type;
+	}
+	
+	private Map<String, Object> buildInboundError(MaterialTransactionSaveLine line, BigDecimal qty, String sql,
+			Exception e) {
+		Map<String, Object> error = new LinkedHashMap<>();
+		error.put("mOrderId", line != null ? line.getMOrderId() : null);
+		error.put("quantity", qty);
+		error.put("sql", sql);
+		error.put("errorMessage", e != null ? e.getMessage() : null);
+		Throwable root = resolveRootCause(e);
+		error.put("rootCause", root != null ? root.getMessage() : null);
+		SQLException sqlException = findSqlException(e);
+		if (sqlException != null) {
+			error.put("sqlState", sqlException.getSQLState());
+			error.put("errorCode", sqlException.getErrorCode());
+		}
+		return error;
+	}
+
+	private String buildInboundSummaryMessage(String prefix, List<Map<String, Object>> errors) {
+		if (errors == null || errors.isEmpty()) {
+			return prefix;
+		}
+		List<String> summaries = new ArrayList<>();
+		int limit = Math.min(errors.size(), 3);
+		for (int i = 0; i < limit; i++) {
+			Map<String, Object> error = errors.get(i);
+			summaries.add(formatInboundErrorSummary(error));
+		}
+		String suffix = errors.size() > limit ? " 외 " + (errors.size() - limit) + "건" : "";
+		return prefix + " " + String.join(" | ", summaries) + suffix + " 자세한 내용은 서버 로그를 확인하세요.";
+	}
+
+	private String formatInboundErrorSummary(Map<String, Object> error) {
+		if (error == null) {
+			return "알 수 없는 오류";
+		}
+		Object mOrderId = error.get("mOrderId");
+		Object quantity = error.get("quantity");
+		Object sqlState = error.get("sqlState");
+		Object errorCode = error.get("errorCode");
+		Object rootCause = error.get("rootCause");
+		Object errorMessage = error.get("errorMessage");
+		StringBuilder summary = new StringBuilder();
+		summary.append("mOrderId=").append(mOrderId);
+		if (quantity != null) {
+			summary.append(", qty=").append(quantity);
+		}
+		if (sqlState != null) {
+			summary.append(", SQLState=").append(sqlState);
+		}
+		if (errorCode != null) {
+			summary.append(", errorCode=").append(errorCode);
+		}
+		if (rootCause != null && StringUtils.hasText(rootCause.toString())) {
+			summary.append(", rootCause=").append(rootCause);
+		} else if (errorMessage != null && StringUtils.hasText(errorMessage.toString())) {
+			summary.append(", error=").append(errorMessage);
+		}
+		return summary.toString();
+	}
+
+	private Throwable resolveRootCause(Throwable throwable) {
+		if (throwable == null) {
+			return null;
+		}
+		Throwable root = throwable;
+		while (root.getCause() != null && root.getCause() != root) {
+			root = root.getCause();
+		}
+		return root;
+	}
+
+	private SQLException findSqlException(Throwable throwable) {
+		Throwable current = throwable;
+		while (current != null) {
+			if (current instanceof SQLException sqlException) {
+				return sqlException;
+			}
+			current = current.getCause();
+		}
+		return null;
 	}
 
 	private String selectStyleIdExpression(String orderStyleIdColumn, String specStyleIdColumn) {

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.sql.SQLException;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
@@ -32,37 +33,36 @@ import java.util.Map;
 public class MaterialInboundController extends PageViewSupport {
 
 	private static final Logger log = LoggerFactory.getLogger(MaterialInboundController.class);
-    private final MaterialTransactionService materialTransactionService;
-    private final MaterialOrderService materialOrderService;
-    private final UserRepository userRepository;
+	private final MaterialTransactionService materialTransactionService;
+	private final MaterialOrderService materialOrderService;
+	private final UserRepository userRepository;
 
-    public MaterialInboundController(MaterialTransactionService materialTransactionService,
-            MaterialOrderService materialOrderService,
-            UserRepository userRepository) {
-        this.materialTransactionService = materialTransactionService;
-        this.materialOrderService = materialOrderService;
-        this.userRepository = userRepository;
-    }
+	public MaterialInboundController(MaterialTransactionService materialTransactionService,
+			MaterialOrderService materialOrderService, UserRepository userRepository) {
+		this.materialTransactionService = materialTransactionService;
+		this.materialOrderService = materialOrderService;
+		this.userRepository = userRepository;
+	}
 
-    @GetMapping
-    public String view(Model model) {
-        populate(model, "원부자재 입고 등록", "material-inbound", "production/material-inbound",
-                Collections.emptyList());
-        return "layout/layout";
-    }
+	@GetMapping
+	public String view(Model model) {
+		populate(model, "원부자재 입고 등록", "material-inbound", "production/material-inbound", Collections.emptyList());
+		return "layout/layout";
+	}
 
-    @GetMapping("/styles")
-    @ResponseBody
-    public List<MaterialOrderStyleResult> searchStyles(@RequestParam(name = "keyword", required = false) String keyword) {
-        return materialOrderService.searchStyles(keyword);
-    }
+	@GetMapping("/styles")
+	@ResponseBody
+	public List<MaterialOrderStyleResult> searchStyles(
+			@RequestParam(name = "keyword", required = false) String keyword) {
+		return materialOrderService.searchStyles(keyword);
+	}
 
-    @GetMapping("/options")
-    @ResponseBody
-    public MaterialOrderSelection loadSelection(@RequestParam(name = "stylesId", required = false) String stylesId,
-            @RequestParam(name = "styleCode", required = false) String styleCode) {
-        return materialOrderService.loadSelection(stylesId, styleCode);
-    }
+	@GetMapping("/options")
+	@ResponseBody
+	public MaterialOrderSelection loadSelection(@RequestParam(name = "stylesId", required = false) String stylesId,
+			@RequestParam(name = "styleCode", required = false) String styleCode) {
+		return materialOrderService.loadSelection(stylesId, styleCode);
+	}
 
 	@GetMapping("/list")
 	@ResponseBody
@@ -71,8 +71,8 @@ public class MaterialInboundController extends PageViewSupport {
 			@RequestParam(name = "prdAgreeCode", required = false) String prdAgreeCode,
 			@RequestParam(name = "colorCode", required = false) String colorCode) {
 		try {
-			List<MaterialTransactionLineView> result =
-					materialTransactionService.findInboundMaterials(stylesId, styleCode, prdAgreeCode, colorCode);
+			List<MaterialTransactionLineView> result = materialTransactionService.findInboundMaterials(stylesId,
+					styleCode, prdAgreeCode, colorCode);
 			return ResponseEntity.ok(result);
 		} catch (Exception e) {
 			log.error("원부자재 입고 조회 중 오류가 발생했습니다.", e);
@@ -81,27 +81,65 @@ public class MaterialInboundController extends PageViewSupport {
 		}
 	}
 
-    @PostMapping("/save")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> saveInbound(@RequestBody MaterialTransactionSaveRequest request,
-            Principal principal) {
-        String empNo = resolveEmpNo(principal);
-        try {
-            Map<String, Object> result = materialTransactionService.saveInbound(request, empNo);
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            log.error("원부자재 입고 저장 중 오류가 발생했습니다.", e);
-            String message = "입고 등록에 실패했습니다. (원인: " + e.getMessage() + ")";
-            return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
-        }
-    }
+	@PostMapping("/save")
+	@ResponseBody
+	public ResponseEntity<Map<String, Object>> saveInbound(@RequestBody MaterialTransactionSaveRequest request,
+			Principal principal) {
+		String empNo = resolveEmpNo(principal);
+		try {
+			Map<String, Object> result = materialTransactionService.saveInbound(request, empNo);
+			return ResponseEntity.ok(result);
+		} catch (Exception e) {
+			log.error("Inbound save failed. request={}, empNo={}", request, empNo, e);
+			String message = buildInboundErrorMessage(e);
+			return ResponseEntity.status(500).body(Map.of("success", false, "message", message));
+		}
+	}
 
-    private String resolveEmpNo(Principal principal) {
-        if (principal == null || !StringUtils.hasText(principal.getName())) {
-            return null;
-        }
-        return userRepository.findByUsername(principal.getName())
-                .map(User::getEmpNo)
-                .orElse(principal.getName());
-    }
+	private String resolveEmpNo(Principal principal) {
+		if (principal == null || !StringUtils.hasText(principal.getName())) {
+			return null;
+		}
+		return userRepository.findByUsername(principal.getName()).map(User::getEmpNo).orElse(principal.getName());
+	}
+
+	private String buildInboundErrorMessage(Exception e) {
+		Throwable root = resolveRootCause(e);
+		SQLException sqlException = findSqlException(e);
+		StringBuilder detail = new StringBuilder();
+		if (root != null && StringUtils.hasText(root.getMessage())) {
+			detail.append(root.getMessage());
+		} else if (e != null && StringUtils.hasText(e.getMessage())) {
+			detail.append(e.getMessage());
+		} else {
+			detail.append("알 수 없는 오류");
+		}
+		if (sqlException != null) {
+			detail.append(" [SQLState=").append(sqlException.getSQLState()).append(", errorCode=")
+					.append(sqlException.getErrorCode()).append("]");
+		}
+		return "입고 등록에 실패했습니다. (원인: " + detail + ")";
+	}
+
+	private Throwable resolveRootCause(Throwable throwable) {
+		if (throwable == null) {
+			return null;
+		}
+		Throwable root = throwable;
+		while (root.getCause() != null && root.getCause() != root) {
+			root = root.getCause();
+		}
+		return root;
+	}
+
+	private SQLException findSqlException(Throwable throwable) {
+		Throwable current = throwable;
+		while (current != null) {
+			if (current instanceof SQLException sqlException) {
+				return sqlException;
+			}
+			current = current.getCause();
+		}
+		return null;
+	}
 }

@@ -413,11 +413,7 @@
 						}
 					})
 					.catch((e) => {
-						const rawMessage = e?.message;
-						const message = rawMessage && rawMessage.includes('원인:')
-							? rawMessage
-							: `입고 등록에 실패했습니다. (원인: ${rawMessage || '알 수 없는 오류'})`;
-						alert(message);
+						alert(e?.message || '입고 등록에 실패했습니다.');
 					});
 			});
 

@@ -73,10 +73,21 @@
 			white-space: nowrap;
 		}
 
+		.moout-table {
+			table-layout: fixed;
+			width: 100%;
+		}
+
 		.moout-table tbody td {
 			font-size: 13px;
 			vertical-align: middle;
 			white-space: nowrap;
+		}
+
+		.moout-table th,
+		.moout-table td {
+			overflow: hidden;
+			text-overflow: ellipsis;
 		}
 
 		.moout-placeholder {
@@ -97,7 +108,38 @@
 
 		.mout-factory-wrapper {
 			position: relative;
-			min-width: 160px;
+			min-width: 180px;
+		}
+
+		.mout-factory-wrapper .input-group {
+			flex-wrap: nowrap;
+		}
+
+		.mout-factory-wrapper .form-control {
+			min-width: 0;
+		}
+
+		.mout-factory-wrapper .btn {
+			width: 32px;
+			padding: 0;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.mout-color-col,
+		.mout-material-color-col {
+			max-width: 90px;
+			width: 90px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.mout-producer-col {
+			min-width: 200px;
+			width: 200px;
+			overflow: visible;
 		}
 
 		.mout-factory-dropdown {
@@ -192,13 +234,13 @@
 					<thead class="table-light">
 						<tr>
 							<th>품번</th>
-							<th>색상</th>
+							<th class="mout-color-col">색상</th>
 							<th>생산합의코드</th>
 							<th>원부자재구분</th>
 							<th>자재명칭</th>
 							<th>용도</th>
 							<th>자재규격</th>
-							<th>자재색상</th>
+							<th class="mout-material-color-col">자재색상</th>
 							<th>소요량단위</th>
 							<th>1매소요량</th>
 							<th>자재처</th>
@@ -209,7 +251,7 @@
 							<th>입고량</th>
 							<th>기출고량</th>
 							<th>출고량</th>
-							<th>생산처</th>
+							<th class="mout-producer-col">생산처</th>
 						</tr>
 					</thead>
 					<tbody id="mout-table-body">
@@ -395,13 +437,13 @@
 					const plannedOutbound = formatQuantity(0);
 					row.innerHTML = `
 							<td>${item.styleCode || '-'}</td>
-							<td>${item.colorCode || '-'}</td>
+							<td class="mout-color-col">${item.colorCode || '-'}</td>
 							<td>${item.agreementMonth || item.prdAgreeCode || '-'}</td>
 							<td>${item.category || '-'}</td>
 							<td>${item.materialName || '-'}</td>
 							<td>${item.materialUsage || '-'}</td>
 							<td>${item.spec || '-'}</td>
-							<td>${item.materialColor || '-'}</td>
+							<td class="mout-material-color-col">${item.materialColor || '-'}</td>
 							<td>${item.uom || '-'}</td>
 							<td>${formatQuantity(item.qtyPerPiece)}</td>
 							<td>${item.supplierName || item.supplierCode || '-'}</td>
@@ -417,7 +459,7 @@
 									<input type="number" class="form-control form-control-sm mout-issued-input" min="0" step="0.001" value="0">
 								</div>
 							</td>
-							<td>${renderFactoryInput()}</td>
+							<td class="mout-producer-col">${renderFactoryInput()}</td>
 						`;
 					const issuedInput = row.querySelector('.mout-issued-input');
 					issuedInput.addEventListener('input', () => {
@@ -433,7 +475,7 @@
 			}
 
 			function renderFactoryInput() {
-							return `
+				return `
 								<div class="mout-factory-wrapper">
 									<div class="input-group input-group-sm">
 										<input type="text" class="form-control mout-factory-input" placeholder="생산처 코드 검색">
@@ -444,89 +486,89 @@
 									<div class="mout-factory-dropdown"></div>
 								</div>
 							`;
-						}
+			}
 
-						function normalizeFactoryOptions() {
-							return (factoryOptions || []).map(opt => ({
-								code: opt.code || opt.code_value || '',
-								name: opt.name || opt.code_name || opt.code || ''
-							})).filter(opt => opt.code);
-						}
+			function normalizeFactoryOptions() {
+				return (factoryOptions || []).map(opt => ({
+					code: opt.code || opt.code_value || '',
+					name: opt.name || opt.code_name || opt.code || ''
+				})).filter(opt => opt.code);
+			}
 
-						const normalizedFactories = normalizeFactoryOptions();
+			const normalizedFactories = normalizeFactoryOptions();
 
-						function filterFactories(keyword) {
-							if (!keyword) {
-								return normalizedFactories;
-							}
-							const lower = keyword.toLowerCase();
-							return normalizedFactories.filter(opt =>
-								opt.code.toLowerCase().includes(lower) ||
-								(opt.name || '').toLowerCase().includes(lower)
-							);
-						}
+			function filterFactories(keyword) {
+				if (!keyword) {
+					return normalizedFactories;
+				}
+				const lower = keyword.toLowerCase();
+				return normalizedFactories.filter(opt =>
+					opt.code.toLowerCase().includes(lower) ||
+					(opt.name || '').toLowerCase().includes(lower)
+				);
+			}
 
-						function closeFactoryDropdowns() {
-							document.querySelectorAll('.mout-factory-dropdown.show').forEach(dropdown => {
-								dropdown.classList.remove('show');
-							});
-						}
+			function closeFactoryDropdowns() {
+				document.querySelectorAll('.mout-factory-dropdown.show').forEach(dropdown => {
+					dropdown.classList.remove('show');
+				});
+			}
 
-						function attachFactorySearch(row) {
-							const wrapper = row.querySelector('.mout-factory-wrapper');
-							const input = row.querySelector('.mout-factory-input');
-							const button = row.querySelector('.mout-factory-search');
-							const dropdown = row.querySelector('.mout-factory-dropdown');
+			function attachFactorySearch(row) {
+				const wrapper = row.querySelector('.mout-factory-wrapper');
+				const input = row.querySelector('.mout-factory-input');
+				const button = row.querySelector('.mout-factory-search');
+				const dropdown = row.querySelector('.mout-factory-dropdown');
 
-							if (!wrapper || !input || !button || !dropdown) {
-								return;
+				if (!wrapper || !input || !button || !dropdown) {
+					return;
 				}
 				const renderOptions = (keyword) => {
-									dropdown.innerHTML = '';
-									const matches = filterFactories(keyword);
-									if (matches.length === 0) {
-										dropdown.innerHTML = '<div class="mout-factory-empty">조회된 생산처가 없습니다.</div>';
-										return;
-									}
-									matches.forEach(opt => {
-										const optionEl = document.createElement('div');
-										optionEl.className = 'mout-factory-option';
-										optionEl.textContent = opt.name ? `${opt.code} (${opt.name})` : opt.code;
-										optionEl.addEventListener('click', () => {
-											input.value = opt.code;
-											closeFactoryDropdowns();
-										});
-										dropdown.appendChild(optionEl);
-									});
-								};
-
-								button.addEventListener('click', (event) => {
-									event.preventDefault();
-									event.stopPropagation();
-									if (normalizedFactories.length === 0) {
-										renderOptions('');
-										dropdown.classList.add('show');
-										return;
-									}
-									closeFactoryDropdowns();
-									renderOptions(input.value);
-									dropdown.classList.add('show');
-								});
-
-								input.addEventListener('input', () => {
-									if (dropdown.classList.contains('show')) {
-										renderOptions(input.value);
-									}
-								});
-
-								wrapper.addEventListener('click', (event) => {
-									event.stopPropagation();
-								});
-			}
-			
-			document.addEventListener('click', () => {
+					dropdown.innerHTML = '';
+					const matches = filterFactories(keyword);
+					if (matches.length === 0) {
+						dropdown.innerHTML = '<div class="mout-factory-empty">조회된 생산처가 없습니다.</div>';
+						return;
+					}
+					matches.forEach(opt => {
+						const optionEl = document.createElement('div');
+						optionEl.className = 'mout-factory-option';
+						optionEl.textContent = opt.name ? `${opt.code} (${opt.name})` : opt.code;
+						optionEl.addEventListener('click', () => {
+							input.value = opt.code;
 							closeFactoryDropdowns();
 						});
+						dropdown.appendChild(optionEl);
+					});
+				};
+
+				button.addEventListener('click', (event) => {
+					event.preventDefault();
+					event.stopPropagation();
+					if (normalizedFactories.length === 0) {
+						renderOptions('');
+						dropdown.classList.add('show');
+						return;
+					}
+					closeFactoryDropdowns();
+					renderOptions(input.value);
+					dropdown.classList.add('show');
+				});
+
+				input.addEventListener('input', () => {
+					if (dropdown.classList.contains('show')) {
+						renderOptions(input.value);
+					}
+				});
+
+				wrapper.addEventListener('click', (event) => {
+					event.stopPropagation();
+				});
+			}
+
+			document.addEventListener('click', () => {
+				closeFactoryDropdowns();
+			});
 
 			saveButton.addEventListener('click', () => {
 				const rows = Array.from(tableBody.querySelectorAll('tr[data-m-order-id]'));
