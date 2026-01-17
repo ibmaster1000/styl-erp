@@ -75,6 +75,37 @@
 			white-space: nowrap;
 		}
 
+		.wo-right-table {
+			table-layout: fixed;
+			width: 100%;
+		}
+
+		.wo-right-table-wrap {
+			overflow-x: auto;
+		}
+
+		.wo-col-style {
+			width: 120px;
+		}
+
+		.wo-col-agreement {
+			width: 140px;
+		}
+
+		.wo-col-color {
+			width: 70px;
+		}
+
+		.wo-col-qty {
+			width: 90px;
+		}
+
+		.wo-col-producer,
+		.wo-col-due,
+		.wo-col-delivery {
+			min-width: 180px;
+		}
+
 		.wo-placeholder {
 			text-align: center;
 			color: #6b7280;
@@ -93,15 +124,20 @@
 		}
 
 		.wo-input-group .form-control {
-			min-width: 140px;
+			min-width: 0;
+			flex: 1 1 auto;
 		}
 
 		.wo-input-group {
+			display: flex;
 			flex-wrap: nowrap;
+			gap: 6px;
+			align-items: center;
 		}
 
 		.wo-input-group .btn {
 			white-space: nowrap;
+			flex: 0 0 auto;
 		}
 
 		@media (max-width: 1200px) {
@@ -199,17 +235,17 @@
 							<button type="submit" class="btn btn--primary" id="wo-save-button">저장</button>
 						</div>
 					</div>
-					<div class="table-responsive">
-						<table class="table table-bordered align-middle wo-table data-table">
+					<div class="table-responsive wo-right-table-wrap">
+						<table class="table table-bordered align-middle wo-table data-table wo-right-table">
 							<thead class="table-light">
 								<tr>
-									<th>품번</th>
-									<th>생산합의코드</th>
-									<th>색상</th>
-									<th>합의량</th>
-									<th>생산처</th>
-									<th>납기일</th>
-									<th>납품장소</th>
+									<th class="wo-col-style">품번</th>
+									<th class="wo-col-agreement">생산합의코드</th>
+									<th class="wo-col-color">색상</th>
+									<th class="wo-col-qty">합의량</th>
+									<th class="wo-col-producer">생산처</th>
+									<th class="wo-col-due">납기일</th>
+									<th class="wo-col-delivery">납품장소</th>
 								</tr>
 							</thead>
 							<tbody id="wo-right-body">
@@ -319,6 +355,7 @@
 			let activeInput = null;
 			let selectedFactoryRow = null;
 			let selectedWarehouseRow = null;
+			const todayStr = getTodayString();
 
 			styleCodeInput.addEventListener('input', () => {
 				styleIdInput.value = '';
@@ -577,7 +614,10 @@
 					row.dataset.colorCode = item.colorCode || '';
 					row.dataset.prdAgreeId = item.prdAgreeId || '';
 					row.dataset.agreementQuantity = item.agreementQuantity || '';
-					const dueDateValue = normalizeDate(item.dueDate);
+					let dueDateValue = normalizeDate(item.dueDate);
+					if (dueDateValue && dueDateValue < todayStr) {
+						dueDateValue = todayStr;
+					}
 					row.innerHTML = `
 							<td>${item.styleCode || '-'}</td>
 							<td>${item.prdAgreeCode || '-'}</td>
@@ -604,6 +644,7 @@
 						`;
 					rightBody.appendChild(row);
 				});
+				applyDueDateMin();
 			}
 
 			function normalizeDate(value) {
@@ -614,6 +655,21 @@
 					return value.split('T')[0];
 				}
 				return value.length >= 10 ? value.slice(0, 10) : value;
+			}
+
+			function getTodayString() {
+				const now = new Date();
+				const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+				return local.toISOString().split('T')[0];
+			}
+
+			function applyDueDateMin() {
+				rightBody.querySelectorAll('.wo-due-date').forEach(input => {
+					input.min = todayStr;
+					if (input.value && input.value < todayStr) {
+						input.value = todayStr;
+					}
+				});
 			}
 
 			function formatQuantity(value) {
@@ -657,6 +713,9 @@
 					const factoryInput = row.querySelector('.wo-factory-input');
 					const dueDateInput = row.querySelector('.wo-due-date');
 					const warehouseInput = row.querySelector('.wo-warehouse-input');
+					if (dueDateInput?.value && dueDateInput.value < todayStr) {
+						dueDateInput.value = todayStr;
+					}
 					lines.push({
 						styleCode: row.dataset.styleCode || '',
 						prdAgreeCode: row.dataset.prdAgreeCode || '',
@@ -671,6 +730,11 @@
 				const hasMissing = lines.some(line => !line.producerCode || !line.dueDate || !line.deliveryPlaceCode);
 				if (hasMissing) {
 					setMessage('danger', '생산처/납기일/납품장소를 모두 입력하세요.');
+					return;
+				}
+				const hasPastDueDate = lines.some(line => line.dueDate < todayStr);
+				if (hasPastDueDate) {
+					setMessage('danger', '납기일은 오늘 이후만 선택할 수 있습니다.');
 					return;
 				}
 				try {
@@ -834,6 +898,7 @@
 				resetTable('조회된 데이터가 없습니다.');
 			}
 			resetRightTable();
+			applyDueDateMin();
 		});
 		/*]]>*/
 	</script>

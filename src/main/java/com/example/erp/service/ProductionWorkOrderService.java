@@ -10,6 +10,7 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -29,7 +30,6 @@ public class ProductionWorkOrderService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final String STATUS_DRAFT = "NEW";
     private static final String STATUS_ACTIVE = "ACTIVE";
-    private static final String FACTORY_TYPE_CUSTOMER = "CUSTOMER";
     private static final String COLOR_TYPE_DEFAULT = "COLOR";
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
@@ -364,7 +364,6 @@ public class ProductionWorkOrderService {
         String styleIdColumn = findFirstExistingColumn("production_jobs", List.of("styles_id", "style_id"));
         String qtyColumn = findFirstExistingColumn("production_jobs", List.of("quantity", "order_qty", "agree_qty"));
         String producerColumn = findFirstExistingColumn("production_jobs", List.of("factory_code", "producer_code"));
-        String factoryTypeColumn = findFirstExistingColumn("production_jobs", List.of("factory_type"));
         String dueDateColumn = findFirstExistingColumn("production_jobs", List.of("due_date", "delivery_due_date",
                 "delivery_date"));
         String deliveryColumn = findFirstExistingColumn("production_jobs", List.of("delivery_location",
@@ -395,6 +394,9 @@ public class ProductionWorkOrderService {
                     request.getStyleCode(), resolvedStyleId);
         }
         LocalDateTime dueDate = parseDateTime(request.getDueDate());
+        if (dueDate == null || dueDate.toLocalDate().isBefore(LocalDate.now())) {
+            return Map.of("success", false, "message", "납기일은 오늘 이후만 선택할 수 있습니다.");
+        }
         Long prdAgreeId = request.getPrdAgreeId();
         if (prdAgreeId == null) {
             prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode());
@@ -407,7 +409,6 @@ public class ProductionWorkOrderService {
                 .addValue("colorCode", request.getColorCode())
                 .addValue("agreementQty", agreementQty)
                 .addValue("producerCode", request.getProducerCode())
-                .addValue("factoryType", FACTORY_TYPE_CUSTOMER)
                 .addValue("dueDate", dueDate != null ? Timestamp.valueOf(dueDate) : null)
                 .addValue("deliveryPlace", request.getDeliveryPlaceCode())
                 .addValue("status", STATUS_DRAFT)
@@ -437,10 +438,6 @@ public class ProductionWorkOrderService {
         }
         columns.add(producerColumn);
         values.add(":producerCode");
-        if (factoryTypeColumn != null) {
-            columns.add(factoryTypeColumn);
-            values.add(":factoryType");
-        }
         columns.add(dueDateColumn);
         values.add(":dueDate");
         columns.add(deliveryColumn);
@@ -470,9 +467,6 @@ public class ProductionWorkOrderService {
                 updates.add(qtyColumn + " = :agreementQty");
             }
             updates.add(producerColumn + " = :producerCode");
-            if (factoryTypeColumn != null) {
-                updates.add(factoryTypeColumn + " = :factoryType");
-            }
             updates.add(dueDateColumn + " = :dueDate");
             updates.add(deliveryColumn + " = :deliveryPlace");
             updates.add(statusColumn + " = :status");
@@ -506,7 +500,7 @@ public class ProductionWorkOrderService {
 
         int affected = jdbcTemplate.update(sql, params);
         return Map.of("success", affected > 0,
-                "message", affected > 0 ? "작업지시 기본정보가 저장되었습니다." : "작업지시 저장에 실패했습니다.");
+                "message", affected > 0 ? "작업지시 기본정보가 저장되었습니다." : "작업시 저장에 실패했습니다.");
     }
 
     @Transactional
