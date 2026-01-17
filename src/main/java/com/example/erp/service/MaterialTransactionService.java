@@ -104,13 +104,15 @@ public class MaterialTransactionService {
 					lineErrors.add(Map.of("index", idx, "error", "line is null"));
 					continue;
 				}
-				if (line.getMOrderId() == null) {
-					lineErrors.add(Map.of("index", idx, "error", "mOrderId 누락"));
-					missingFields.add("mOrderId");
+				if (line.getMOrderId() == null && line.getBomId() == null) {
+					lineErrors.add(Map.of("index", idx, "mOrderId", null, "bomId", null,
+							"error", "mOrderId/bomId 둘 다 누락"));
+					missingFields.add("mOrderIdOrBomId");
 				}
 				BigDecimal qty = line.getQuantity();
 				if (qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) {
-					lineErrors.add(Map.of("index", idx, "error", "receivedQty 누락/0이하", "mOrderId", line.getMOrderId()));
+					lineErrors.add(Map.of("index", idx, "mOrderId", line.getMOrderId(), "bomId", line.getBomId(),
+							"error", "receivedQty 누락/0이하"));
 					missingFields.add("receivedQty");
 				}
 			}
@@ -140,6 +142,40 @@ public class MaterialTransactionService {
 					"message", "입고 등록 실패 (material_orders 컬럼 누락: " + orderMissingCols + ")",
 					"missingFields", orderMissingCols
 			);
+		}
+		
+		Set<Long> bomIds = new LinkedHashSet<>();
+		if (!CollectionUtils.isEmpty(request.getItems())) {
+			for (MaterialTransactionSaveLine line : request.getItems()) {
+				if (line != null && line.getMOrderId() == null && line.getBomId() != null) {
+					bomIds.add(line.getBomId());
+				}
+			}
+		}
+
+		Map<Long, Long> orderIdByBomId = new LinkedHashMap<>();
+		if (!bomIds.isEmpty() && stylesId != null && prdAgreeId != null && StringUtils.hasText(request.getColorCode())) {
+			String orderIdByBomSql = """
+					select mo.bom_id as bomId, max(mo.m_order_id) as mOrderId
+					from material_orders mo
+					where mo.styles_id = :stylesId
+					  and mo.prd_agree_id = :prdAgreeId
+					  and mo.color_code = :colorCode
+					  and mo.bom_id in (:bomIds)
+					group by mo.bom_id
+					""";
+			MapSqlParameterSource params = new MapSqlParameterSource()
+					.addValue("stylesId", stylesId)
+					.addValue("prdAgreeId", prdAgreeId)
+					.addValue("colorCode", request.getColorCode())
+					.addValue("bomIds", bomIds);
+			jdbcTemplate.query(orderIdByBomSql, params, rs -> {
+				Long bomId = rs.getLong("bomId");
+				Long mOrderId = rs.getLong("mOrderId");
+				if (bomId != null && mOrderId != null) {
+					orderIdByBomId.put(bomId, mOrderId);
+				}
+			});
 		}
 
 		// 5) 기본 필드/해석 실패를 한 번에 반환
@@ -257,10 +293,20 @@ public class MaterialTransactionService {
 			}
 
 			Long mOrderId = line.getMOrderId();
+			if (mOrderId == null && line.getBomId() != null) {
+				mOrderId = orderIdByBomId.get(line.getBomId());
+			}
 			BigDecimal receivedQty = line.getQuantity();
-			if (mOrderId == null || receivedQty == null || receivedQty.compareTo(BigDecimal.ZERO) <= 0) {
+			if (mOrderId == null) {
 				skipped++;
-				lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "qty", receivedQty, "error", "필수값 누락/0이하"));
+				lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "bomId", line.getBomId(),
+						"error", "mOrderId 해석 실패(bomId 매핑 없음)"));
+				continue;
+			}
+			if (receivedQty == null || receivedQty.compareTo(BigDecimal.ZERO) <= 0) {
+				skipped++;
+				lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "bomId", line.getBomId(),
+						"qty", receivedQty, "error", "필수값 누락/0이하"));
 				continue;
 			}
 
@@ -281,16 +327,19 @@ public class MaterialTransactionService {
 					created++;
 				} else {
 					skipped++;
-					lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "error", "insert 0 rows (조건 불일치 가능)"));
+					lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "bomId", line.getBomId(),
+							"error", "insert 0 rows (조건 불일치 가능)"));
 				}
 			} catch (org.springframework.dao.DataIntegrityViolationException e) {
 				skipped++;
 				String root = (e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : e.getMessage());
-				lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "error", "DataIntegrityViolation", "detail", root));
+				lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "bomId", line.getBomId(),
+						"error", "DataIntegrityViolation", "detail", root));
 			} catch (Exception e) {
 				skipped++;
 				String root = (e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
-				lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "error", "Exception", "detail", root));
+				lineErrors.add(Map.of("index", idx, "mOrderId", mOrderId, "bomId", line.getBomId(),
+						"error", "Exception", "detail", root));
 			}
 		}
 
