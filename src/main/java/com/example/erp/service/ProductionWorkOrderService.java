@@ -110,8 +110,8 @@ public class ProductionWorkOrderService {
                 .filter(StringUtils::hasText)
                 .collect(Collectors.toSet());
 
-        Map<String, String> producerNames = findCodeNames("CUSTOMER", producerCodes);
-        Map<String, String> deliveryNames = findCodeNames("WAREHOUSE", deliveryCodes);
+        Map<String, String> producerNames = findCodeNames("customer", producerCodes);
+        Map<String, String> deliveryNames = findCodeNames("warehouse", deliveryCodes);
 
         for (WorkOrderAgreementRow row : rows) {
             String key = buildKey(row.getStyleCode(), row.getPrdAgreeCode(), row.getColorCode());
@@ -300,8 +300,8 @@ public class ProductionWorkOrderService {
                 .filter(StringUtils::hasText)
                 .collect(Collectors.toSet());
 
-        Map<String, String> producerNames = findCodeNames("CUSTOMER", producerCodes);
-        Map<String, String> deliveryNames = findCodeNames("WAREHOUSE", deliveryCodes);
+        Map<String, String> producerNames = findCodeNames("customer", producerCodes);
+        Map<String, String> deliveryNames = findCodeNames("warehouse", deliveryCodes);
 
         for (WorkOrderAgreementRow row : rows) {
             String key = buildKey(row.getStyleCode(), row.getPrdAgreeCode(), row.getColorCode());
@@ -365,14 +365,12 @@ public class ProductionWorkOrderService {
         String producerColumn = findFirstExistingColumn("production_jobs", List.of("factory_code", "producer_code"));
         String dueDateColumn = findFirstExistingColumn("production_jobs", List.of("due_date", "delivery_due_date",
                 "delivery_date"));
-        String deliveryColumn = findFirstExistingColumn("production_jobs", List.of("delivery_location",
-                "delivery_place_code", "delivery_place", "warehouse_code"));
+        String deliveryColumn = findFirstExistingColumn("production_jobs", List.of("warehouse_code",
+                "delivery_location", "delivery_place_code", "delivery_place"));
         String statusColumn = findFirstExistingColumn("production_jobs", List.of("status"));
         String prdAgreeIdColumn = findFirstExistingColumn("production_jobs", List.of("prd_agree_id"));
-        String createdDateColumn = findFirstExistingColumn("production_jobs",
-                List.of("created_date", "created_at", "created_datetime"));
-        String updatedDateColumn = findFirstExistingColumn("production_jobs",
-                List.of("updated_date", "updated_at", "updated_datetime"));
+        String createdDateColumn = findFirstExistingColumn("production_jobs", List.of("created_date"));
+        String updatedDateColumn = findFirstExistingColumn("production_jobs", List.of("updated_date"));
 
         if (agreementColumn == null || colorColumn == null || producerColumn == null || dueDateColumn == null
                 || deliveryColumn == null || statusColumn == null) {
@@ -553,8 +551,8 @@ public class ProductionWorkOrderService {
         String producerColumn = findFirstExistingColumn("production_jobs", List.of("factory_code", "producer_code"));
         String dueDateColumn = findFirstExistingColumn("production_jobs", List.of("due_date", "delivery_due_date",
                 "delivery_date"));
-        String deliveryColumn = findFirstExistingColumn("production_jobs", List.of("delivery_location",
-                "delivery_place_code", "delivery_place", "warehouse_code"));
+        String deliveryColumn = findFirstExistingColumn("production_jobs", List.of("warehouse_code",
+                "delivery_location", "delivery_place_code", "delivery_place"));
         String statusColumn = findFirstExistingColumn("production_jobs", List.of("status"));
 
         if (agreementColumn == null || colorColumn == null) {
@@ -610,8 +608,8 @@ public class ProductionWorkOrderService {
         String producerColumn = findFirstExistingColumn("production_jobs", List.of("factory_code", "producer_code"));
         String dueDateColumn = findFirstExistingColumn("production_jobs", List.of("due_date", "delivery_due_date",
                 "delivery_date"));
-        String deliveryColumn = findFirstExistingColumn("production_jobs", List.of("delivery_location",
-                "delivery_place_code", "delivery_place", "warehouse_code"));
+        String deliveryColumn = findFirstExistingColumn("production_jobs", List.of("warehouse_code",
+                "delivery_location", "delivery_place_code", "delivery_place"));
         String statusColumn = findFirstExistingColumn("production_jobs", List.of("status"));
 
         if (agreementColumn == null || colorColumn == null) {
