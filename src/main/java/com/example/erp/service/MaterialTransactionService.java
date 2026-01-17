@@ -53,199 +53,115 @@ public class MaterialTransactionService {
 
 	@Transactional
 	public Map<String, Object> saveInbound(MaterialTransactionSaveRequest request, String empNo) {
-		try {
-			if (!hasTable("material_inbounds")) {
-				return Map.of("success", false, "created", 0, "skipped", 0, "message", "입고 테이블이 없습니다.");
-			}
-			if (!hasTable("material_orders")) {
-				return Map.of("success", false, "created", 0, "skipped", 0, "message", "발주 테이블이 없습니다.");
-			}
-			if (CollectionUtils.isEmpty(request.getItems())) {
-				return Map.of("success", false, "created", 0, "skipped", 0, "message", "입고 항목이 없습니다.");
-			}
-
-			List<String> missingColumns = findMissingColumns("material_inbounds",
-					List.of("m_order_id", "received_qty"));
-			if (!missingColumns.isEmpty()) {
-				return Map.of("success", false, "created", 0, "skipped", 0,
-						"message", "입고 컬럼이 부족합니다. missingColumns=" + missingColumns);
-			}
-
-			boolean hasSpecs = hasTable("material_specs");
-			boolean hasInboundDatetime = hasColumn("material_inbounds", "inbound_datetime");
-			boolean hasStylesId = hasColumn("material_inbounds", "styles_id");
-			boolean hasPrdAgreeId = hasColumn("material_inbounds", "prd_agree_id");
-			boolean hasColorType = hasColumn("material_inbounds", "color_type");
-			boolean hasColorCode = hasColumn("material_inbounds", "color_code");
-			boolean hasOrderUom = hasColumn("material_inbounds", "order_uom");
-			boolean hasUnitPrice = hasColumn("material_inbounds", "unit_price");
-			boolean hasProducerType = hasColumn("material_inbounds", "producer_type");
-			boolean hasProducerCode = hasColumn("material_inbounds", "producer_code");
-			boolean hasWarehouseType = hasColumn("material_inbounds", "warehouse_type");
-			boolean hasWarehouseCode = hasColumn("material_inbounds", "warehouse_code");
-			boolean hasCreatedBy = hasColumn("material_inbounds", "created_by");
-			boolean hasRemark = hasColumn("material_inbounds", "remark");
-			boolean hasPlannedQty = hasColumn("material_inbounds", "planned_qty");
-
-			String agreementCodeCol = findFirstExistingColumn("production_agreements",
-					List.of("agreement_code", "prd_agree_code", "prd_agree_no"));
-			String agreementColorCol = findFirstExistingColumn("production_agreements",
-					List.of("color_code", "color"));
-			String agreementQtyCol = findFirstExistingColumn("production_agreements", List.of("quantity", "qty"));
-			String lossRateCol = findFirstExistingColumn("material_specs", List.of("loss_rate", "loss"));
-			String lossExpr = lossRateCol != null ? "coalesce(ms." + lossRateCol + ", 0)" : "0";
-			boolean hasAgreementCols = agreementCodeCol != null && agreementColorCol != null && agreementQtyCol != null;
-			String plannedQtyExpr;
-			if (hasAgreementCols) {
-				String agreementSumExpr = "(select coalesce(sum(" + agreementQtyCol + "), 0)"
-						+ " from production_agreements"
-						+ " where " + agreementCodeCol + " = :prdAgreeCode"
-						+ " and " + agreementColorCol + " = :colorCode)";
-				plannedQtyExpr = "round(" + agreementSumExpr
-						+ " * coalesce(ms.qty_per_piece, 0) * (1 + (" + lossExpr + " / 100.0)), 3)";
-			} else {
-				if (hasPlannedQty) {
-					log.warn("planned_qty 계산에 필요한 production_agreements 컬럼을 찾지 못했습니다.");
-				}
-				plannedQtyExpr = "0";
-			}
-
-			Long prdAgreeId = resolvePrdAgreeId(request.getPrdAgreeCode(), request.getColorCode());
-			int created = 0;
-			int skipped = 0;
-			List<Map<String, Object>> errors = new ArrayList<>();
-			for (MaterialTransactionSaveLine line : request.getItems()) {
-				BigDecimal qty = safeDecimal(line.getQuantity());
-				if (qty.compareTo(BigDecimal.ZERO) <= 0 || line.getMOrderId() == null) {
-					skipped++;
-					continue;
-				}
-
-				MapSqlParameterSource params = new MapSqlParameterSource()
-						.addValue("mOrderId", line.getMOrderId())
-						.addValue("receivedQty", qty)
-						.addValue("inboundDatetime", Timestamp.valueOf(LocalDateTime.now()))
-						.addValue("createdBy", empNo)
-						.addValue("remark", line.getRemark())
-						.addValue("prdAgreeCode", request.getPrdAgreeCode())
-						.addValue("colorCode", request.getColorCode());
-
-				List<String> columns = new ArrayList<>();
-				List<String> values = new ArrayList<>();
-				columns.add("m_order_id");
-				values.add("mo.m_order_id");
-				columns.add("received_qty");
-				values.add(":receivedQty");
-				if (hasInboundDatetime) {
-					columns.add("inbound_datetime");
-					values.add(":inboundDatetime");
-				}
-				if (hasStylesId) {
-					columns.add("styles_id");
-					values.add("mo.styles_id");
-				}
-				if (hasPrdAgreeId) {
-					columns.add("prd_agree_id");
-					values.add("mo.prd_agree_id");
-				}
-				if (hasColorType) {
-					columns.add("color_type");
-					values.add("'COLOR'");
-				}
-				if (hasColorCode) {
-					columns.add("color_code");
-					values.add("mo.color_code");
-				}
-				if (hasOrderUom) {
-					columns.add("order_uom");
-					values.add(hasSpecs ? "ms.order_uom" : "null");
-				}
-				if (hasUnitPrice) {
-					columns.add("unit_price");
-					values.add("mo.unit_price");
-				}
-				if (hasProducerType) {
-					columns.add("producer_type");
-					values.add("'CUSTOMER'");
-				}
-				if (hasProducerCode) {
-					columns.add("producer_code");
-					values.add("mo.vendor_code");
-				}
-				if (hasWarehouseType) {
-					columns.add("warehouse_type");
-					values.add("'WAREHOUSE'");
-				}
-				if (hasWarehouseCode) {
-					columns.add("warehouse_code");
-					values.add("mo.warehouse_code");
-				}
-				if (hasCreatedBy) {
-					columns.add("created_by");
-					values.add(":createdBy");
-				}
-				if (hasRemark) {
-					columns.add("remark");
-					values.add(":remark");
-				}
-				if (hasPlannedQty) {
-					columns.add("planned_qty");
-					values.add(plannedQtyExpr);
-				}
-
-				String sql = "insert into material_inbounds (" + String.join(", ", columns) + ") select "
-						+ String.join(", ", values) + " from material_orders mo "
-						+ (hasSpecs ? "left join material_specs ms on ms.bom_id = mo.bom_id " : "")
-						+ "where mo.m_order_id = :mOrderId";
-				log.info("Executing inbound SQL: {} params: mOrderId={}, prdAgreeId={}, colorCode={}, stylesId={}",
-						sql, line.getMOrderId(), prdAgreeId, request.getColorCode(), request.getStylesId());
-				try {
-					int affected = jdbcTemplate.update(sql, params);
-					if (affected > 0) {
-						created++;
-					} else {
-						skipped++;
-						errors.add(buildInboundError(line, qty, sql,
-								new IllegalStateException("입고 처리 대상이 없습니다.")));
-					}
-				} catch (Exception e) {
-					skipped++;
-					Map<String, Object> error = buildInboundError(line, qty, sql, e);
-					errors.add(error);
-					log.error("입고 저장 실패. mOrderId={}, qty={}, sqlState={}, errorCode={}, message={}",
-							line.getMOrderId(), qty, error.get("sqlState"), error.get("errorCode"),
-							error.get("errorMessage"), e);
-				}
-			}
-
-			boolean hasErrors = !errors.isEmpty();
-			String message;
-			if (created > 0 && !hasErrors) {
-				message = "입고가 등록되었습니다.";
-			} else if (created > 0) {
-				message = buildInboundSummaryMessage("입고 등록 중 일부 항목이 실패했습니다.", errors);
-			} else if (hasErrors) {
-				message = buildInboundSummaryMessage("입고 등록에 실패했습니다.", errors);
-			} else {
-				message = "입고 등록에 실패했습니다.";
-			}
-
-			Map<String, Object> result = new LinkedHashMap<>();
-			result.put("success", created > 0 && !hasErrors);
-			result.put("created", created);
-			result.put("skipped", skipped);
-			result.put("message", message);
-			if (hasErrors) {
-				result.put("errors", errors);
-			}
-			return result;
-		} catch (Exception e) {
-			String errorId = UUID.randomUUID().toString();
-			String errorDetail = resolveErrorDetail(e);
-			log.error("입고 저장 중 오류가 발생했습니다. errorId={} detail={}", errorId, errorDetail, e);
-			return Map.of("success", false, "created", 0, "skipped", 0,
-					"message", "입고 등록 중 오류가 발생했습니다. (원인: " + errorDetail + ")");
+		if (request == null || CollectionUtils.isEmpty(request.getItems())) {
+			return Map.of("success", false, "created", 0, "skipped", 0, "message", "입고 항목이 없습니다.");
 		}
+
+		String producerType = null;
+		String producerCode = null;
+		try {
+			org.springframework.beans.BeanWrapper wrapper = new org.springframework.beans.BeanWrapperImpl(request);
+			if (wrapper.isReadableProperty("producerType")) {
+				Object value = wrapper.getPropertyValue("producerType");
+				if (value != null) {
+					producerType = value.toString();
+				}
+			}
+			if (wrapper.isReadableProperty("producerCode")) {
+				Object value = wrapper.getPropertyValue("producerCode");
+				if (value != null) {
+					producerCode = value.toString();
+				}
+			}
+		} catch (Exception e) {
+			log.debug("요청에서 producer 정보를 확인하지 못했습니다.", e);
+		}
+
+		if (!StringUtils.hasText(producerType)) {
+			throw new IllegalArgumentException("producerType 값이 필요합니다.");
+		}
+		if (!StringUtils.hasText(producerCode)) {
+			throw new IllegalArgumentException("producerCode 값이 필요합니다.");
+		}
+
+		String sql = """
+				INSERT INTO material_inbounds (
+				    inbound_datetime,
+				    m_order_id,
+				    styles_id,
+				    prd_agree_id,
+				    color_type,
+				    color_code,
+				    material_spec_id,
+				    producer_type,
+				    producer_code,
+				    warehouse_type,
+				    warehouse_code,
+				    planned_qty,
+				    received_qty,
+				    order_uom,
+				    unit_price,
+				    created_by,
+				    remark
+				)
+				SELECT
+				    NOW(),
+				    mo.m_order_id,
+				    mo.styles_id,
+				    mo.prd_agree_id,
+				    mo.color_type,
+				    mo.color_code,
+				    mo.bom_id,
+				    :producerType,
+				    :producerCode,
+				    mo.warehouse_type,
+				    mo.warehouse_code,
+				    mo.order_amount,
+				    :receivedQty,
+				    :orderUom,
+				    mo.unit_price,
+				    :createdBy,
+				    :remark
+				FROM material_orders mo
+				WHERE mo.m_order_id = :mOrderId
+				""";
+
+		int created = 0;
+		int skipped = 0;
+		for (MaterialTransactionSaveLine line : request.getItems()) {
+			if (line == null || line.getMOrderId() == null) {
+				skipped++;
+				continue;
+			}
+
+			BigDecimal receivedQty = safeDecimal(line.getQuantity());
+			if (receivedQty.compareTo(BigDecimal.ZERO) <= 0) {
+				skipped++;
+				continue;
+			}
+
+			String orderUom = StringUtils.hasText(line.getOrderUom()) ? line.getOrderUom() : "EA";
+			MapSqlParameterSource params = new MapSqlParameterSource().addValue("mOrderId", line.getMOrderId())
+					.addValue("producerType", producerType).addValue("producerCode", producerCode)
+					.addValue("receivedQty", receivedQty).addValue("orderUom", orderUom).addValue("createdBy", empNo)
+					.addValue("remark", line.getRemark());
+
+			try {
+				int affected = jdbcTemplate.update(sql, params);
+				if (affected > 0) {
+					created++;
+				} else {
+					skipped++;
+				}
+			} catch (org.springframework.dao.DataIntegrityViolationException e) {
+				throw new RuntimeException("입고 등록에 실패했습니다. (원인: " + e.getMostSpecificCause().getMessage() + ")", e);
+			} catch (Exception e) {
+				throw new RuntimeException("입고 등록에 실패했습니다. (원인: " + e.getMessage() + ")", e);
+			}
+		}
+
+		return Map.of("success", created > 0, "created", created, "skipped", skipped, "message",
+				created > 0 ? "입고가 등록되었습니다." : "입고 등록에 실패했습니다.");
 	}
 
 	@Transactional
@@ -260,8 +176,8 @@ public class MaterialTransactionService {
 			List<String> missingColumns = findMissingColumns("material_outbounds",
 					List.of("m_order_id", "issued_out_qty", "receiver_code", "receiver_type"));
 			if (!missingColumns.isEmpty()) {
-				return Map.of("success", false, "created", 0, "skipped", 0,
-						"message", "출고 컬럼이 부족합니다. missingColumns=" + missingColumns);
+				return Map.of("success", false, "created", 0, "skipped", 0, "message",
+						"출고 컬럼이 부족합니다. missingColumns=" + missingColumns);
 			}
 
 			boolean hasPlannedOutQty = hasColumn("material_outbounds", "planned_out_qty");
@@ -295,15 +211,11 @@ public class MaterialTransactionService {
 					}
 				}
 
-				MapSqlParameterSource params = new MapSqlParameterSource()
-						.addValue("mOrderId", line.getMOrderId())
-						.addValue("plannedOutQty", BigDecimal.ZERO)
-						.addValue("issuedOutQty", issued)
-						.addValue("receiverType", "CUSTOMER")
-						.addValue("receiverCode", line.getFactoryCode())
+				MapSqlParameterSource params = new MapSqlParameterSource().addValue("mOrderId", line.getMOrderId())
+						.addValue("plannedOutQty", BigDecimal.ZERO).addValue("issuedOutQty", issued)
+						.addValue("receiverType", "CUSTOMER").addValue("receiverCode", line.getFactoryCode())
 						.addValue("outboundDatetime", Timestamp.valueOf(LocalDateTime.now()))
-						.addValue("createdBy", empNo)
-						.addValue("remark", line.getRemark());
+						.addValue("createdBy", empNo).addValue("remark", line.getRemark());
 
 				List<String> columns = new ArrayList<>();
 				List<String> values = new ArrayList<>();
@@ -344,13 +256,13 @@ public class MaterialTransactionService {
 				}
 			}
 
-			return Map.of("success", created > 0, "created", created, "skipped", skipped,
-					"message", created > 0 ? "출고가 등록되었습니다." : "출고 등록에 실패했습니다.");
+			return Map.of("success", created > 0, "created", created, "skipped", skipped, "message",
+					created > 0 ? "출고가 등록되었습니다." : "출고 등록에 실패했습니다.");
 		} catch (Exception e) {
 			String errorId = UUID.randomUUID().toString();
 			log.error("출고 저장 중 오류가 발생했습니다. errorId={}", errorId, e);
-			return Map.of("success", false, "created", 0, "skipped", 0,
-					"message", "출고 등록 중 오류가 발생했습니다. errorId=" + errorId);
+			return Map.of("success", false, "created", 0, "skipped", 0, "message",
+					"출고 등록 중 오류가 발생했습니다. errorId=" + errorId);
 		}
 	}
 
@@ -404,8 +316,7 @@ public class MaterialTransactionService {
 
 		String agreementCodeCol = findFirstExistingColumn("production_agreements",
 				List.of("agreement_code", "prd_agree_code", "prd_agree_no"));
-		String agreementColorCol = findFirstExistingColumn("production_agreements",
-				List.of("color_code", "color"));
+		String agreementColorCol = findFirstExistingColumn("production_agreements", List.of("color_code", "color"));
 		String agreementQtyCol = findFirstExistingColumn("production_agreements", List.of("quantity", "qty"));
 		String lossRateCol = findFirstExistingColumn("material_specs", List.of("loss_rate", "loss"));
 		String lossExpr = lossRateCol != null ? "coalesce(ms." + lossRateCol + ", 0)" : "0";
@@ -422,8 +333,8 @@ public class MaterialTransactionService {
 						  and %s = :colorCode
 					) pa on 1=1
 					""".formatted(agreementQtyCol, agreementCodeCol, agreementColorCol);
-			requiredExpr = "coalesce(pa.agreement_qty, 0) * coalesce(ms.qty_per_piece, 0) "
-					+ "* (1 + (" + lossExpr + " / 100.0))";
+			requiredExpr = "coalesce(pa.agreement_qty, 0) * coalesce(ms.qty_per_piece, 0) " + "* (1 + (" + lossExpr
+					+ " / 100.0))";
 			requiredSelect = "round(" + requiredExpr + ", 3) as required_qty, ";
 		}
 
@@ -449,46 +360,32 @@ public class MaterialTransactionService {
 		if (includeOutbound) {
 			if (hasTable("material_outbounds")) {
 				outboundJoin = """
-					left join (
-						select m_order_id,
-						       round(coalesce(sum(issued_out_qty), 0), 3) as issued_qty
-						from material_outbounds
-						group by m_order_id
-					) mo2 on mo2.m_order_id = mo.m_order_id
-					""";
-				outboundSelect = "0 as planned_out_qty, "
-						+ "coalesce(mo2.issued_qty, 0) as issued_out_qty, ";
+						left join (
+							select m_order_id,
+							       round(coalesce(sum(issued_out_qty), 0), 3) as issued_qty
+							from material_outbounds
+							group by m_order_id
+						) mo2 on mo2.m_order_id = mo.m_order_id
+						""";
+				outboundSelect = "0 as planned_out_qty, " + "coalesce(mo2.issued_qty, 0) as issued_out_qty, ";
 			}
 		}
 
-		StringBuilder sql = new StringBuilder()
-				.append("select mo.m_order_id as m_order_id, ")
-				.append("mo.bom_id as bom_id, ")
-				.append("mo.styles_id as styles_id, ")
-				.append("s.style_code as style_code, ")
-				.append("coalesce(s.product_emp_no, '') as production_emp_no, ")
-				.append("ms.category as category, ")
-				.append("ms.material_name as material_name, ")
-				.append("ms.material_usage as material_usage, ")
-				.append("ms.spec as spec, ")
-				.append("ms.material_color as material_color, ")
-				.append("ms.uom as uom, ")
+		StringBuilder sql = new StringBuilder().append("select mo.m_order_id as m_order_id, ")
+				.append("mo.bom_id as bom_id, ").append("mo.styles_id as styles_id, ")
+				.append("s.style_code as style_code, ").append("coalesce(s.product_emp_no, '') as production_emp_no, ")
+				.append("ms.category as category, ").append("ms.material_name as material_name, ")
+				.append("ms.material_usage as material_usage, ").append("ms.spec as spec, ")
+				.append("ms.material_color as material_color, ").append("ms.uom as uom, ")
 				.append("ms.qty_per_piece as qty_per_piece, ")
 				.append("coalesce(mo.vendor_code, ms.supplier_code) as supplier_code, ")
-				.append("ms.order_uom as order_uom, ")
-				.append("mo.unit_price as unit_price, ")
-				.append("mo.order_amount as order_amount, ")
-				.append(requiredSelect)
-				.append(inboundSelect)
+				.append("ms.order_uom as order_uom, ").append("mo.unit_price as unit_price, ")
+				.append("mo.order_amount as order_amount, ").append(requiredSelect).append(inboundSelect)
 				.append(includeOutbound ? outboundSelect : "0 as planned_out_qty, 0 as issued_out_qty, ")
-				.append("ms.remark as remark ")
-				.append("from material_orders mo ")
+				.append("ms.remark as remark ").append("from material_orders mo ")
 				.append("join material_specs ms on mo.bom_id = ms.bom_id ")
-				.append("left join styles s on s.styles_id = mo.styles_id ")
-				.append(requiredJoin)
-				.append(inboundJoin)
-				.append(outboundJoin)
-				.append("where mo.prd_agree_id = :prdAgreeId ")
+				.append("left join styles s on s.styles_id = mo.styles_id ").append(requiredJoin).append(inboundJoin)
+				.append(outboundJoin).append("where mo.prd_agree_id = :prdAgreeId ")
 				.append("and mo.color_code = :colorCode ");
 
 		String resolvedStyleId = resolveStyleId(stylesId, styleCode);
@@ -502,10 +399,9 @@ public class MaterialTransactionService {
 
 		MapSqlParameterSource params = new MapSqlParameterSource().addValue("prdAgreeId", prdAgreeId)
 				.addValue("colorCode", colorCode).addValue("stylesId", resolvedStyleId)
-				.addValue("prdAgreeCode", prdAgreeCode)
-				.addValue("styleCode", styleCode);
-		log.info("Executing material list SQL: {} params: prdAgreeId={}, colorCode={}, stylesId={}",
-				sql, prdAgreeId, colorCode, resolvedStyleId);
+				.addValue("prdAgreeCode", prdAgreeCode).addValue("styleCode", styleCode);
+		log.info("Executing material list SQL: {} params: prdAgreeId={}, colorCode={}, stylesId={}", sql, prdAgreeId,
+				colorCode, resolvedStyleId);
 
 		List<MaterialTransactionLineView> rows = new ArrayList<>();
 		List<String> supplierCodes = new ArrayList<>();
@@ -519,27 +415,18 @@ public class MaterialTransactionService {
 					.setBomId(rs.getObject("bom_id") != null ? rs.getLong("bom_id") : null)
 					.setStylesId(rs.getString("styles_id"))
 					.setStyleCode(resolveStyleCodeValue(rs.getString("style_code"), styleCode))
-					.setPrdAgreeCode(prdAgreeCode)
-					.setAgreementMonth(prdAgreeCode)
-					.setColorCode(colorCode)
-					.setCategory(rs.getString("category"))
-					.setMaterialName(rs.getString("material_name"))
-					.setMaterialUsage(rs.getString("material_usage"))
-					.setSpec(rs.getString("spec"))
-					.setMaterialColor(rs.getString("material_color"))
-					.setUom(rs.getString("uom"))
-					.setQtyPerPiece(rs.getBigDecimal("qty_per_piece"))
-					.setSupplierCode(supplierCode)
-					.setSupplierName(null)
-					.setProductionManager(rs.getString("production_emp_no"))
-					.setOrderUom(rs.getString("order_uom"))
-					.setUnitPrice(rs.getBigDecimal("unit_price"))
+					.setPrdAgreeCode(prdAgreeCode).setAgreementMonth(prdAgreeCode).setColorCode(colorCode)
+					.setCategory(rs.getString("category")).setMaterialName(rs.getString("material_name"))
+					.setMaterialUsage(rs.getString("material_usage")).setSpec(rs.getString("spec"))
+					.setMaterialColor(rs.getString("material_color")).setUom(rs.getString("uom"))
+					.setQtyPerPiece(rs.getBigDecimal("qty_per_piece")).setSupplierCode(supplierCode)
+					.setSupplierName(null).setProductionManager(rs.getString("production_emp_no"))
+					.setOrderUom(rs.getString("order_uom")).setUnitPrice(rs.getBigDecimal("unit_price"))
 					.setOrderQuantity(rs.getBigDecimal("order_amount"))
 					.setRequiredQuantity(rs.getBigDecimal("required_qty"))
 					.setInboundQuantity(rs.getBigDecimal("inbound_qty"))
 					.setPlannedOutboundQuantity(rs.getBigDecimal("planned_out_qty"))
-					.setOutboundQuantity(rs.getBigDecimal("issued_out_qty"))
-					.setRemark(rs.getString("remark"));
+					.setOutboundQuantity(rs.getBigDecimal("issued_out_qty")).setRemark(rs.getString("remark"));
 			rows.add(view);
 		});
 
@@ -606,8 +493,8 @@ public class MaterialTransactionService {
 
 		StringBuilder sql = new StringBuilder().append("select ").append(codeColumn).append(" as code_value, ")
 				.append(nameColumn != null ? nameColumn : "null").append(" as code_name ")
-				.append(codeTypeColumn != null ? ", " + codeTypeColumn + " as code_type " : "")
-				.append("from codes ").append("where ").append(codeColumn).append(" in (:codes) ");
+				.append(codeTypeColumn != null ? ", " + codeTypeColumn + " as code_type " : "").append("from codes ")
+				.append("where ").append(codeColumn).append(" in (:codes) ");
 		if (codeTypeColumn != null) {
 			sql.append("and ").append(codeTypeColumn).append(" = 'CUSTOMER' ");
 		}
@@ -639,7 +526,8 @@ public class MaterialTransactionService {
 			return "null as " + alias;
 		}
 		if (primaryColumn != null && fallbackColumn != null) {
-			return "coalesce(" + primaryPrefix + primaryColumn + ", " + fallbackPrefix + fallbackColumn + ") as " + alias;
+			return "coalesce(" + primaryPrefix + primaryColumn + ", " + fallbackPrefix + fallbackColumn + ") as "
+					+ alias;
 		}
 		if (primaryColumn != null) {
 			return primaryPrefix + primaryColumn + " as " + alias;
@@ -653,7 +541,7 @@ public class MaterialTransactionService {
 		}
 		return StringUtils.hasText(fallback) ? fallback : null;
 	}
-	
+
 	private String resolveErrorDetail(Exception e) {
 		if (e == null) {
 			return "알 수 없는 오류";
@@ -669,7 +557,7 @@ public class MaterialTransactionService {
 		}
 		return type;
 	}
-	
+
 	private Map<String, Object> buildInboundError(MaterialTransactionSaveLine line, BigDecimal qty, String sql,
 			Exception e) {
 		Map<String, Object> error = new LinkedHashMap<>();
@@ -781,8 +669,7 @@ public class MaterialTransactionService {
 		if (idColumn == null || codeColumn == null) {
 			return null;
 		}
-		String sql = "select " + idColumn + " as styles_id from styles where " + codeColumn
-				+ " = :styleCode limit 1";
+		String sql = "select " + idColumn + " as styles_id from styles where " + codeColumn + " = :styleCode limit 1";
 		MapSqlParameterSource params = new MapSqlParameterSource("styleCode", styleCode);
 		List<String> ids = jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("styles_id"));
 		return ids.isEmpty() ? null : ids.get(0);
