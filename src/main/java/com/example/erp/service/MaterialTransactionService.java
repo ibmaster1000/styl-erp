@@ -110,7 +110,10 @@ public class MaterialTransactionService {
 		int created = 0;
 		int skipped = 0;
 		for (MaterialTransactionSaveLine line : request.getItems()) {
-			if (line == null || line.getMOrderId() == null) {
+			if (line == null) {
+				throw new IllegalArgumentException("입고 항목이 없습니다.");
+			}
+			if (line.getMOrderId() == null) {
 				throw new IllegalArgumentException("mOrderId 값이 필요합니다.");
 			}
 
