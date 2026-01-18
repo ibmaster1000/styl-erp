@@ -29,10 +29,34 @@
 				<h4 class="panel-title">진행 현황</h4>
 			</div>
 			<div class="status-cards">
-				<div class="status-card"></div>
-				<div class="status-card"></div>
-				<div class="status-card"></div>
-				<div class="status-card"></div>
+				<div class="status-card">
+					<div class="status-title">생산합의 등록률</div>
+					<div class="status-value" th:text="${progress.agreement.percent + '%'}">0%</div>
+					<div class="status-sub" th:text="${progress.agreement.numerator + '/' + progress.agreement.denominator}">0/0</div>
+				</div>
+				<div class="status-card">
+					<div class="status-title">작업지시 진행률</div>
+					<div class="status-value" th:text="${progress.workOrder.percent + '%'}">0%</div>
+					<div class="status-sub" th:text="${progress.workOrder.numerator + '/' + progress.workOrder.denominator}">0/0</div>
+				</div>
+				<div class="status-card">
+					<div class="status-title">완제품 입고율</div>
+					<div class="status-value" th:text="${progress.inbound.percent + '%'}">0%</div>
+					<div class="status-sub" th:text="${progress.inbound.numerator + '/' + progress.inbound.denominator}">0/0</div>
+				</div>
+				<div class="status-card">
+					<div class="status-title">완제품 출고율</div>
+					<div class="status-value" th:text="${progress.outbound.percent + '%'}">0%</div>
+					<div class="status-sub" th:text="${progress.outbound.numerator + '/' + progress.outbound.denominator}">0/0</div>
+				</div>
+			</div>
+		</section>
+		<section class="panel chart-panel">
+			<div class="panel-header">
+				<h4 class="panel-title">생산 상태 분포</h4>
+			</div>
+			<div class="chart-container">
+				<canvas id="productionStatusChart"></canvas>
 			</div>
 		</section>
 		<section class="panel inventory-panel">
@@ -42,4 +66,32 @@
 			<div class="inventory-placeholder"></div>
 		</section>
 	</div>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		const statusLabels = /*[[${chartLabels}]]*/ [];
+		const statusValues = /*[[${chartValues}]]*/ [];
+		/*]]>*/
+		if (document.getElementById('productionStatusChart') && window.Chart) {
+			const ctx = document.getElementById('productionStatusChart').getContext('2d');
+			new Chart(ctx, {
+				type: 'doughnut',
+				data: {
+					labels: statusLabels,
+					datasets: [{
+						data: statusValues,
+						backgroundColor: ['#2563eb', '#16a34a', '#f97316', '#a855f7', '#ef4444', '#14b8a6']
+					}]
+				},
+				options: {
+					responsive: true,
+					plugins: {
+						legend: {
+							position: 'bottom'
+						}
+					}
+				}
+			});
+		}
+	</script>
 </div>
