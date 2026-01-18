@@ -1,0 +1,351 @@
+<div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
+	<style>
+		.status-layout {
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+		}
+
+		.status-panel {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+		}
+
+		.status-top {
+			display: flex;
+			gap: 16px;
+			align-items: stretch;
+			min-height: 200px;
+		}
+
+		.status-controls {
+			flex: 1 1 60%;
+			display: grid;
+			grid-template-rows: auto auto;
+			gap: 12px;
+		}
+
+		.status-row {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			flex-wrap: wrap;
+		}
+
+		.status-row .form-label {
+			margin-bottom: 0;
+			white-space: nowrap;
+		}
+
+		.status-style-input {
+			flex: 1 1 260px;
+			max-width: 340px;
+			min-width: 220px;
+		}
+
+		.status-meta-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			flex: 1 1 auto;
+			min-width: 200px;
+		}
+
+		.status-meta-item .form-select {
+			min-width: 140px;
+		}
+
+		.status-search-button {
+			width: 140px;
+			align-self: stretch;
+			min-height: 38px;
+		}
+
+		.status-summary {
+			flex: 1 1 40%;
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+			min-width: 280px;
+		}
+
+		.status-summary .table-responsive {
+			max-height: 220px;
+		}
+
+		.status-table thead th {
+			font-size: 13px;
+			font-weight: 800;
+			background: #f9fafb;
+			white-space: nowrap;
+		}
+
+		.status-table tbody td {
+			font-size: 13px;
+			white-space: nowrap;
+		}
+
+		.status-placeholder {
+			text-align: center;
+			color: #6b7280;
+		}
+
+		@media (max-width: 992px) {
+			.status-top {
+				flex-direction: column;
+			}
+		}
+	</style>
+
+	<div class="mb-3">
+		<h4 class="fw-bold mb-1">자재 재고 현황</h4>
+		<p class="text-muted mb-0">품번 확인 후 색상/생산합의를 선택해 자재 재고를 조회합니다.</p>
+	</div>
+
+	<div class="status-layout">
+		<div class="status-top">
+			<div class="status-panel status-controls">
+				<div class="status-row form-row">
+					<label class="form-label fw-bold mb-0">품번</label>
+					<div class="input-group status-style-input">
+						<input type="text" class="form-control" id="ms-status-style" placeholder="품번을 입력하세요">
+						<button class="btn btn--outline" type="button" id="ms-status-verify">확인</button>
+					</div>
+					<span class="text-muted" id="ms-status-message"></span>
+				</div>
+				<div class="status-row form-row">
+					<div class="status-meta-item">
+						<label class="form-label fw-bold mb-0">색상</label>
+						<select class="form-select" id="ms-status-color" disabled>
+							<option value="">색상 선택</option>
+						</select>
+					</div>
+					<div class="status-meta-item">
+						<label class="form-label fw-bold mb-0">생산합의코드</label>
+						<select class="form-select" id="ms-status-agreement" disabled>
+							<option value="">생산합의코드 선택</option>
+						</select>
+					</div>
+					<div class="actions">
+						<button class="btn btn--primary status-search-button" type="button" id="ms-status-search" disabled>조회</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="status-panel status-summary">
+				<div class="d-flex justify-content-between align-items-center">
+					<div>
+						<div class="fw-bold">조회 요약</div>
+						<div class="text-muted small" id="ms-status-summary">조건을 선택해 조회하세요.</div>
+					</div>
+					<span class="badge text-bg-light" id="ms-status-style-chip">-</span>
+				</div>
+				<div class="table-responsive">
+					<table class="table data-table mb-0 status-table">
+						<thead>
+							<tr>
+								<th class="text-start">품번</th>
+								<th class="text-start">색상</th>
+								<th class="text-start">합의코드</th>
+							</tr>
+						</thead>
+						<tbody id="ms-status-context">
+							<tr>
+								<td colspan="3" class="status-placeholder">조회 후 표시됩니다.</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<div class="status-panel">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<h6 class="fw-bold mb-0">재고 상세</h6>
+				<small class="text-muted" id="ms-status-count">조회 전입니다.</small>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-bordered align-middle data-table status-table" id="ms-status-table">
+					<thead class="table-light">
+						<tr>
+							<th class="text-start">자재명칭</th>
+							<th class="text-start">구분</th>
+							<th class="text-start">규격</th>
+							<th class="text-end">재고수량</th>
+							<th class="text-end">입고누적</th>
+							<th class="text-end">출고누적</th>
+							<th class="text-end">필요수량</th>
+							<th class="text-start">비고</th>
+						</tr>
+					</thead>
+					<tbody id="ms-status-body">
+						<tr>
+							<td colspan="8" class="status-placeholder">조회 후 재고 목록이 표시됩니다.</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const styleInput = document.getElementById('ms-status-style');
+			const colorInput = document.getElementById('ms-status-color');
+			const agreementInput = document.getElementById('ms-status-agreement');
+			const verifyButton = document.getElementById('ms-status-verify');
+			const statusMessage = document.getElementById('ms-status-message');
+			const searchButton = document.getElementById('ms-status-search');
+			const styleChip = document.getElementById('ms-status-style-chip');
+			const summaryText = document.getElementById('ms-status-summary');
+			const contextBody = document.getElementById('ms-status-context');
+			const tableBody = document.getElementById('ms-status-body');
+			const countLabel = document.getElementById('ms-status-count');
+
+			let styleVerified = false;
+
+			const updateSelectOptions = (select, options, placeholder) => {
+				select.innerHTML = '';
+				const defaultOption = document.createElement('option');
+				defaultOption.value = '';
+				defaultOption.textContent = placeholder;
+				select.appendChild(defaultOption);
+				(options || []).forEach((value) => {
+					const option = document.createElement('option');
+					option.value = value;
+					option.textContent = value;
+					select.appendChild(option);
+				});
+			};
+
+			const updateSearchButtonState = () => {
+				searchButton.disabled = !(styleVerified && colorInput.value && agreementInput.value);
+			};
+
+			const setStatusMessage = (message, isSuccess) => {
+				statusMessage.textContent = message;
+				statusMessage.classList.remove('text-muted', 'text-success', 'text-danger');
+				statusMessage.classList.add(isSuccess ? 'text-success' : 'text-danger');
+			};
+
+			const resetOptionState = () => {
+				styleVerified = false;
+				colorInput.disabled = true;
+				agreementInput.disabled = true;
+				updateSelectOptions(colorInput, [], '색상 선택');
+				updateSelectOptions(agreementInput, [], '생산합의코드 선택');
+				updateSearchButtonState();
+			};
+
+			const resetTables = () => {
+				contextBody.innerHTML = '<tr><td colspan="3" class="status-placeholder">조회 후 표시됩니다.</td></tr>';
+				tableBody.innerHTML = '<tr><td colspan="8" class="status-placeholder">조회 후 재고 목록이 표시됩니다.</td></tr>';
+				countLabel.textContent = '조회 전입니다.';
+				summaryText.textContent = '조건을 선택해 조회하세요.';
+				styleChip.textContent = '-';
+			};
+
+			const formatNumber = (value) => {
+				if (value === null || value === undefined || value === '') return '-';
+				const parsed = Number(value);
+				if (Number.isNaN(parsed)) return value;
+				return new Intl.NumberFormat('ko-KR').format(parsed);
+			};
+
+			const renderContext = () => {
+				contextBody.innerHTML = '';
+				const row = document.createElement('tr');
+				row.innerHTML = `\n\t\t\t<td class="text-start">${styleInput.value.trim() || '-'}</td>\n\t\t\t<td class="text-start">${colorInput.value || '-'}</td>\n\t\t\t<td class="text-start">${agreementInput.value || '-'}</td>\n\t\t`;
+				contextBody.appendChild(row);
+				styleChip.textContent = styleInput.value.trim() || '-';
+				summaryText.textContent = `품번 ${styleInput.value.trim() || '-'} / 색상 ${colorInput.value || '-'} / 합의 ${agreementInput.value || '-'}`;
+			};
+
+			const renderRows = (list) => {
+				tableBody.innerHTML = '';
+				if (!list || list.length === 0) {
+					tableBody.innerHTML = '<tr><td colspan="8" class="status-placeholder">조회된 재고가 없습니다.</td></tr>';
+					countLabel.textContent = '0건 조회됨';
+					return;
+				}
+				list.forEach((item) => {
+					const row = document.createElement('tr');
+					row.innerHTML = `\n\t\t\t<td class="text-start">${item.materialName || '-'}</td>\n\t\t\t<td class="text-start">${item.category || '-'}</td>\n\t\t\t<td class="text-start">${item.spec || '-'}</td>\n\t\t\t<td class="text-end">${formatNumber(item.inventoryQuantity)}</td>\n\t\t\t<td class="text-end">${formatNumber(item.inboundQuantity)}</td>\n\t\t\t<td class="text-end">${formatNumber(item.outboundQuantity)}</td>\n\t\t\t<td class="text-end">${formatNumber(item.requiredQuantity)}</td>\n\t\t\t<td class="text-start">${item.remark || '-'}</td>\n\t\t`;
+					tableBody.appendChild(row);
+				});
+				countLabel.textContent = `총 ${list.length}건`;
+			};
+
+			const verifyStyleCode = async () => {
+				const styleCode = styleInput.value.trim();
+				resetTables();
+				if (!styleCode) {
+					resetOptionState();
+					setStatusMessage('품번을 입력하세요.', false);
+					return;
+				}
+				try {
+					const response = await fetch(`/api/material-orders/context?styleCode=${encodeURIComponent(styleCode)}`);
+					if (!response.ok) {
+						throw new Error('context');
+					}
+					const data = await response.json();
+					if (data.styleVerified) {
+						styleVerified = true;
+						setStatusMessage(data.message || '품번이 확인되었습니다.', true);
+						updateSelectOptions(colorInput, data.colors || [], '색상 선택');
+						updateSelectOptions(agreementInput, data.agreements || [], '생산합의코드 선택');
+						colorInput.disabled = false;
+						agreementInput.disabled = false;
+						updateSearchButtonState();
+					} else {
+						resetOptionState();
+						setStatusMessage(data.message || '없는 품번입니다.', false);
+					}
+				} catch (error) {
+					resetOptionState();
+					setStatusMessage('품번 확인 중 오류가 발생했습니다.', false);
+				}
+			};
+
+			const fetchInventory = async () => {
+				const styleCode = styleInput.value.trim();
+				const colorCode = colorInput.value;
+				const agreementCode = agreementInput.value;
+				if (!styleCode || !colorCode || !agreementCode) return;
+				try {
+					const params = new URLSearchParams({
+						styleCode,
+						prdAgreeCode: agreementCode,
+						colorCode
+					});
+					const response = await fetch(`/production/material-inbound/list?${params.toString()}`);
+					if (!response.ok) {
+						throw new Error('fetch');
+					}
+					const data = await response.json();
+					renderContext();
+					renderRows(Array.isArray(data) ? data : []);
+				} catch (error) {
+					tableBody.innerHTML = '<tr><td colspan="8" class="status-placeholder">조회 중 오류가 발생했습니다.</td></tr>';
+					countLabel.textContent = '조회 실패';
+				}
+			};
+
+			verifyButton.addEventListener('click', verifyStyleCode);
+			searchButton.addEventListener('click', fetchInventory);
+			colorInput.addEventListener('change', updateSearchButtonState);
+			agreementInput.addEventListener('change', updateSearchButtonState);
+			styleInput.addEventListener('input', () => {
+				statusMessage.textContent = '';
+				statusMessage.classList.remove('text-success', 'text-danger');
+				statusMessage.classList.add('text-muted');
+				resetOptionState();
+				resetTables();
+			});
+		});
+	</script>
+</div>

@@ -52,12 +52,14 @@
 			</a>
 
 			<div class="menu-title">현황</div>
-			<div class="nav-link">
+			<a th:href="@{/status/material-inventory}"
+				th:classappend="${activeMenu}=='material-status' ? ' active'">
 				<i class="bi bi-box-seam"></i> 자재 재고 현황
-			</div>
-			<div class="nav-link">
+			</a>
+			<a th:href="@{/status/work-orders}"
+				th:classappend="${activeMenu}=='work-order-status' ? ' active'">
 				<i class="bi bi-clipboard-check"></i> 작업지시서 현황
-			</div>
+			</a>
 		</div>
 	</aside>
 </div>

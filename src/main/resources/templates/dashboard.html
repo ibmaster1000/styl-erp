@@ -2,16 +2,22 @@
 	<div class="dashboard-layout">
 		<section class="panel summary-panel">
 			<div class="panel-header">
-				<h4 class="panel-title">현황 표시</h4>
+				<h4 class="panel-title">운영 현황 요약</h4>
 			</div>
 			<div class="kpi-cards">
-				<div class="kpi-card">
+				<div class="kpi-card position-relative">
 					<div class="kpi-label">진행중 작업지시</div>
 					<div class="kpi-value" th:text="${kpi.workOrdersInProgress}">0</div>
+					<a class="stretched-link" th:href="@{/status/work-orders}">
+						<span class="visually-hidden">작업지시서 현황 이동</span>
+					</a>
 				</div>
-				<div class="kpi-card">
+				<div class="kpi-card position-relative">
 					<div class="kpi-label">자재 부족</div>
 					<div class="kpi-value" th:text="${kpi.materialShortage}">0</div>
+					<a class="stretched-link" th:href="@{/status/material-inventory}">
+						<span class="visually-hidden">자재 재고 현황 이동</span>
+					</a>
 				</div>
 				<div class="kpi-card">
 					<div class="kpi-label">금일 입고</div>
@@ -29,15 +35,21 @@
 				<h4 class="panel-title">진행 현황</h4>
 			</div>
 			<div class="status-cards">
-				<div class="status-card">
+				<div class="status-card position-relative">
 					<div class="status-title">생산합의 등록률</div>
 					<div class="status-value" th:text="${progress.agreement.percent + '%'}">0%</div>
 					<div class="status-sub" th:text="${progress.agreement.numerator + '/' + progress.agreement.denominator}">0/0</div>
+					<a class="stretched-link" th:href="@{/production-agreements}">
+						<span class="visually-hidden">생산합의 관리 이동</span>
+					</a>
 				</div>
-				<div class="status-card">
+				<div class="status-card position-relative">
 					<div class="status-title">작업지시 진행률</div>
 					<div class="status-value" th:text="${progress.workOrder.percent + '%'}">0%</div>
 					<div class="status-sub" th:text="${progress.workOrder.numerator + '/' + progress.workOrder.denominator}">0/0</div>
+					<a class="stretched-link" th:href="@{/status/work-orders}">
+						<span class="visually-hidden">작업지시서 현황 이동</span>
+					</a>
 				</div>
 				<div class="status-card">
 					<div class="status-title">완제품 입고율</div>
@@ -45,7 +57,7 @@
 					<div class="status-sub" th:text="${progress.inbound.numerator + '/' + progress.inbound.denominator}">0/0</div>
 				</div>
 				<div class="status-card">
-					<div class="status-title">완제품 출고율</div>
+					<div class="status-title">완제품 고율</div>
 					<div class="status-value" th:text="${progress.outbound.percent + '%'}">0%</div>
 					<div class="status-sub" th:text="${progress.outbound.numerator + '/' + progress.outbound.denominator}">0/0</div>
 				</div>
@@ -85,6 +97,7 @@
 				},
 				options: {
 					responsive: true,
+					maintainAspectRatio: false,
 					plugins: {
 						legend: {
 							position: 'bottom'

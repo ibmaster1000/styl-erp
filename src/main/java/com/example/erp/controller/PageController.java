@@ -41,4 +41,16 @@ public class PageController extends PageViewSupport {
         populate(model, "원부자재 발주", "material-orders", "pages/material-orders", Collections.emptyList());
         return "layout/layout";
     }
+
+    @GetMapping("/status/material-inventory")
+    public String materialInventoryStatus(Model model) {
+        populate(model, "자재 재고 현황", "material-status", "pages/status-material-inventory", Collections.emptyList());
+        return "layout/layout";
+    }
+
+    @GetMapping("/status/work-orders")
+    public String workOrderStatus(Model model) {
+        populate(model, "작업지시서 현황", "work-order-status", "pages/status-work-orders", Collections.emptyList());
+        return "layout/layout";
+    }
 }
