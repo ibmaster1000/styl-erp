@@ -273,8 +273,27 @@ public class FgReceiptService {
             if (prdAgreeId == null && StringUtils.hasText(line.getPrdAgreeCode())) {
                 prdAgreeId = resolvePrdAgreeId(line.getPrdAgreeCode(), line.getColorCode());
             }
+            String agreementCode = line.getPrdAgreeCode();
+            if (!StringUtils.hasText(agreementCode) && prdAgreeId != null) {
+                agreementCode = resolveAgreementCode(prdAgreeId);
+            }
             if (!StringUtils.hasText(styleId) || prdAgreeId == null) {
                 lineErrors.add(Map.of("index", index, "error", "stylesId/prdAgreeId 누락"));
+                skipped++;
+                continue;
+            }
+            if (inboundQty == null || inboundQty.compareTo(BigDecimal.ZERO) <= 0) {
+                lineErrors.add(Map.of("index", index, "error", "입고량은 0보다 커야 합니다."));
+                skipped++;
+                continue;
+            }
+            if (!StringUtils.hasText(warehouseCode)) {
+                lineErrors.add(Map.of("index", index, "error", "물류동(창고) 코드 누락"));
+                skipped++;
+                continue;
+            }
+            if (!StringUtils.hasText(aisle) || !StringUtils.hasText(section) || !StringUtils.hasText(level)) {
+                lineErrors.add(Map.of("index", index, "error", "통로/구획/단 위치 누락"));
                 skipped++;
                 continue;
             }
@@ -283,6 +302,7 @@ public class FgReceiptService {
             MapSqlParameterSource params = new MapSqlParameterSource()
                     .addValue("stylesId", styleId)
                     .addValue("prdAgreeId", prdAgreeId)
+                    .addValue("agreementCode", agreementCode)
                     .addValue("colorType", "color")
                     .addValue("colorCode", line.getColorCode())
                     .addValue("factoryType", "customer")
@@ -305,43 +325,43 @@ public class FgReceiptService {
             values.add(":stylesId");
             columns.add(prdAgreeIdColumn);
             values.add(":prdAgreeId");
-            if (colorTypeColumn != null) {
+            if (colorTypeColumn != null && !isGeneratedColumn("fg_inbounds", colorTypeColumn)) {
                 columns.add(colorTypeColumn);
                 values.add(":colorType");
             }
-            if (colorCodeColumn != null) {
+            if (colorCodeColumn != null && !isGeneratedColumn("fg_inbounds", colorCodeColumn)) {
                 columns.add(colorCodeColumn);
                 values.add(":colorCode");
             }
-            if (factoryTypeColumn != null) {
+            if (factoryTypeColumn != null && !isGeneratedColumn("fg_inbounds", factoryTypeColumn)) {
                 columns.add(factoryTypeColumn);
                 values.add(":factoryType");
             }
-            if (factoryCodeColumn != null) {
+            if (factoryCodeColumn != null && !isGeneratedColumn("fg_inbounds", factoryCodeColumn)) {
                 columns.add(factoryCodeColumn);
                 values.add(":factoryCode");
             }
-            if (warehouseTypeColumn != null) {
+            if (warehouseTypeColumn != null && !isGeneratedColumn("fg_inbounds", warehouseTypeColumn)) {
                 columns.add(warehouseTypeColumn);
                 values.add(":warehouseType");
             }
-            if (warehouseCodeColumn != null) {
+            if (warehouseCodeColumn != null && !isGeneratedColumn("fg_inbounds", warehouseCodeColumn)) {
                 columns.add(warehouseCodeColumn);
                 values.add(":warehouseCode");
             }
-            if (aisleColumn != null) {
+            if (aisleColumn != null && !isGeneratedColumn("fg_inbounds", aisleColumn)) {
                 columns.add(aisleColumn);
                 values.add(":aisle");
             }
-            if (sectionColumn != null) {
+            if (sectionColumn != null && !isGeneratedColumn("fg_inbounds", sectionColumn)) {
                 columns.add(sectionColumn);
                 values.add(":section");
             }
-            if (levelColumn != null) {
+            if (levelColumn != null && !isGeneratedColumn("fg_inbounds", levelColumn)) {
                 columns.add(levelColumn);
                 values.add(":level");
             }
-            if (lcCodeColumn != null) {
+            if (lcCodeColumn != null && !isGeneratedColumn("fg_inbounds", lcCodeColumn)) {
                 columns.add(lcCodeColumn);
                 values.add(":lcCode");
             }
@@ -376,8 +396,8 @@ public class FgReceiptService {
                     created++;
                     if (canUseInventory && hasInventoryInputs) {
                         try {
-                            upsertFgInventory(styleId, line.getColorCode(), warehouseCode, aisle, section, level,
-                                    inboundQty, params.getValue("nowDate"));
+                            upsertFgInventory(styleId, line.getColorCode(), prdAgreeId, agreementCode,
+                                    warehouseCode, aisle, section, level, inboundQty, params.getValue("nowDate"));
                         } catch (Exception ex) {
                             log.warn("fg_inventory 반영 실패: stylesId={}, prdAgreeId={}, detail={}", styleId, prdAgreeId,
                                     ex.getMessage());
@@ -415,13 +435,21 @@ public class FgReceiptService {
                 lineErrorsLimited);
     }
 
-    private void upsertFgInventory(String stylesId, String colorCode, String warehouseCode, String aisle,
-            String section, String level, BigDecimal inboundQty, Object nowValue) {
+    private void upsertFgInventory(String stylesId, String colorCode, Long prdAgreeId, String agreementCode,
+            String warehouseCode, String aisle, String section, String level, BigDecimal inboundQty, Object nowValue) {
+        String prdAgreeIdColumn = findFirstExistingColumn("fg_inventory", List.of("prd_agree_id"));
+        String agreementCodeColumn = findFirstExistingColumn("fg_inventory", List.of("agreement_code"));
+        boolean includePrdAgreeId = prdAgreeIdColumn != null
+                && !isGeneratedColumn("fg_inventory", prdAgreeIdColumn);
+        boolean includeAgreementCode = agreementCodeColumn != null
+                && !isGeneratedColumn("fg_inventory", agreementCodeColumn);
         String updatedColumn = findFirstExistingColumn("fg_inventory", List.of("updated_at", "updated_date"));
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("stylesId", stylesId)
                 .addValue("colorType", "color")
                 .addValue("colorCode", colorCode)
+                .addValue("prdAgreeId", prdAgreeId)
+                .addValue("agreementCode", agreementCode)
                 .addValue("warehouseType", "warehouse")
                 .addValue("warehouseCode", warehouseCode)
                 .addValue("aisle", aisle)
@@ -431,6 +459,8 @@ public class FgReceiptService {
                 .addValue("nowDate", nowValue);
 
         String updateSql = "update fg_inventory set qty = qty + :qty"
+                + (includePrdAgreeId ? ", " + prdAgreeIdColumn + " = :prdAgreeId" : "")
+                + (includeAgreementCode ? ", " + agreementCodeColumn + " = :agreementCode" : "")
                 + (updatedColumn != null ? ", " + updatedColumn + " = :nowDate" : "")
                 + " where styles_id = :stylesId and color_type = :colorType and color_code = :colorCode "
                 + "and warehouse_type = :warehouseType and warehouse_code = :warehouseCode "
@@ -440,9 +470,15 @@ public class FgReceiptService {
             return;
         }
         String insertSql = "insert into fg_inventory (styles_id, color_type, color_code, warehouse_type, warehouse_code, "
-                + "aisle, section, level, qty"
+                + "aisle, section, level"
+                + (includePrdAgreeId ? ", " + prdAgreeIdColumn : "")
+                + (includeAgreementCode ? ", " + agreementCodeColumn : "")
+                + ", qty"
                 + (updatedColumn != null ? ", " + updatedColumn : "")
-                + ") values (:stylesId, :colorType, :colorCode, :warehouseType, :warehouseCode, :aisle, :section, :level, :qty"
+                + ") values (:stylesId, :colorType, :colorCode, :warehouseType, :warehouseCode, :aisle, :section, :level"
+                + (includePrdAgreeId ? ", :prdAgreeId" : "")
+                + (includeAgreementCode ? ", :agreementCode" : "")
+                + ", :qty"
                 + (updatedColumn != null ? ", :nowDate" : "")
                 + ")";
         jdbcTemplate.update(insertSql, params);
@@ -523,6 +559,24 @@ public class FgReceiptService {
         return result.isEmpty() ? null : result.get(0);
     }
 
+    private String resolveAgreementCode(Long prdAgreeId) {
+        if (prdAgreeId == null || !hasTable("production_agreements")) {
+            return null;
+        }
+        String prdAgreeIdColumn = findFirstExistingColumn("production_agreements", List.of("prd_agree_id",
+                "prd_agree_no", "prd_agree_seq"));
+        String agreementCodeCol = findFirstExistingColumn("production_agreements",
+                List.of("agreement_code", "prd_agree_code", "prd_agree_no"));
+        if (prdAgreeIdColumn == null || agreementCodeCol == null) {
+            return null;
+        }
+        String sql = "select " + agreementCodeCol + " as agreement_code from production_agreements where "
+                + prdAgreeIdColumn + " = :prdAgreeId limit 1";
+        MapSqlParameterSource params = new MapSqlParameterSource("prdAgreeId", prdAgreeId);
+        List<String> result = jdbcTemplate.query(sql, params, (rs, rowNum) -> rs.getString("agreement_code"));
+        return result.isEmpty() ? null : result.get(0);
+    }
+
     private boolean hasTable(String tableName) {
         try {
             Integer count = jdbcTemplate.queryForObject("""
@@ -543,6 +597,24 @@ public class FgReceiptService {
                     from information_schema.columns
                     where upper(table_name) = upper(:tableName)
                       and upper(column_name) = upper(:columnName)
+                    """,
+                    new MapSqlParameterSource().addValue("tableName", tableName).addValue("columnName", columnName),
+                    Integer.class);
+            return count != null && count > 0;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    private boolean isGeneratedColumn(String tableName, String columnName) {
+        try {
+            Integer count = jdbcTemplate.queryForObject("""
+                    select count(*)
+                    from information_schema.columns
+                    where upper(table_name) = upper(:tableName)
+                      and upper(column_name) = upper(:columnName)
+                      and (generation_expression is not null
+                           or extra like '%GENERATED%')
                     """,
                     new MapSqlParameterSource().addValue("tableName", tableName).addValue("columnName", columnName),
                     Integer.class);

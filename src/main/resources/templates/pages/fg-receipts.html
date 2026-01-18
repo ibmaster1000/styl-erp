@@ -62,6 +62,11 @@
 			max-width: 140px;
 		}
 
+		.fg-table th.fg-warehouse-col,
+		.fg-table td.fg-warehouse-col {
+			min-width: 160px;
+		}
+
 		.fg-placeholder {
 			text-align: center;
 			color: #6b7280;
@@ -93,21 +98,8 @@
 			background: rgba(107, 114, 128, 0.15);
 		}
 
-		.fg-modal-search {
-			display: flex;
-			flex-wrap: nowrap;
-			align-items: center;
-			gap: 8px;
-		}
-
 		.fg-modal-search .form-control {
-			flex: 1 1 auto;
 			min-width: 0;
-		}
-
-		.fg-modal-search .btn {
-			flex: 0 0 auto;
-			white-space: nowrap;
 		}
 
 		@media (max-width: 992px) {
@@ -160,7 +152,7 @@
 							<th>사이즈</th>
 							<th>작지량</th>
 							<th>입고량</th>
-							<th>물류동</th>
+							<th class="fg-warehouse-col">물류동</th>
 							<th>통로</th>
 							<th>구획</th>
 							<th>단</th>
@@ -191,7 +183,7 @@
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<div class="fg-modal-search mb-3">
+					<div class="input-group fg-modal-search mb-3">
 						<input type="text" class="form-control" id="fg-warehouse-keyword" placeholder="검색어를 입력하세요">
 						<button class="btn btn--outline" type="button" id="fg-warehouse-search">검색</button>
 					</div>
@@ -377,7 +369,7 @@
 						<td>-</td>
 						<td>${formatQuantity(item.quantity)}</td>
 						<td><input type="number" class="form-control form-control-sm fg-inbound-input" name="lines[${lineIndex}].inboundQty" min="0" step="1" value=""></td>
-						<td>
+						<td class="fg-warehouse-col">
 							<div class="input-group fg-input-group">
 								<input type="text" class="form-control form-control-sm fg-warehouse-code" name="lines[${lineIndex}].warehouseCode">
 								<button type="button" class="btn btn--outline fg-warehouse-button"><i class="bi bi-search"></i></button>
@@ -442,16 +434,17 @@
 				codes.forEach((code) => {
 					const row = document.createElement('tr');
 					row.className = 'fg-modal-row';
-					row.innerHTML = `<td>${code.code || ''}</td><td>${code.codeName || ''}</td><td>${code.remark || ''}</td>`;
+					const codeValue = code.code ?? '';
+					row.innerHTML = `<td>${codeValue}</td><td>${code.codeName || ''}</td><td>${code.remark || ''}</td>`;
 					row.addEventListener('click', () => {
 						warehouseResults.querySelectorAll('.fg-modal-row').forEach((r) => r.classList.remove('active'));
 						row.classList.add('active');
-						selectedWarehouseCode = code.code || '';
+						selectedWarehouseCode = String(codeValue);
 						selectedWarehouseName = code.codeName || '';
 						selectedWarehouseRemark = code.remark || '';
 					});
 					row.addEventListener('dblclick', () => {
-						selectedWarehouseCode = code.code || '';
+						selectedWarehouseCode = String(codeValue);
 						selectedWarehouseName = code.codeName || '';
 						selectedWarehouseRemark = code.remark || '';
 						applyWarehouseSelection();
@@ -520,7 +513,8 @@
 
 			const buildPayloadLines = () => {
 				const rows = Array.from(tableBody.querySelectorAll('tr'));
-				return rows.map((row) => {
+				const errors = [];
+				const lines = rows.map((row, rowIndex) => {
 					const qtyRaw = row.querySelector('.fg-inbound-input')?.value ?? '';
 					const parsedQty = Number(qtyRaw);
 					const inboundQty = Number.isFinite(parsedQty) && parsedQty > 0 ? parsedQty : null;
@@ -536,6 +530,15 @@
 					const aisle = padTwoDigits(aisleRaw);
 					const section = padTwoDigits(sectionRaw);
 					const level = padTwoDigits(levelRaw);
+					if (!inboundQty) {
+						errors.push(`${rowIndex + 1}행: 입고량을 입력하세요.`);
+					}
+					if (!String(warehouseCode).trim()) {
+						errors.push(`${rowIndex + 1}행: 물류동(창고) 코드를 선택하세요.`);
+					}
+					if (!aisle || !section || !level) {
+						errors.push(`${rowIndex + 1}행: 통로/구획/단을 모두 입력하세요.`);
+					}
 					return {
 						stylesId: row.dataset.stylesId || null,
 						prdAgreeId: row.dataset.prdAgreeId || null,
@@ -550,14 +553,19 @@
 						inboundQty
 					};
 				}).filter(Boolean);
+				return {lines, errors};
 			};
 
 			searchButton.addEventListener('click', loadResults);
 
 			saveButton.addEventListener('click', async () => {
-				const lines = buildPayloadLines();
+				const {lines, errors} = buildPayloadLines();
 				if (lines.length === 0) {
 					alert('입고량을 입력하세요.');
+					return;
+				}
+				if (errors.length > 0) {
+					alert(`입력값을 확인하세요.\n\n- ${errors.join('\n- ')}`);
 					return;
 				}
 				const res = await fetch('/fg/receipts/save', {
