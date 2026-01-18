@@ -241,6 +241,7 @@ public class FgReceiptService {
 
         int created = 0;
         int skipped = 0;
+        int inventorySkipped = 0;
         int index = 0;
         for (FgReceiptSaveLine line : request.getItems()) {
             index++;
@@ -251,11 +252,6 @@ public class FgReceiptService {
             }
 
             BigDecimal inboundQty = line.getInboundQty();
-            if (inboundQty == null || inboundQty.compareTo(BigDecimal.ZERO) <= 0) {
-                lineErrors.add(Map.of("index", index, "error", "입고량 누락"));
-                skipped++;
-                continue;
-            }
             if (!StringUtils.hasText(line.getColorCode())) {
                 lineErrors.add(Map.of("index", index, "error", "색상 누락"));
                 skipped++;
@@ -265,12 +261,12 @@ public class FgReceiptService {
             String aisle = normalizeLocation(line.getAisle());
             String section = normalizeLocation(line.getSection());
             String level = normalizeLocation(line.getLevel());
-            if (!StringUtils.hasText(warehouseCode) || !StringUtils.hasText(aisle)
-                    || !StringUtils.hasText(section) || !StringUtils.hasText(level)) {
-                lineErrors.add(Map.of("index", index, "error", "창고/통로/구획/단 누락"));
-                skipped++;
-                continue;
-            }
+            boolean hasInventoryInputs = StringUtils.hasText(warehouseCode)
+                    && inboundQty != null
+                    && inboundQty.compareTo(BigDecimal.ZERO) > 0
+                    && StringUtils.hasText(aisle)
+                    && StringUtils.hasText(section)
+                    && StringUtils.hasText(level);
 
             String styleId = resolveStyleId(line.getStylesId(), line.getStyleCode());
             Long prdAgreeId = line.getPrdAgreeId();
@@ -378,7 +374,7 @@ public class FgReceiptService {
                 int affected = jdbcTemplate.update(sql, params);
                 if (affected > 0) {
                     created++;
-                    if (canUseInventory) {
+                    if (canUseInventory && hasInventoryInputs) {
                         try {
                             upsertFgInventory(styleId, line.getColorCode(), warehouseCode, aisle, section, level,
                                     inboundQty, params.getValue("nowDate"));
@@ -388,6 +384,10 @@ public class FgReceiptService {
                             lineErrors.add(Map.of("index", index, "error", "fgInventoryUpsertFailed",
                                     "detail", ex.getMessage()));
                         }
+                    } else if (canUseInventory) {
+                        inventorySkipped++;
+                        lineErrors.add(Map.of("index", index, "error", "fgInventorySkipped",
+                                "detail", "창고/수량/위치 누락"));
                     } else {
                         lineErrors.add(Map.of("index", index, "error", "fgInventorySkipped",
                                 "detail", "fg_inventory 테이블/컬럼 없음"));
@@ -405,7 +405,10 @@ public class FgReceiptService {
 
         boolean success = created > 0;
         String message = success
-                ? "입고 등록 완료 (created=" + created + ", skipped=" + skipped + ")"
+                ? (inventorySkipped > 0
+                        ? "입고내역 저장 완료(일부 라인은 창고/수량/위치 누락으로 재고 반영 제외) (created=" + created
+                                + ", skipped=" + skipped + ", inventorySkipped=" + inventorySkipped + ")"
+                        : "입고 등록 완료 (created=" + created + ", skipped=" + skipped + ")")
                 : "입고 등록 실패 (created=0, skipped=" + skipped + ") - lineErrors 확인";
         List<Map<String, Object>> lineErrorsLimited = lineErrors.size() > 20 ? lineErrors.subList(0, 20) : lineErrors;
         return Map.of("success", success, "created", created, "skipped", skipped, "message", message, "lineErrors",

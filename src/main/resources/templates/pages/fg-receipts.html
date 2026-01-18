@@ -93,6 +93,23 @@
 			background: rgba(107, 114, 128, 0.15);
 		}
 
+		.fg-modal-search {
+			display: flex;
+			flex-wrap: nowrap;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.fg-modal-search .form-control {
+			flex: 1 1 auto;
+			min-width: 0;
+		}
+
+		.fg-modal-search .btn {
+			flex: 0 0 auto;
+			white-space: nowrap;
+		}
+
 		@media (max-width: 992px) {
 			.fg-row {
 				flex-direction: column;
@@ -152,7 +169,7 @@
 					</thead>
 					<tbody id="fg-table-body">
 						<tr>
-							<td colspan="12" class="fg-placeholder">검색 버튼을 눌러 조회하세요.</td>
+							<td colspan="12" class="fg-placeholder">검색 튼을 눌러 조회하세요.</td>
 						</tr>
 					</tbody>
 				</table>
@@ -174,7 +191,7 @@
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+					<div class="fg-modal-search mb-3">
 						<input type="text" class="form-control" id="fg-warehouse-keyword" placeholder="검색어를 입력하세요">
 						<button class="btn btn--outline" type="button" id="fg-warehouse-search">검색</button>
 					</div>
@@ -343,7 +360,8 @@
 				}
 				const start = (currentPage - 1) * pageSize;
 				const pageItems = currentResults.slice(start, start + pageSize);
-				pageItems.forEach(item => {
+				pageItems.forEach((item, pageIndex) => {
+					const lineIndex = start + pageIndex;
 					const row = document.createElement('tr');
 					row.dataset.stylesId = item.stylesId || item.styles_id || '';
 					row.dataset.prdAgreeId = item.prdAgreeId || item.prd_agree_id || '';
@@ -358,17 +376,17 @@
 						<td>${item.colorCode || item.color_code || '-'}</td>
 						<td>-</td>
 						<td>${formatQuantity(item.quantity)}</td>
-						<td><input type="number" class="form-control form-control-sm fg-inbound-input" min="0" step="1" value=""></td>
+						<td><input type="number" class="form-control form-control-sm fg-inbound-input" name="lines[${lineIndex}].inboundQty" min="0" step="1" value=""></td>
 						<td>
 							<div class="input-group fg-input-group">
-								<input type="text" class="form-control form-control-sm fg-warehouse-code">
+								<input type="text" class="form-control form-control-sm fg-warehouse-code" name="lines[${lineIndex}].warehouseCode">
 								<button type="button" class="btn btn--outline fg-warehouse-button"><i class="bi bi-search"></i></button>
 							</div>
 							<div class="text-muted small fg-warehouse-name"></div>
 						</td>
-						<td><input type="text" class="form-control form-control-sm fg-aisle-input" placeholder="01"></td>
-						<td><input type="text" class="form-control form-control-sm fg-section-input" placeholder="01"></td>
-						<td><input type="text" class="form-control form-control-sm fg-level-input" placeholder="01"></td>
+						<td><input type="text" class="form-control form-control-sm fg-aisle-input" name="lines[${lineIndex}].aisle" placeholder="01"></td>
+						<td><input type="text" class="form-control form-control-sm fg-section-input" name="lines[${lineIndex}].section" placeholder="01"></td>
+						<td><input type="text" class="form-control form-control-sm fg-level-input" name="lines[${lineIndex}].level" placeholder="01"></td>
 						<td class="fg-lc-code">-</td>
 					`;
 					row.querySelector('.fg-warehouse-button').addEventListener('click', () => {
@@ -503,14 +521,21 @@
 			const buildPayloadLines = () => {
 				const rows = Array.from(tableBody.querySelectorAll('tr'));
 				return rows.map((row) => {
-					const qty = Number(row.querySelector('.fg-inbound-input')?.value || '0');
-					if (!qty || qty <= 0) {
+					const qtyRaw = row.querySelector('.fg-inbound-input')?.value ?? '';
+					const parsedQty = Number(qtyRaw);
+					const inboundQty = Number.isFinite(parsedQty) && parsedQty > 0 ? parsedQty : null;
+					const warehouseCode = row.querySelector('.fg-warehouse-code')?.value || '';
+					const aisleRaw = row.querySelector('.fg-aisle-input')?.value || '';
+					const sectionRaw = row.querySelector('.fg-section-input')?.value || '';
+					const levelRaw = row.querySelector('.fg-level-input')?.value || '';
+					const hasInput = [qtyRaw, warehouseCode, aisleRaw, sectionRaw, levelRaw]
+						.some(value => String(value).trim() !== '');
+					if (!hasInput) {
 						return null;
 					}
-					const warehouseCode = row.querySelector('.fg-warehouse-code')?.value || '';
-					const aisle = padTwoDigits(row.querySelector('.fg-aisle-input')?.value || '');
-					const section = padTwoDigits(row.querySelector('.fg-section-input')?.value || '');
-					const level = padTwoDigits(row.querySelector('.fg-level-input')?.value || '');
+					const aisle = padTwoDigits(aisleRaw);
+					const section = padTwoDigits(sectionRaw);
+					const level = padTwoDigits(levelRaw);
 					return {
 						stylesId: row.dataset.stylesId || null,
 						prdAgreeId: row.dataset.prdAgreeId || null,
@@ -522,7 +547,7 @@
 						aisle,
 						section,
 						level,
-						inboundQty: qty
+						inboundQty
 					};
 				}).filter(Boolean);
 			};
