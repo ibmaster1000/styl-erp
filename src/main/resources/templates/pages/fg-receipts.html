@@ -1,22 +1,569 @@
 <div xmlns:th="http://www.thymeleaf.org" th:fragment="content" class="content-area container-fluid">
+	<style>
+		.fg-layout {
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+		}
+
+		.fg-panel {
+			background: #ffffff;
+			border: 1px solid #e5e7eb;
+			border-radius: 12px;
+			padding: 16px;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+		}
+
+		.fg-row {
+			display: flex;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 8px 12px;
+		}
+
+		.fg-row .form-label {
+			margin-bottom: 0;
+			white-space: nowrap;
+		}
+
+		.fg-style-input {
+			flex: 1 1 260px;
+			max-width: 320px;
+			min-width: 200px;
+		}
+
+		.fg-style-input .form-control {
+			max-width: 100%;
+			min-width: 0;
+		}
+
+		.fg-search-button {
+			width: 120px;
+			align-self: stretch;
+			min-height: 38px;
+		}
+
+		.fg-table thead th {
+			font-size: 13px;
+			font-weight: 800;
+			background: #f9fafb;
+			white-space: nowrap;
+		}
+
+		.fg-table tbody td {
+			font-size: 13px;
+			vertical-align: middle;
+			white-space: nowrap;
+		}
+
+		.fg-table th.fg-style-col,
+		.fg-table td.fg-style-col {
+			min-width: 110px;
+			max-width: 140px;
+		}
+
+		.fg-placeholder {
+			text-align: center;
+			color: #6b7280;
+		}
+
+		.data-table th,
+		.data-table td {
+			text-align: center;
+			vertical-align: middle;
+		}
+
+		.data-table input {
+			text-align: center;
+		}
+
+		.fg-input-group .form-control {
+			max-width: 110px;
+		}
+
+		.fg-input-group .btn {
+			padding: 4px 8px;
+		}
+
+		.fg-modal-row {
+			cursor: pointer;
+		}
+
+		.fg-modal-row.active {
+			background: rgba(107, 114, 128, 0.15);
+		}
+
+		@media (max-width: 992px) {
+			.fg-row {
+				flex-direction: column;
+				align-items: flex-start;
+			}
+		}
+	</style>
+
 	<div class="mb-3">
-		<h4 class="fw-bold mb-1">완제품 입고</h4>
-		<p class="text-muted mb-0">입고 내역 관리</p>
+		<h4 class="fw-bold mb-1">완제품 입고 등록</h4>
+		<p class="text-muted mb-0">생산 작업지시를 조회하고 완제품 입고를 등록하세요.</p>
 	</div>
 
-	<form class="card ui-card mb-3">
-		<div class="card-body ui-card-body row g-3 align-items-end">
-			<div class="col-md-4">
-				<label class="form-label fw-semibold">품번</label>
-				<input type="text" class="form-control" placeholder="품번">
-				<section class="panel mt-3">
-					<h4 class="h6 fw-bold mb-2">준비중</h4>
-					<div class="text-muted small">상세 기능은 추후 추가됩니다.</div>
-				</section>
+	<div class="fg-layout">
+		<div class="fg-panel">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<h6 class="fw-bold mb-0">검색 조건</h6>
+				<small class="text-muted">검색 버튼을 눌러 목록을 갱신합니다.</small>
+			</div>
+			<div class="fg-row form-row">
+				<label class="form-label fw-bold mb-0">품번</label>
+				<div class="input-group fg-style-input">
+					<input type="text" id="fg-style-input" class="form-control" placeholder="품번을 입력하세요">
+				</div>
+				<button type="button" class="btn btn--primary fg-search-button" id="fg-search-button">검색</button>
+			</div>
+			<div id="fg-search-message" class="mt-2"></div>
+		</div>
+
+		<div class="fg-panel">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<div>
+					<h6 class="fw-bold mb-0">입고 대상 목록</h6>
+					<small class="text-muted">입고량과 보관 위치를 입력하고 저장하세요.</small>
+				</div>
+				<div class="actions">
+					<button type="button" class="btn btn--primary" id="fg-save-button">저장</button>
+				</div>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-bordered align-middle fg-table data-table">
+					<thead class="table-light">
+						<tr>
+							<th>업체명</th>
+							<th class="fg-style-col">품번</th>
+							<th>생산합의코드</th>
+							<th>색상</th>
+							<th>사이즈</th>
+							<th>작지량</th>
+							<th>입고량</th>
+							<th>물류동</th>
+							<th>통로</th>
+							<th>구획</th>
+							<th>단</th>
+							<th>L/C</th>
+						</tr>
+					</thead>
+					<tbody id="fg-table-body">
+						<tr>
+							<td colspan="12" class="fg-placeholder">검색 버튼을 눌러 조회하세요.</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="d-flex justify-content-between align-items-center mt-2">
+				<small class="text-muted" id="fg-page-info">0건</small>
+				<nav>
+					<ul class="pagination pagination-sm mb-0" id="fg-pagination"></ul>
+				</nav>
 			</div>
 		</div>
-		<section class="panel mt-3">
-			<h4 class="h6 fw-bold mb-2">준비중</h4>
-			<div class="text-muted small">상세 기능은 추후 추가됩니다.</div>
-		</section>
+	</div>
+
+	<div class="modal fade" id="fgWarehouseModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title fw-bold">창고 검색</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+						<input type="text" class="form-control" id="fg-warehouse-keyword" placeholder="검색어를 입력하세요">
+						<button class="btn btn--outline" type="button" id="fg-warehouse-search">검색</button>
+					</div>
+					<div class="table-responsive">
+						<table class="table table-bordered data-table">
+							<thead class="table-light">
+								<tr>
+									<th>코드</th>
+									<th>창고 명칭</th>
+									<th>비고</th>
+								</tr>
+							</thead>
+							<tbody id="fg-warehouse-results">
+								<tr>
+									<td colspan="3" class="text-center text-muted">검색어를 입력하세요.</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn--outline" data-bs-dismiss="modal">닫기</button>
+					<button type="button" class="btn btn--primary" id="fg-warehouse-apply">선택</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const searchButton = document.getElementById('fg-search-button');
+			const saveButton = document.getElementById('fg-save-button');
+			const styleInput = document.getElementById('fg-style-input');
+			const tableBody = document.getElementById('fg-table-body');
+			const messageBox = document.getElementById('fg-search-message');
+			const paginationEl = document.getElementById('fg-pagination');
+			const pageInfoEl = document.getElementById('fg-page-info');
+			const warehouseModalEl = document.getElementById('fgWarehouseModal');
+			const warehouseKeywordInput = document.getElementById('fg-warehouse-keyword');
+			const warehouseSearchButton = document.getElementById('fg-warehouse-search');
+			const warehouseResults = document.getElementById('fg-warehouse-results');
+			const warehouseApplyButton = document.getElementById('fg-warehouse-apply');
+			const warehouseModal = warehouseModalEl ? new bootstrap.Modal(warehouseModalEl) : null;
+			let selectedWarehouseCode = '';
+			let selectedWarehouseName = '';
+			let selectedWarehouseRemark = '';
+			let currentWarehouseTarget = null;
+			let currentPage = 1;
+			const pageSize = 25;
+			let currentResults = [];
+
+			const setMessage = (type, text) => {
+				messageBox.innerHTML = `<div class="alert alert-${type} py-2 mb-0">${text}</div>`;
+			};
+
+			const clearMessage = () => {
+				messageBox.innerHTML = '';
+			};
+
+			const resetTable = (message) => {
+				tableBody.innerHTML = `<tr><td colspan="12" class="fg-placeholder">${message}</td></tr>`;
+			};
+
+			const formatQuantity = (value) => {
+				const num = Number(value);
+				const safe = isNaN(num) ? 0 : num;
+				return safe.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+			};
+
+			const padTwoDigits = (value) => {
+				if (value === null || value === undefined) {
+					return '';
+				}
+				const numeric = String(value).replace(/\D/g, '');
+				if (!numeric) {
+					return '';
+				}
+				return numeric.padStart(2, '0').slice(-2);
+			};
+
+			const resolveWarehousePrefix = (warehouseCode) => {
+				if (!warehouseCode) {
+					return '';
+				}
+				const raw = String(warehouseCode).trim();
+				if (raw.length <= 1) {
+					return raw;
+				}
+				const sliced = raw.slice(1).replace(/^0+/, '');
+				return sliced || '0';
+			};
+
+			const updateLcCode = (row) => {
+				if (!row) {
+					return;
+				}
+				const warehouseCode = row.querySelector('.fg-warehouse-code')?.value || '';
+				const aisle = padTwoDigits(row.querySelector('.fg-aisle-input')?.value || '');
+				const section = padTwoDigits(row.querySelector('.fg-section-input')?.value || '');
+				const level = padTwoDigits(row.querySelector('.fg-level-input')?.value || '');
+				const prefix = resolveWarehousePrefix(warehouseCode);
+				const lcValue = prefix && aisle && section && level ? `${prefix}-${aisle}-${section}-${level}` : '';
+				const lcCell = row.querySelector('.fg-lc-code');
+				if (lcCell) {
+					lcCell.textContent = lcValue || '-';
+				}
+			};
+
+			const sanitizeNumericInput = (input) => {
+				if (!input) {
+					return;
+				}
+				const digits = String(input.value || '').replace(/\D/g, '');
+				input.value = digits;
+			};
+
+			const enforceTwoDigit = (input) => {
+				if (!input) {
+					return;
+				}
+				const digits = String(input.value || '').replace(/\D/g, '');
+				if (!digits) {
+					input.value = '';
+					return;
+				}
+				input.value = digits.padStart(2, '0').slice(-2);
+			};
+
+			const renderPagination = () => {
+				paginationEl.innerHTML = '';
+				const totalCount = currentResults.length;
+				const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+				currentPage = Math.min(currentPage, totalPages);
+				pageInfoEl.textContent = `${totalCount.toLocaleString()}건 (페이지 ${currentPage}/${totalPages})`;
+
+				const createPageItem = (label, page, disabled, active) => {
+					const li = document.createElement('li');
+					li.className = `page-item${disabled ? ' disabled' : ''}${active ? ' active' : ''}`;
+					const btn = document.createElement('button');
+					btn.type = 'button';
+					btn.className = 'page-link';
+					btn.textContent = label;
+					btn.addEventListener('click', () => {
+						if (!disabled && page !== currentPage) {
+							currentPage = page;
+							renderTable();
+						}
+					});
+					li.appendChild(btn);
+					paginationEl.appendChild(li);
+				};
+
+				createPageItem('이전', Math.max(1, currentPage - 1), currentPage === 1, false);
+				for (let p = 1; p <= totalPages; p += 1) {
+					createPageItem(String(p), p, false, p === currentPage);
+				}
+				createPageItem('다음', Math.min(totalPages, currentPage + 1), currentPage === totalPages, false);
+			};
+
+			const renderTable = () => {
+				tableBody.innerHTML = '';
+				if (!currentResults || currentResults.length === 0) {
+					resetTable('조회된 데이터가 없습니다.');
+					renderPagination();
+					return;
+				}
+				const start = (currentPage - 1) * pageSize;
+				const pageItems = currentResults.slice(start, start + pageSize);
+				pageItems.forEach(item => {
+					const row = document.createElement('tr');
+					row.dataset.stylesId = item.stylesId || item.styles_id || '';
+					row.dataset.prdAgreeId = item.prdAgreeId || item.prd_agree_id || '';
+					row.dataset.prdAgreeCode = item.prdAgreeCode || item.agreementCode || item.prd_agree_code || '';
+					row.dataset.colorCode = item.colorCode || item.color_code || '';
+					row.dataset.factoryCode = item.factoryCode || item.producerCode || item.factory_code || '';
+					row.dataset.styleCode = item.styleCode || item.stylesCode || '';
+					row.innerHTML = `
+						<td>${item.factoryName || item.factoryCode || item.factory_code || '-'}</td>
+						<td class="fg-style-col">${item.stylesId || item.styles_id || ''}<div class="text-muted small">${item.styleCode || item.style_code || ''}</div></td>
+						<td>${item.prdAgreeCode || item.agreementCode || item.prd_agree_code || '-'}</td>
+						<td>${item.colorCode || item.color_code || '-'}</td>
+						<td>-</td>
+						<td>${formatQuantity(item.quantity)}</td>
+						<td><input type="number" class="form-control form-control-sm fg-inbound-input" min="0" step="1" value=""></td>
+						<td>
+							<div class="input-group fg-input-group">
+								<input type="text" class="form-control form-control-sm fg-warehouse-code">
+								<button type="button" class="btn btn--outline fg-warehouse-button"><i class="bi bi-search"></i></button>
+							</div>
+							<div class="text-muted small fg-warehouse-name"></div>
+						</td>
+						<td><input type="text" class="form-control form-control-sm fg-aisle-input" placeholder="01"></td>
+						<td><input type="text" class="form-control form-control-sm fg-section-input" placeholder="01"></td>
+						<td><input type="text" class="form-control form-control-sm fg-level-input" placeholder="01"></td>
+						<td class="fg-lc-code">-</td>
+					`;
+					row.querySelector('.fg-warehouse-button').addEventListener('click', () => {
+						currentWarehouseTarget = row;
+						openWarehouseModal();
+					});
+					const warehouseInput = row.querySelector('.fg-warehouse-code');
+					const warehouseName = row.querySelector('.fg-warehouse-name');
+					warehouseInput.addEventListener('input', () => {
+						warehouseName.textContent = '';
+						updateLcCode(row);
+					});
+					const aisleInput = row.querySelector('.fg-aisle-input');
+					const sectionInput = row.querySelector('.fg-section-input');
+					const levelInput = row.querySelector('.fg-level-input');
+					[aisleInput, sectionInput, levelInput].forEach((input) => {
+						input.addEventListener('input', () => {
+							sanitizeNumericInput(input);
+							updateLcCode(row);
+						});
+						input.addEventListener('blur', () => {
+							enforceTwoDigit(input);
+							updateLcCode(row);
+						});
+					});
+					tableBody.appendChild(row);
+				});
+				renderPagination();
+			};
+
+			const openWarehouseModal = () => {
+				if (!warehouseModal) {
+					return;
+				}
+				selectedWarehouseCode = '';
+				selectedWarehouseName = '';
+				selectedWarehouseRemark = '';
+				warehouseKeywordInput.value = '';
+				resetWarehouseResults('검색어를 입력하세요.');
+				warehouseModal.show();
+			};
+
+			const resetWarehouseResults = (message) => {
+				warehouseResults.innerHTML = `<tr><td colspan="3" class="text-center text-muted">${message}</td></tr>`;
+			};
+
+			const renderWarehouseRows = (codes) => {
+				warehouseResults.innerHTML = '';
+				if (!codes || codes.length === 0) {
+					resetWarehouseResults('검색 결과가 없습니다.');
+					return;
+				}
+				codes.forEach((code) => {
+					const row = document.createElement('tr');
+					row.className = 'fg-modal-row';
+					row.innerHTML = `<td>${code.code || ''}</td><td>${code.codeName || ''}</td><td>${code.remark || ''}</td>`;
+					row.addEventListener('click', () => {
+						warehouseResults.querySelectorAll('.fg-modal-row').forEach((r) => r.classList.remove('active'));
+						row.classList.add('active');
+						selectedWarehouseCode = code.code || '';
+						selectedWarehouseName = code.codeName || '';
+						selectedWarehouseRemark = code.remark || '';
+					});
+					row.addEventListener('dblclick', () => {
+						selectedWarehouseCode = code.code || '';
+						selectedWarehouseName = code.codeName || '';
+						selectedWarehouseRemark = code.remark || '';
+						applyWarehouseSelection();
+					});
+					warehouseResults.appendChild(row);
+				});
+			};
+
+			const fetchWarehouses = async (keyword) => {
+				const response = await fetch(`/fg/receipts/warehouses?keyword=${encodeURIComponent(keyword || '')}`);
+				if (!response.ok) {
+					return [];
+				}
+				return response.json();
+			};
+
+			const loadWarehouses = async () => {
+				const keyword = warehouseKeywordInput.value.trim();
+				const results = await fetchWarehouses(keyword);
+				renderWarehouseRows(results);
+			};
+
+			const applyWarehouseSelection = () => {
+				if (!currentWarehouseTarget) {
+					return;
+				}
+				if (!selectedWarehouseCode) {
+					alert('선택된 창고가 없습니다.');
+					return;
+				}
+				const codeInput = currentWarehouseTarget.querySelector('.fg-warehouse-code');
+				const nameEl = currentWarehouseTarget.querySelector('.fg-warehouse-name');
+				if (codeInput) {
+					codeInput.value = selectedWarehouseCode;
+				}
+				if (nameEl) {
+					const nameText = selectedWarehouseName || selectedWarehouseRemark || '';
+					nameEl.textContent = nameText;
+				}
+				updateLcCode(currentWarehouseTarget);
+				warehouseModal.hide();
+			};
+
+			const loadResults = async () => {
+				clearMessage();
+				try {
+					const keyword = styleInput.value.trim();
+					const res = await fetch(`/fg/receipts/list?styleCode=${encodeURIComponent(keyword)}`);
+					const data = await res.json().catch(() => ({}));
+					if (!res.ok) {
+						throw new Error(data?.message || '조회 중 오류가 발생했습니다.');
+					}
+					currentResults = Array.isArray(data?.items) ? data.items : [];
+					currentPage = 1;
+					renderTable();
+					if (currentResults.length > 0) {
+						setMessage('success', `총 ${currentResults.length}건 조회되었습니다.`);
+					} else {
+						setMessage('warning', '조회된 데이터가 없습니다.');
+					}
+				} catch (e) {
+					resetTable('조회 중 오류가 발생했습니다.');
+					setMessage('danger', e?.message || '조회 중 오류가 발생했습니다.');
+				}
+			};
+
+			const buildPayloadLines = () => {
+				const rows = Array.from(tableBody.querySelectorAll('tr'));
+				return rows.map((row) => {
+					const qty = Number(row.querySelector('.fg-inbound-input')?.value || '0');
+					if (!qty || qty <= 0) {
+						return null;
+					}
+					const warehouseCode = row.querySelector('.fg-warehouse-code')?.value || '';
+					const aisle = padTwoDigits(row.querySelector('.fg-aisle-input')?.value || '');
+					const section = padTwoDigits(row.querySelector('.fg-section-input')?.value || '');
+					const level = padTwoDigits(row.querySelector('.fg-level-input')?.value || '');
+					return {
+						stylesId: row.dataset.stylesId || null,
+						prdAgreeId: row.dataset.prdAgreeId || null,
+						prdAgreeCode: row.dataset.prdAgreeCode || null,
+						colorCode: row.dataset.colorCode || null,
+						factoryCode: row.dataset.factoryCode || null,
+						styleCode: row.dataset.styleCode || null,
+						warehouseCode,
+						aisle,
+						section,
+						level,
+						inboundQty: qty
+					};
+				}).filter(Boolean);
+			};
+
+			searchButton.addEventListener('click', loadResults);
+
+			saveButton.addEventListener('click', async () => {
+				const lines = buildPayloadLines();
+				if (lines.length === 0) {
+					alert('입고량을 입력하세요.');
+					return;
+				}
+				const res = await fetch('/fg/receipts/save', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({items: lines})
+				});
+				const json = await res.json();
+				if (!json.success) {
+					let msg = json.message || '입고 등록 실패';
+					if (json.missingFields && Array.isArray(json.missingFields) && json.missingFields.length) {
+						msg += `\n\n[missingFields]\n- ${json.missingFields.join('\n- ')}`;
+					}
+					if (json.lineErrors && Array.isArray(json.lineErrors) && json.lineErrors.length) {
+						const preview = json.lineErrors.slice(0, 5).map(e => JSON.stringify(e)).join('\n');
+						msg += `\n\n[lineErrors sample]\n${preview}`;
+					}
+					alert(msg);
+					return;
+				}
+				alert(json.message || '입고 등록 완료');
+			});
+
+			warehouseSearchButton.addEventListener('click', loadWarehouses);
+			warehouseKeywordInput.addEventListener('keydown', (event) => {
+				if (event.key === 'Enter') {
+					event.preventDefault();
+					loadWarehouses();
+				}
+			});
+			warehouseApplyButton.addEventListener('click', applyWarehouseSelection);
+		});
+	</script>
 </div>
